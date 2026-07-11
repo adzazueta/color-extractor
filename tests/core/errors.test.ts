@@ -3,7 +3,7 @@ import {
   ColorExtractorError,
   COLOR_EXTRACTOR_ERROR_CODES,
   type ColorExtractorErrorCode,
-} from '../src/core/errors.js'
+} from '../../src/core/errors.js'
 
 describe('COLOR_EXTRACTOR_ERROR_CODES', () => {
   it('contains the 11 documented package error codes', () => {

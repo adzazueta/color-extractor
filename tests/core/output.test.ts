@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
-import { applyOutputFlags, type FullExtractionResult } from '../src/core/output.js'
-import type { ExtractedColor } from '../src/core/types.js'
-import type { ExtractionMetadata } from '../src/core/result.js'
+import { applyOutputFlags, type FullExtractionResult } from '../../src/core/output.js'
+import type { ExtractedColor } from '../../src/core/types.js'
+import type { ExtractionMetadata } from '../../src/core/result.js'
 
 function makeColor(overrides: Partial<ExtractedColor> = {}): ExtractedColor {
   return {

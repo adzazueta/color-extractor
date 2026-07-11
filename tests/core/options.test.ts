@@ -14,7 +14,7 @@ import type {
   SecondaryFallbackMode,
   SecondaryOptions,
   SvgHandling,
-} from '../src/core/options.js'
+} from '../../src/core/options.js'
 
 describe('KmeansOptions', () => {
   it('has clusters and iterations as optional numbers', () => {

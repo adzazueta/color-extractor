@@ -6,7 +6,7 @@ import type {
   HSL,
   Lab,
   RGB,
-} from '../src/core/types.js'
+} from '../../src/core/types.js'
 
 describe('RGB', () => {
   it('has r, g, b as number', () => {

@@ -1,10 +1,10 @@
 import { describe, it, expect, expectTypeOf } from 'vitest'
-import type { ExtractedColor } from '../src/core/types.js'
+import type { ExtractedColor } from '../../src/core/types.js'
 import type {
   ExtractColorsResult,
   ExtractionMetadata,
   MinimalExtractColorsResult,
-} from '../src/core/result.js'
+} from '../../src/core/result.js'
 
 function makeColor(): ExtractedColor {
   return { hex: '#ff8040', rgb: { r: 255, g: 128, b: 64 } }

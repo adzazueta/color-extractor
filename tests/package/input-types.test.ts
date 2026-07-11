@@ -2,11 +2,11 @@ import { describe, it, expect, expectTypeOf } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { dirname, resolve } from 'node:path'
-import type { BrowserExtractColorsInput } from '../src/browser/types.js'
-import type { NodeExtractColorsInput } from '../src/node/types.js'
+import type { BrowserExtractColorsInput } from '../../src/browser/types.js'
+import type { NodeExtractColorsInput } from '../../src/node/types.js'
 
 const here = dirname(fileURLToPath(import.meta.url))
-const rootDir = resolve(here, '..')
+const rootDir = resolve(here, '../..')
 
 describe('BrowserExtractColorsInput', () => {
   it('accepts every documented browser-native input (runtime-checkable in Node)', () => {

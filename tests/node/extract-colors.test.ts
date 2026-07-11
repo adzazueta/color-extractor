@@ -1,11 +1,11 @@
 import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
-import { extractColors } from '../src/node/index.js'
-import { ColorExtractorError } from '../src/core/index.js'
-import type { NodeExtractColorsInput } from '../src/node/index.js'
+import { extractColors } from '../../src/node/index.js'
+import { ColorExtractorError } from '../../src/core/index.js'
+import type { NodeExtractColorsInput } from '../../src/node/index.js'
 
-const rootDir = resolve(import.meta.dirname, '..')
+const rootDir = resolve(import.meta.dirname, '../..')
 
 function readDist(relPath: string): string {
   return readFileSync(resolve(rootDir, 'dist', relPath), 'utf-8')

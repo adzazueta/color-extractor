@@ -3,7 +3,7 @@ import {
   DEFAULT_OPTIONS,
   resolveOptions,
   type ResolvedOptions,
-} from '../src/core/defaults.js'
+} from '../../src/core/defaults.js'
 
 describe('DEFAULT_OPTIONS', () => {
   it('matches the documented spec defaults', () => {

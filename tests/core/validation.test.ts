@@ -1,9 +1,9 @@
 import { describe, it, expect, expectTypeOf } from 'vitest'
-import { ColorExtractorError } from '../src/core/errors.js'
+import { ColorExtractorError } from '../../src/core/errors.js'
 import {
   validateCoreInput,
   type PixelInput,
-} from '../src/core/validation.js'
+} from '../../src/core/validation.js'
 
 function expectUnsupportedInput(fn: () => unknown): void {
   try {

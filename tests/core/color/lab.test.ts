@@ -2,11 +2,66 @@ import { describe, it, expect, expectTypeOf } from 'vitest'
 import {
   labDistance,
   labSquaredDistance,
+  xyzToLab,
 } from '../../../src/core/color/lab.js'
+import { srgbByteToLinear } from '../../../src/core/color/srgb.js'
+import { linearRgbToXyz } from '../../../src/core/color/xyz.js'
 import type { Lab } from '../../../src/core/types.js'
 
 const A: Lab = { L: 50, a: 0, b: 0 }
 const B: Lab = { L: 53, a: 80, b: 67 }
+
+describe('xyzToLab', () => {
+  it('maps black to Lab black', () => {
+    const result = xyzToLab(0, 0, 0)
+    expect(result.L).toBeCloseTo(0, 12)
+    expect(result.a).toBeCloseTo(0, 12)
+    expect(result.b).toBeCloseTo(0, 12)
+  })
+
+  it('maps the D65 white point to Lab white', () => {
+    const result = xyzToLab(0.95047, 1, 1.08883)
+    expect(result.L).toBeCloseTo(100, 12)
+    expect(result.a).toBeCloseTo(0, 12)
+    expect(result.b).toBeCloseTo(0, 12)
+  })
+
+  it.each([
+    ['red', 0.4124564, 0.2126729, 0.0193339, 53.24, 80.09, 67.2],
+    ['green', 0.3575761, 0.7151522, 0.119192, 87.73, -86.18, 83.18],
+    ['blue', 0.1804375, 0.072175, 0.9503041, 32.3, 79.19, -107.86],
+  ])('maps D65 %s XYZ reference values to Lab', (_, x, y, z, L, a, b) => {
+    const result = xyzToLab(x, y, z)
+    expect(result.L).toBeCloseTo(L, 1)
+    expect(result.a).toBeCloseTo(a, 1)
+    expect(result.b).toBeCloseTo(b, 1)
+  })
+})
+
+describe('sRGB byte to Lab conversion', () => {
+  function toLab(r: number, g: number, b: number): Lab {
+    const xyz = linearRgbToXyz(
+      srgbByteToLinear(r),
+      srgbByteToLinear(g),
+      srgbByteToLinear(b),
+    )
+    return xyzToLab(xyz.x, xyz.y, xyz.z)
+  }
+
+  it('converts sRGB red through linear RGB and XYZ D65', () => {
+    const result = toLab(255, 0, 0)
+    expect(result.L).toBeCloseTo(53.24, 1)
+    expect(result.a).toBeCloseTo(80.09, 1)
+    expect(result.b).toBeCloseTo(67.2, 1)
+  })
+
+  it('converts non-neutral sRGB orange through the full chain', () => {
+    const result = toLab(255, 128, 0)
+    expect(result.L).toBeCloseTo(67.05, 1)
+    expect(result.a).toBeCloseTo(42.83, 1)
+    expect(result.b).toBeCloseTo(74.03, 1)
+  })
+})
 
 describe('labSquaredDistance', () => {
   describe('identity', () => {

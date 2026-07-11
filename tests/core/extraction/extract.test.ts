@@ -3,9 +3,9 @@ import {
   extractColorsFromPixels,
   extractColorsFromImageData,
   type ImageDataLike,
-} from '../src/core/extract.js'
-import { ColorExtractorError } from '../src/core/index.js'
-import type { PixelInput } from '../src/core/validation.js'
+} from '../../../src/core/extract.js'
+import { ColorExtractorError } from '../../../src/core/index.js'
+import type { PixelInput } from '../../../src/core/validation.js'
 
 function makePixels(width: number, height: number, fill: number = 128): PixelInput {
   const data = new Uint8Array(width * height * 4)
@@ -90,7 +90,7 @@ describe('core entrypoint shape', () => {
   it('dist/core/index.js exports extractColorsFromPixels and extractColorsFromImageData', async () => {
     const fs = await import('node:fs/promises')
     const path = await import('node:path')
-    const rootDir = path.resolve(import.meta.dirname, '..')
+    const rootDir = path.resolve(import.meta.dirname, '../../..')
     const js = await fs.readFile(path.resolve(rootDir, 'dist/core/index.js'), 'utf-8')
     expect(js).toMatch(/extractColorsFromPixels/)
     expect(js).toMatch(/extractColorsFromImageData/)
@@ -99,7 +99,7 @@ describe('core entrypoint shape', () => {
   it('dist/core/index.d.ts does not reference Buffer or File globals', async () => {
     const fs = await import('node:fs/promises')
     const path = await import('node:path')
-    const rootDir = path.resolve(import.meta.dirname, '..')
+    const rootDir = path.resolve(import.meta.dirname, '../../..')
     const dts = await fs.readFile(path.resolve(rootDir, 'dist/core/index.d.ts'), 'utf-8')
     expect(dts).not.toMatch(/\bBuffer\b/)
     expect(dts).not.toMatch(/\bFile\b/)
