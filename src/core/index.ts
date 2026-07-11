@@ -4,11 +4,6 @@ export {
   ColorExtractorError,
   type ColorExtractorErrorCode,
 } from './errors.js'
-export {
-  validateCoreInput,
-  type PixelData,
-  type PixelInput,
-} from './validation.js'
 export type {
   ColorRole,
   ColorSource,
@@ -39,10 +34,6 @@ export type {
   MinimalExtractColorsResult,
 } from './result.js'
 export {
-  applyOutputFlags,
-  type FullExtractionResult,
-} from './output.js'
-export {
   DEFAULT_OPTIONS,
   resolveOptions,
   type ResolvedOptions,
@@ -50,4 +41,6 @@ export {
 export {
   extractColorsFromPixels,
   extractColorsFromImageData,
+  type ImageDataLike,
 } from './extract.js'
+export type { PixelData, PixelInput } from './validation.js'

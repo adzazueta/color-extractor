@@ -2,6 +2,7 @@ import { describe, it, expect, expectTypeOf } from 'vitest'
 import {
   extractColorsFromPixels,
   extractColorsFromImageData,
+  type ImageDataLike,
 } from '../src/core/extract.js'
 import { ColorExtractorError } from '../src/core/index.js'
 import type { PixelInput } from '../src/core/validation.js'
@@ -71,11 +72,15 @@ describe('extractColorsFromPixels', () => {
 })
 
 describe('extractColorsFromImageData', () => {
-  it('accepts an ImageData input (type-level)', () => {
-    expectTypeOf<Parameters<typeof extractColorsFromImageData>[0]>().toEqualTypeOf<ImageData>()
+  it('accepts an ImageDataLike input (type-level)', () => {
+    expectTypeOf<Parameters<typeof extractColorsFromImageData>[0]>().toEqualTypeOf<ImageDataLike>()
   })
 
-  it('rejects non-ImageData inputs at the type level', () => {
+  it('DOM ImageData is structurally compatible with ImageDataLike', () => {
+    expectTypeOf<ImageData>().toMatchTypeOf<ImageDataLike>()
+  })
+
+  it('rejects non-ImageDataLike inputs at the type level', () => {
     expectTypeOf<File>().not.toMatchTypeOf<Parameters<typeof extractColorsFromImageData>[0]>()
     expectTypeOf<Buffer>().not.toMatchTypeOf<Parameters<typeof extractColorsFromImageData>[0]>()
   })

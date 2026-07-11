@@ -5,6 +5,12 @@ import type { ExtractColorsOptions } from './options.js'
 import type { ExtractColorsResult } from './result.js'
 import type { PixelInput } from './validation.js'
 
+export interface ImageDataLike {
+  readonly data: Uint8ClampedArray
+  readonly width: number
+  readonly height: number
+}
+
 function placeholderResult(): ExtractColorsResult {
   return {
     primary: {
@@ -27,7 +33,7 @@ export async function extractColorsFromPixels(
 }
 
 export async function extractColorsFromImageData(
-  imageData: ImageData,
+  imageData: ImageDataLike,
   options?: ExtractColorsOptions,
 ): Promise<ExtractColorsResult> {
   if (imageData === null || imageData === undefined) {
