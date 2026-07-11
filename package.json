@@ -3,7 +3,6 @@
   "version": "0.1.0",
   "description": "ESM-only npm package for extracting perceptually meaningful primary and secondary colors from images in browser and Node.js",
   "type": "module",
-  "license": "MIT",
   "keywords": [
     "color",
     "extraction",
@@ -14,9 +13,21 @@
     "typescript",
     "esm"
   ],
-  "author": "Alexis D. Zazueta",
+  "author": "Alexis D. Zazueta <alexisd.zazueta@gmail.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/adzazueta/color-extractor.git"
+  },
+  "bugs": {
+    "url": "https://github.com/adzazueta/color-extractor/issues"
+  },
+  "homepage": "https://github.com/adzazueta/color-extractor#readme",
   "engines": {
     "node": ">=20.3.0"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "packageManager": "pnpm@10.7.0",
   "exports": {
