@@ -184,11 +184,101 @@ describe('resolveOptions', () => {
       expect(DEFAULT_OPTIONS.remote.maxBytes).toBe(10_000_000)
     })
 
-    it('mutating DEFAULT_OPTIONS does not affect a previously-resolved result', () => {
+    it('regression: unprovided nested groups in user options do not share references with DEFAULT_OPTIONS (the exact case of the previous bug)', () => {
+      const resolved = resolveOptions({ sampleSize: 200 })
+
+      ;(resolved.output as { includeHsl: boolean }).includeHsl = false
+      ;(resolved.output as { includePalette: boolean }).includePalette = true
+      ;(resolved.remote as { maxBytes: number }).maxBytes = 1
+      ;(resolved.remote as { allowedProtocols: string[] }).allowedProtocols = ['ftp:']
+      ;(resolved.kmeans as { clusters: number }).clusters = 99
+      ;(resolved.filtering as { alphaThreshold: number }).alphaThreshold = 0
+
+      expect(DEFAULT_OPTIONS.output.includeHsl).toBe(true)
+      expect(DEFAULT_OPTIONS.output.includePalette).toBe(false)
+      expect(DEFAULT_OPTIONS.remote.maxBytes).toBe(10_000_000)
+      expect(DEFAULT_OPTIONS.remote.allowedProtocols).toEqual(['http:', 'https:'])
+      expect(DEFAULT_OPTIONS.kmeans.clusters).toBe(5)
+      expect(DEFAULT_OPTIONS.filtering.alphaThreshold).toBe(128)
+
+      expect(resolved.sampleSize).toBe(200)
+    })
+
+    it('regression: arrays inside unprovided groups have independent references from DEFAULT_OPTIONS', () => {
+      const resolved = resolveOptions({ sampleSize: 200 })
+      expect(resolved.remote.allowedProtocols).not.toBe(DEFAULT_OPTIONS.remote.allowedProtocols)
+      expect(resolved.remote.allowedProtocols).toEqual(DEFAULT_OPTIONS.remote.allowedProtocols)
+
+      ;(resolved.remote.allowedProtocols as string[]).push('ftp:')
+      expect(DEFAULT_OPTIONS.remote.allowedProtocols).toEqual(['http:', 'https:'])
+      expect(resolved.remote.allowedProtocols).toEqual(['http:', 'https:', 'ftp:'])
+    })
+
+    it('regression: user-provided nested group is also independent of DEFAULT_OPTIONS', () => {
+      const resolved = resolveOptions({ kmeans: { clusters: 8 } })
+      ;(resolved.kmeans as { iterations: number }).iterations = 99
+      expect(DEFAULT_OPTIONS.kmeans.iterations).toBe(7)
+      expect(resolved.kmeans.iterations).toBe(99)
+    })
+  })
+
+  describe('DEFAULT_OPTIONS runtime immutability (Object.freeze)', () => {
+    it('DEFAULT_OPTIONS is frozen at the top level', () => {
+      expect(Object.isFrozen(DEFAULT_OPTIONS)).toBe(true)
+    })
+
+    it('DEFAULT_OPTIONS nested groups are frozen', () => {
+      expect(Object.isFrozen(DEFAULT_OPTIONS.kmeans)).toBe(true)
+      expect(Object.isFrozen(DEFAULT_OPTIONS.output)).toBe(true)
+      expect(Object.isFrozen(DEFAULT_OPTIONS.remote)).toBe(true)
+      expect(Object.isFrozen(DEFAULT_OPTIONS.decode)).toBe(true)
+    })
+
+    it('DEFAULT_OPTIONS arrays are frozen', () => {
+      expect(Object.isFrozen(DEFAULT_OPTIONS.remote.allowedProtocols)).toBe(true)
+    })
+
+    it('attempting to mutate a top-level field throws in strict mode', () => {
+      expect(() => {
+        ;(DEFAULT_OPTIONS as unknown as { sampleSize: number }).sampleSize = 999
+      }).toThrow(TypeError)
+      expect(DEFAULT_OPTIONS.sampleSize).toBe(150)
+    })
+
+    it('attempting to mutate a nested field throws in strict mode', () => {
+      expect(() => {
+        ;(DEFAULT_OPTIONS.output as unknown as { includeHsl: boolean }).includeHsl = false
+      }).toThrow(TypeError)
+      expect(DEFAULT_OPTIONS.output.includeHsl).toBe(true)
+    })
+
+    it('attempting to push into a frozen array throws in strict mode', () => {
+      expect(() => {
+        ;(DEFAULT_OPTIONS.remote.allowedProtocols as unknown as string[]).push('ftp:')
+      }).toThrow(TypeError)
+      expect(DEFAULT_OPTIONS.remote.allowedProtocols).toEqual(['http:', 'https:'])
+    })
+
+    it('subsequent resolveOptions calls return defaults unchanged after attempted mutation', () => {
+      try {
+        ;(DEFAULT_OPTIONS as unknown as { sampleSize: number }).sampleSize = 999
+      } catch { /* expected throw */ }
+      const after = resolveOptions()
+      expect(after.sampleSize).toBe(150)
+    })
+  })
+
+  describe('resolved result is a fresh (mutable) copy', () => {
+    it('resolveOptions() returns an unfrozen result so callers can mutate it', () => {
       const resolved = resolveOptions()
-      ;(DEFAULT_OPTIONS as { sampleSize: number }).sampleSize = 1
-      expect(resolved.sampleSize).toBe(150)
-      ;(DEFAULT_OPTIONS as { sampleSize: number }).sampleSize = 150
+      expect(Object.isFrozen(resolved)).toBe(false)
+      ;(resolved as { sampleSize: number }).sampleSize = 999
+      expect(resolved.sampleSize).toBe(999)
+    })
+
+    it('resolveOptions with user options returns an unfrozen result', () => {
+      const resolved = resolveOptions({ sampleSize: 200 })
+      expect(Object.isFrozen(resolved)).toBe(false)
     })
   })
 

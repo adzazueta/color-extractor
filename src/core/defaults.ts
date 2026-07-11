@@ -4,7 +4,7 @@ export type ResolvedOptions = {
   readonly [K in keyof ExtractColorsOptions]-?: ExtractColorsOptions[K]
 }
 
-export const DEFAULT_OPTIONS: ResolvedOptions = {
+export const DEFAULT_OPTIONS: ResolvedOptions = deepFreeze({
   sampleSize: 150,
   paletteSize: 5,
   accents: 0,
@@ -37,7 +37,7 @@ export const DEFAULT_OPTIONS: ResolvedOptions = {
     respectOrientation: true,
     normalizeColorProfile: true,
   },
-}
+})
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
@@ -53,6 +53,24 @@ function deepClone<T>(value: T): T {
     result[key] = Array.isArray(v) ? v.slice() : deepClone(v)
   }
   return result as T
+}
+
+function deepFreeze<T>(value: T): T {
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      deepFreeze(item)
+    }
+    Object.freeze(value)
+    return value
+  }
+  if (isPlainObject(value)) {
+    for (const key of Object.keys(value)) {
+      deepFreeze((value as Record<string, unknown>)[key])
+    }
+    Object.freeze(value)
+    return value
+  }
+  return value
 }
 
 function deepMerge<T>(defaults: T, user: Partial<T>): T {
