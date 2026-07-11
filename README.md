@@ -16,7 +16,7 @@ Works in browser and Node through conditional exports. Runtime-specific subpaths
 
 ## Documentation
 
-Full documentation lives in the project repository under the `docs/` directory, covering:
+Full documentation lives in the **Linear workspace** for this project. The canonical source of truth is the [Documentation Home](https://linear.app/adzazueta/document/00-documentation-home-efdb974fe5a6), which covers:
 
 - Overview and design principles
 - Algorithm specification

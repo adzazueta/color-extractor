@@ -43,33 +43,6 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
 }
 
-function deepMerge<T>(defaults: T, user: Partial<T>): T {
-  const result = { ...defaults }
-  for (const key of Object.keys(user) as Array<keyof T>) {
-    const userValue = user[key]
-    const defaultValue = defaults[key]
-    if (userValue === undefined) {
-      continue
-    }
-    if (isPlainObject(userValue) && isPlainObject(defaultValue)) {
-      ;(result as Record<string, unknown>)[key as string] = deepMerge(
-        defaultValue as Record<string, unknown>,
-        userValue as Record<string, unknown>,
-      )
-    } else {
-      ;(result as Record<string, unknown>)[key as string] = userValue
-    }
-  }
-  return result
-}
-
-export function resolveOptions(user?: ExtractColorsOptions): ResolvedOptions {
-  if (user === undefined) {
-    return deepClone(DEFAULT_OPTIONS)
-  }
-  return deepMerge(DEFAULT_OPTIONS, user)
-}
-
 function deepClone<T>(value: T): T {
   if (!isPlainObject(value)) {
     return value
@@ -80,4 +53,32 @@ function deepClone<T>(value: T): T {
     result[key] = Array.isArray(v) ? v.slice() : deepClone(v)
   }
   return result as T
+}
+
+function deepMerge<T>(defaults: T, user: Partial<T>): T {
+  const defaultsRecord = defaults as unknown as Record<string, unknown>
+  const userRecord = user as unknown as Record<string, unknown>
+  const result: Record<string, unknown> = {}
+  for (const key of Object.keys(defaultsRecord)) {
+    result[key] = deepClone(defaultsRecord[key])
+  }
+  for (const key of Object.keys(userRecord)) {
+    const userValue = userRecord[key]
+    if (userValue === undefined) {
+      continue
+    }
+    if (isPlainObject(userValue) && isPlainObject(result[key])) {
+      result[key] = deepMerge(result[key], userValue)
+    } else {
+      result[key] = userValue
+    }
+  }
+  return result as T
+}
+
+export function resolveOptions(user?: ExtractColorsOptions): ResolvedOptions {
+  if (user === undefined) {
+    return deepClone(DEFAULT_OPTIONS)
+  }
+  return deepMerge(DEFAULT_OPTIONS, user)
 }

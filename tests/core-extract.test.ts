@@ -27,7 +27,7 @@ describe('extractColorsFromPixels', () => {
 
   it('accepts Uint8ClampedArray', async () => {
     const result = await extractColorsFromPixels({
-      data: new Uint8ClampedArray(40),
+      data: new Uint8ClampedArray(400),
       width: 10,
       height: 10,
     })

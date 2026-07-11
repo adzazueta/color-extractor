@@ -15,6 +15,11 @@ function expectUnsupportedInput(fn: () => unknown): void {
   }
 }
 
+const W = 10
+const H = 10
+const PIXELS = W * H
+const BYTES = PIXELS * 4
+
 describe('validateCoreInput', () => {
   describe('rejects non-object inputs', () => {
     it.each([
@@ -35,75 +40,140 @@ describe('validateCoreInput', () => {
     })
 
     it('throws when `data` is missing', () => {
-      expectUnsupportedInput(() => validateCoreInput({ width: 10, height: 10 }))
+      expectUnsupportedInput(() => validateCoreInput({ width: W, height: H }))
     })
 
     it('throws when `width` is missing', () => {
       expectUnsupportedInput(() =>
-        validateCoreInput({ data: new Uint8Array(40) }),
+        validateCoreInput({ data: new Uint8Array(BYTES) }),
       )
     })
 
     it('throws when `height` is missing', () => {
       expectUnsupportedInput(() =>
-        validateCoreInput({ data: new Uint8Array(40), width: 10 }),
+        validateCoreInput({ data: new Uint8Array(BYTES), width: W }),
       )
     })
   })
 
   describe('rejects wrong-typed fields', () => {
-    it('throws when `data` is not a typed array or number[]', () => {
+    it('throws when `data` is not a typed array or byte number[]', () => {
       expectUnsupportedInput(() =>
-        validateCoreInput({ data: 'not pixels', width: 10, height: 10 }),
+        validateCoreInput({ data: 'not pixels', width: W, height: H }),
       )
       expectUnsupportedInput(() =>
-        validateCoreInput({ data: { 0: 0, length: 1 }, width: 10, height: 10 }),
+        validateCoreInput({ data: { 0: 0, length: 1 }, width: W, height: H }),
       )
     })
 
     it('throws when `width` is not a positive integer', () => {
       expectUnsupportedInput(() =>
-        validateCoreInput({ data: new Uint8Array(4), width: 0, height: 10 }),
+        validateCoreInput({ data: new Uint8Array(BYTES), width: 0, height: H }),
       )
       expectUnsupportedInput(() =>
-        validateCoreInput({ data: new Uint8Array(4), width: -1, height: 10 }),
+        validateCoreInput({ data: new Uint8Array(BYTES), width: -1, height: H }),
       )
       expectUnsupportedInput(() =>
-        validateCoreInput({ data: new Uint8Array(4), width: 1.5, height: 10 }),
+        validateCoreInput({ data: new Uint8Array(BYTES), width: 1.5, height: H }),
       )
       expectUnsupportedInput(() =>
-        validateCoreInput({ data: new Uint8Array(4), width: '10', height: 10 }),
+        validateCoreInput({ data: new Uint8Array(BYTES), width: '10', height: H }),
       )
     })
 
     it('throws when `height` is not a positive integer', () => {
       expectUnsupportedInput(() =>
-        validateCoreInput({ data: new Uint8Array(4), width: 10, height: 0 }),
+        validateCoreInput({ data: new Uint8Array(BYTES), width: W, height: 0 }),
       )
       expectUnsupportedInput(() =>
-        validateCoreInput({ data: new Uint8Array(4), width: 10, height: 1.5 }),
+        validateCoreInput({ data: new Uint8Array(BYTES), width: W, height: 1.5 }),
       )
     })
   })
 
+  describe('rejects data with mismatched length', () => {
+    it('throws when data length is less than width * height * 4', () => {
+      expectUnsupportedInput(() =>
+        validateCoreInput({ data: new Uint8Array(40), width: W, height: H }),
+      )
+    })
+
+    it('throws when data length is more than width * height * 4', () => {
+      expectUnsupportedInput(() =>
+        validateCoreInput({ data: new Uint8Array(BYTES + 4), width: W, height: H }),
+      )
+    })
+
+    it('throws when number[] length is less than expected', () => {
+      expectUnsupportedInput(() =>
+        validateCoreInput({ data: [0, 0, 0], width: 1, height: 1 }),
+      )
+    })
+
+    it('accepts exact match for 1x1 (4 bytes)', () => {
+      expect(() =>
+        validateCoreInput({ data: new Uint8Array(4), width: 1, height: 1 }),
+      ).not.toThrow()
+    })
+
+    it('accepts exact match for 10x10 (400 bytes)', () => {
+      expect(() =>
+        validateCoreInput({ data: new Uint8Array(BYTES), width: W, height: H }),
+      ).not.toThrow()
+    })
+  })
+
+  describe('rejects number[] with out-of-range or non-integer values', () => {
+    it('throws for negative values', () => {
+      expectUnsupportedInput(() =>
+        validateCoreInput({ data: [-1, 0, 0, 255], width: 1, height: 1 }),
+      )
+    })
+
+    it('throws for values above 255', () => {
+      expectUnsupportedInput(() =>
+        validateCoreInput({ data: [256, 0, 0, 255], width: 1, height: 1 }),
+      )
+    })
+
+    it('throws for fractional values', () => {
+      expectUnsupportedInput(() =>
+        validateCoreInput({ data: [1.5, 0, 0, 255], width: 1, height: 1 }),
+      )
+    })
+
+    it('throws for NaN', () => {
+      expectUnsupportedInput(() =>
+        validateCoreInput({ data: [Number.NaN, 0, 0, 255], width: 1, height: 1 }),
+      )
+    })
+
+    it('throws for Infinity', () => {
+      expectUnsupportedInput(() =>
+        validateCoreInput({ data: [Number.POSITIVE_INFINITY, 0, 0, 255], width: 1, height: 1 }),
+      )
+    })
+
+    it('accepts a valid byte number[] (all values in [0, 255])', () => {
+      expect(() =>
+        validateCoreInput({ data: [0, 128, 255, 0], width: 1, height: 1 }),
+      ).not.toThrow()
+    })
+  })
+
   describe('accepts valid pixel inputs', () => {
-    it('accepts a Uint8Array payload', () => {
-      const input: PixelInput = { data: new Uint8Array(40), width: 10, height: 10 }
+    it('accepts a Uint8Array payload of correct size', () => {
+      const input: PixelInput = { data: new Uint8Array(BYTES), width: W, height: H }
       expect(() => validateCoreInput(input)).not.toThrow()
     })
 
-    it('accepts a Uint8ClampedArray payload', () => {
-      const input: PixelInput = { data: new Uint8ClampedArray(40), width: 10, height: 10 }
+    it('accepts a Uint8ClampedArray payload of correct size', () => {
+      const input: PixelInput = { data: new Uint8ClampedArray(BYTES), width: W, height: H }
       expect(() => validateCoreInput(input)).not.toThrow()
     })
 
-    it('accepts a number[] payload', () => {
+    it('accepts a number[] payload of correct size with valid bytes', () => {
       const input: PixelInput = { data: [0, 0, 0, 255], width: 1, height: 1 }
-      expect(() => validateCoreInput(input)).not.toThrow()
-    })
-
-    it('accepts an empty array as data (content checks are separate)', () => {
-      const input = { data: [] as number[], width: 1, height: 1 }
       expect(() => validateCoreInput(input)).not.toThrow()
     })
   })
@@ -125,19 +195,30 @@ describe('validateCoreInput', () => {
       }
     })
 
-    it('error message is actionable', () => {
+    it('error message is actionable for shape errors', () => {
       try {
-        validateCoreInput({ data: 'bad', width: 10, height: 10 })
+        validateCoreInput({ data: 'bad', width: W, height: H })
       } catch (error) {
         const message = (error as Error).message
         expect(message).toContain('data')
+      }
+    })
+
+    it('error message is actionable for length errors', () => {
+      try {
+        validateCoreInput({ data: new Uint8Array(40), width: W, height: H })
+      } catch (error) {
+        const message = (error as Error).message
+        expect(message).toContain('length')
+        expect(message).toContain('width')
+        expect(message).toContain('height')
       }
     })
   })
 
   describe('type narrowing', () => {
     it('narrows the input to PixelInput after the call', () => {
-      const input: unknown = { data: new Uint8Array(40), width: 10, height: 10 }
+      const input: unknown = { data: new Uint8Array(BYTES), width: W, height: H }
       validateCoreInput(input)
       expectTypeOf(input).toEqualTypeOf<PixelInput>()
       expectTypeOf(input.data).toEqualTypeOf<PixelInput['data']>()
