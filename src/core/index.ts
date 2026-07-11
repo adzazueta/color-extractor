@@ -17,3 +17,19 @@ export type {
   Lab,
   RGB,
 } from './types.js'
+export type {
+  AnimatedHandling,
+  DecodeOptions,
+  ExtractColorsOptions,
+  FilteringOptions,
+  KmeansOptions,
+  LightnessOptions,
+  OutputOptions,
+  PrimaryOptions,
+  PrimaryPreset,
+  RemoteOptions,
+  ScoringOptions,
+  SecondaryFallbackMode,
+  SecondaryOptions,
+  SvgHandling,
+} from './options.js'
