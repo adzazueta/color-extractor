@@ -42,3 +42,8 @@ export {
   applyOutputFlags,
   type FullExtractionResult,
 } from './output.js'
+export {
+  DEFAULT_OPTIONS,
+  resolveOptions,
+  type ResolvedOptions,
+} from './defaults.js'
