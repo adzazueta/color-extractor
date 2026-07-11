@@ -38,3 +38,7 @@ export type {
   ExtractionMetadata,
   MinimalExtractColorsResult,
 } from './result.js'
+export {
+  applyOutputFlags,
+  type FullExtractionResult,
+} from './output.js'
