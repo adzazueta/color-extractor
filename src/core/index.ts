@@ -44,3 +44,7 @@ export {
   type ImageDataLike,
 } from './extract.js'
 export type { PixelData, PixelInput } from './validation.js'
+export {
+  srgbToLinear,
+  srgbByteToLinear,
+} from './color/srgb.js'
