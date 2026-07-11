@@ -47,3 +47,7 @@ export {
   resolveOptions,
   type ResolvedOptions,
 } from './defaults.js'
+export {
+  extractColorsFromPixels,
+  extractColorsFromImageData,
+} from './extract.js'
