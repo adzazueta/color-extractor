@@ -27,3 +27,20 @@ export function xyzToLab(
     b: 200 * (fy - fz),
   }
 }
+
+export function labSquaredDistance(
+  a: { L: number; a: number; b: number },
+  b: { L: number; a: number; b: number },
+): number {
+  const dL = a.L - b.L
+  const da = a.a - b.a
+  const db = a.b - b.b
+  return dL * dL + da * da + db * db
+}
+
+export function labDistance(
+  a: { L: number; a: number; b: number },
+  b: { L: number; a: number; b: number },
+): number {
+  return Math.sqrt(labSquaredDistance(a, b))
+}

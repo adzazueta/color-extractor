@@ -1,139 +1,140 @@
-import { describe, it, expect } from 'vitest'
-import { xyzToLab } from '../../../src/core/color/lab.js'
-import { linearRgbToXyz } from '../../../src/core/color/xyz.js'
+import { describe, it, expect, expectTypeOf } from 'vitest'
+import {
+  labDistance,
+  labSquaredDistance,
+} from '../../../src/core/color/lab.js'
+import type { Lab } from '../../../src/core/types.js'
 
-const LAB_WHITE_X = 0.95047
-const LAB_WHITE_Y = 1.0
-const LAB_WHITE_Z = 1.08883
+const A: Lab = { L: 50, a: 0, b: 0 }
+const B: Lab = { L: 53, a: 80, b: 67 }
 
-describe('xyzToLab', () => {
-  describe('boundary cases', () => {
-    it('black (0, 0, 0) maps to L=0, a=0, b=0 exactly', () => {
-      const result = xyzToLab(0, 0, 0)
-      expect(result.L).toBe(0)
-      expect(result.a).toBe(0)
-      expect(result.b).toBe(0)
+describe('labSquaredDistance', () => {
+  describe('identity', () => {
+    it('distance from a color to itself is zero', () => {
+      expect(labSquaredDistance(A, A)).toBe(0)
     })
 
-    it('D65 white maps to L=100, a=0, b=0 exactly', () => {
-      const result = xyzToLab(LAB_WHITE_X, LAB_WHITE_Y, LAB_WHITE_Z)
-      expect(result.L).toBe(100)
-      expect(result.a).toBe(0)
-      expect(result.b).toBe(0)
+    it('zero lab pair squared distance is zero', () => {
+      const zero: Lab = { L: 0, a: 0, b: 0 }
+      expect(labSquaredDistance(zero, zero)).toBe(0)
     })
   })
 
-  describe('mid-gray', () => {
-    it('half-intensity white maps to L≈76, a=0, b=0', () => {
-      const result = xyzToLab(LAB_WHITE_X / 2, LAB_WHITE_Y / 2, LAB_WHITE_Z / 2)
-      expect(result.L).toBeCloseTo(76.069, 2)
-      expect(result.a).toBeCloseTo(0, 10)
-      expect(result.b).toBeCloseTo(0, 10)
+  describe('symmetry', () => {
+    it('d(a, b) === d(b, a)', () => {
+      expect(labSquaredDistance(A, B)).toBe(labSquaredDistance(B, A))
     })
 
-    it('quarter-intensity white maps to L≈57, a=0, b=0', () => {
-      const result = xyzToLab(LAB_WHITE_X / 4, LAB_WHITE_Y / 4, LAB_WHITE_Z / 4)
-      expect(result.L).toBeCloseTo(57.075, 2)
-      expect(result.a).toBeCloseTo(0, 10)
-      expect(result.b).toBeCloseTo(0, 10)
-    })
-  })
-
-  describe('primary color channels (linear RGB → XYZ → Lab)', () => {
-    it('pure red (1, 0, 0)', () => {
-      const { x, y, z } = linearRgbToXyz(1, 0, 0)
-      const result = xyzToLab(x, y, z)
-      expect(result.L).toBeCloseTo(53.24, 1)
-      expect(result.a).toBeCloseTo(80.09, 1)
-      expect(result.b).toBeCloseTo(67.20, 1)
-    })
-
-    it('pure green (0, 1, 0) — a < 0 (green axis)', () => {
-      const { x, y, z } = linearRgbToXyz(0, 1, 0)
-      const result = xyzToLab(x, y, z)
-      expect(result.L).toBeCloseTo(87.74, 1)
-      expect(result.a).toBeCloseTo(-86.18, 1)
-      expect(result.b).toBeCloseTo(83.18, 1)
-    })
-
-    it('pure blue (0, 0, 1) — b < 0 (blue axis)', () => {
-      const { x, y, z } = linearRgbToXyz(0, 0, 1)
-      const result = xyzToLab(x, y, z)
-      expect(result.L).toBeCloseTo(32.30, 1)
-      expect(result.a).toBeCloseTo(79.20, 1)
-      expect(result.b).toBeCloseTo(-107.86, 1)
-    })
-  })
-
-  describe('axis properties', () => {
-    it('red has a > 0 (red-green axis), green has a < 0', () => {
-      const redXyz = linearRgbToXyz(1, 0, 0)
-      const greenXyz = linearRgbToXyz(0, 1, 0)
-      const red = xyzToLab(redXyz.x, redXyz.y, redXyz.z)
-      const green = xyzToLab(greenXyz.x, greenXyz.y, greenXyz.z)
-      expect(red.a).toBeGreaterThan(0)
-      expect(green.a).toBeLessThan(0)
-    })
-
-    it('blue has b < 0 (blue-yellow axis), yellow has b > 0', () => {
-      const blueXyz = linearRgbToXyz(0, 0, 1)
-      const yellowXyz = linearRgbToXyz(1, 1, 0)
-      const blue = xyzToLab(blueXyz.x, blueXyz.y, blueXyz.z)
-      const yellow = xyzToLab(yellowXyz.x, yellowXyz.y, yellowXyz.z)
-      expect(blue.b).toBeLessThan(0)
-      expect(yellow.b).toBeGreaterThan(0)
-    })
-
-    it('a and b are zero when X/Xn = Y/Yn = Z/Zn (achromatic)', () => {
-      const result = xyzToLab(LAB_WHITE_X * 0.3, LAB_WHITE_Y * 0.3, LAB_WHITE_Z * 0.3)
-      expect(result.a).toBeCloseTo(0, 10)
-      expect(result.b).toBeCloseTo(0, 10)
-    })
-  })
-
-  describe('piecewise f(t) continuity at threshold', () => {
-    it('linear and power branches meet smoothly at the threshold', () => {
-      const justBelow = (6 / 29) ** 3 - 1e-9
-      const justAbove = (6 / 29) ** 3 + 1e-9
-
-      const f = (t: number): number => {
-        const threshold = (6 / 29) ** 3
-        const slope = (29 / 6) ** 2 / 3
-        const offset = 4 / 29
-        return t > threshold ? t ** (1 / 3) : slope * t + offset
-      }
-
-      const lower = f(justBelow)
-      const upper = f(justAbove)
-      expect(Math.abs(upper - lower)).toBeLessThan(1e-6)
-    })
-
-    it('f(0) in the linear branch gives the expected offset', () => {
-      const result = xyzToLab(0, 0, 0)
-      expect(result.L).toBe(0)
-      expect(result.a).toBe(0)
-      expect(result.b).toBe(0)
-    })
-  })
-
-  describe('monotonicity of L along the gray axis', () => {
-    it('L increases as Y increases (gray axis)', () => {
-      let prevL = -Infinity
-      for (let i = 0; i <= 100; i++) {
-        const t = i / 100
-        const { L } = xyzToLab(LAB_WHITE_X * t, LAB_WHITE_Y * t, LAB_WHITE_Z * t)
-        expect(L).toBeGreaterThanOrEqual(prevL)
-        prevL = L
+    it('symmetry holds for several pairs', () => {
+      const pairs: Array<[Lab, Lab]> = [
+        [{ L: 0, a: 0, b: 0 }, { L: 100, a: 0, b: 0 }],
+        [{ L: 50, a: 50, b: -50 }, { L: 80, a: -80, b: 60 }],
+        [{ L: 25, a: 25, b: 25 }, { L: 75, a: 75, b: 75 }],
+      ]
+      for (const [a, b] of pairs) {
+        expect(labSquaredDistance(a, b)).toBe(labSquaredDistance(b, a))
       }
     })
   })
 
-  describe('allocation-light', () => {
-    it('returns a fresh object per call', () => {
-      const r1 = xyzToLab(0.5, 0.5, 0.5)
-      const r2 = xyzToLab(0.5, 0.5, 0.5)
-      expect(r1).not.toBe(r2)
-      expect(r1).toEqual(r2)
+  describe('matches dL² + da² + db²', () => {
+    it('matches the formula for (50,0,0) vs (53,80,67)', () => {
+      const expected = 3 * 3 + 80 * 80 + 67 * 67
+      expect(labSquaredDistance(A, B)).toBe(expected)
+      expect(labSquaredDistance(A, B)).toBe(10898)
+    })
+
+    it('matches the formula per-channel', () => {
+      const x: Lab = { L: 10, a: 20, b: 30 }
+      const y: Lab = { L: 13, a: 25, b: 33 }
+      const expected = (10 - 13) ** 2 + (20 - 25) ** 2 + (30 - 33) ** 2
+      expect(labSquaredDistance(x, y)).toBe(expected)
+    })
+  })
+
+  describe('channel-isolated behavior', () => {
+    it('differs in L only — squared equals dL²', () => {
+      const x: Lab = { L: 10, a: 50, b: 50 }
+      const y: Lab = { L: 15, a: 50, b: 50 }
+      expect(labSquaredDistance(x, y)).toBe(25)
+    })
+
+    it('differs in a only — squared equals da²', () => {
+      const x: Lab = { L: 50, a: 10, b: 50 }
+      const y: Lab = { L: 50, a: 14, b: 50 }
+      expect(labSquaredDistance(x, y)).toBe(16)
+    })
+
+    it('differs in b only — squared equals db²', () => {
+      const x: Lab = { L: 50, a: 50, b: 10 }
+      const y: Lab = { L: 50, a: 50, b: 12 }
+      expect(labSquaredDistance(x, y)).toBe(4)
+    })
+
+    it('sums channel contributions', () => {
+      const x: Lab = { L: 10, a: 20, b: 30 }
+      const y: Lab = { L: 13, a: 24, b: 35 }
+      expect(labSquaredDistance(x, y)).toBe(9 + 16 + 25)
+    })
+  })
+
+  describe('ordering preservation', () => {
+    it('larger squared distance implies larger non-squared distance', () => {
+      const near: Lab = { L: 50, a: 0, b: 0 }
+      const far: Lab = { L: 80, a: 0, b: 0 }
+      expect(labSquaredDistance(near, far)).toBeGreaterThan(labSquaredDistance(A, A))
+    })
+  })
+
+  describe('type acceptance', () => {
+    it('accepts the Lab interface from public types', () => {
+      expectTypeOf<Lab>().toMatchTypeOf<Parameters<typeof labSquaredDistance>[0]>()
+    })
+  })
+})
+
+describe('labDistance', () => {
+  describe('identity and symmetry', () => {
+    it('distance from a color to itself is zero', () => {
+      expect(labDistance(A, A)).toBe(0)
+    })
+
+    it('d(a, b) === d(b, a)', () => {
+      expect(labDistance(A, B)).toBe(labDistance(B, A))
+    })
+  })
+
+  describe('relation to squared', () => {
+    it('labDistance² === labSquaredDistance for a known pair', () => {
+      const squared = labSquaredDistance(A, B)
+      const distance = labDistance(A, B)
+      expect(distance * distance).toBeCloseTo(squared, 9)
+    })
+
+    it('labDistance === sqrt(labSquaredDistance)', () => {
+      expect(labDistance(A, B)).toBeCloseTo(Math.sqrt(labSquaredDistance(A, B)), 12)
+    })
+  })
+
+  describe('reference values', () => {
+    it('(50,0,0) → (53,80,67) deltaE ≈ 104.39', () => {
+      expect(labDistance(A, B)).toBeCloseTo(104.39, 1)
+    })
+
+    it('(0,0,0) → (100,0,0) deltaE === 100', () => {
+      const black: Lab = { L: 0, a: 0, b: 0 }
+      const white: Lab = { L: 100, a: 0, b: 0 }
+      expect(labDistance(black, white)).toBe(100)
+    })
+  })
+
+  describe('thresholds (for secondary contrast)', () => {
+    it('can be compared against a threshold without conversion', () => {
+      const candidate: Lab = { L: 50, a: 0, b: 0 }
+      const primary: Lab = { L: 50, a: 19.9, b: 0 }
+      const distance = labDistance(candidate, primary)
+      expect(distance).toBeGreaterThanOrEqual(19.9)
+      expect(distance).toBeLessThan(20)
     })
   })
 })
