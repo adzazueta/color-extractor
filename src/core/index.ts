@@ -9,3 +9,11 @@ export {
   type PixelData,
   type PixelInput,
 } from './validation.js'
+export type {
+  ColorRole,
+  ColorSource,
+  ExtractedColor,
+  HSL,
+  Lab,
+  RGB,
+} from './types.js'
