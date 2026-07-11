@@ -33,3 +33,8 @@ export type {
   SecondaryOptions,
   SvgHandling,
 } from './options.js'
+export type {
+  ExtractColorsResult,
+  ExtractionMetadata,
+  MinimalExtractColorsResult,
+} from './result.js'
