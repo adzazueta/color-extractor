@@ -50,3 +50,9 @@ export {
 } from './color/srgb.js'
 export { linearRgbToXyz } from './color/xyz.js'
 export { xyzToLab, labDistance, labSquaredDistance } from './color/lab.js'
+export {
+  chromaFromLab,
+  circularHueDistance,
+  hueFromLab,
+  normalizeHue,
+} from './color/chroma-hue.js'
