@@ -57,3 +57,4 @@ export {
   normalizeHue,
 } from './color/chroma-hue.js'
 export { rgbToHsl, hslToRgb } from './color/hsl.js'
+export { rgbToHex } from './color/hex.js'
