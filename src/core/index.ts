@@ -49,3 +49,4 @@ export {
   srgbByteToLinear,
 } from './color/srgb.js'
 export { linearRgbToXyz } from './color/xyz.js'
+export { xyzToLab } from './color/lab.js'
