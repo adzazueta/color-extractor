@@ -4,3 +4,8 @@ export {
   ColorExtractorError,
   type ColorExtractorErrorCode,
 } from './errors.js'
+export {
+  validateCoreInput,
+  type PixelData,
+  type PixelInput,
+} from './validation.js'
