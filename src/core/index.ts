@@ -68,3 +68,7 @@ export {
   passesFilter,
   type FilterCriteria,
 } from './filter.js'
+export {
+  convertRgbSamplesToLab,
+  type LabSample,
+} from './sample.js'
