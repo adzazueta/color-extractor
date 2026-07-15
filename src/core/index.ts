@@ -72,3 +72,4 @@ export {
   convertRgbSamplesToLab,
   type LabSample,
 } from './sample.js'
+export { initializeCentroids } from './kmeans.js'
