@@ -58,3 +58,8 @@ export {
 } from './color/chroma-hue.js'
 export { rgbToHsl, hslToRgb } from './color/hsl.js'
 export { rgbToHex } from './color/hex.js'
+export {
+  normalizePixels,
+  type NormalizedPixels,
+  type Pixel,
+} from './pixels.js'
