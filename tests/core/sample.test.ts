@@ -37,7 +37,7 @@ describe('convertRgbSamplesToLab', () => {
       expect(result[2]!.index).toBe(42)
     })
 
-    it('preserves alpha in the rgb part of the sample', () => {
+    it('preserves RGB channels in the sample (alpha is not part of the RGB struct)', () => {
       const result = convertRgbSamplesToLab([pixel(128, 128, 128, 200, 0)])
       expect(result[0]!.rgb).toEqual({ r: 128, g: 128, b: 128 })
     })

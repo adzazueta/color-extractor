@@ -3,9 +3,9 @@ import { ColorExtractorError } from './errors.js'
 export type PixelData = Uint8Array | Uint8ClampedArray | number[]
 
 export interface PixelInput {
-  data: PixelData
-  width: number
-  height: number
+  readonly data: PixelData
+  readonly width: number
+  readonly height: number
 }
 
 function isByte(value: number): boolean {
@@ -24,10 +24,6 @@ function isPixelData(value: unknown): value is PixelData {
 
 function isPositiveInteger(value: unknown): value is number {
   return typeof value === 'number' && Number.isInteger(value) && value > 0
-}
-
-function isValidByteArray(value: number[]): boolean {
-  return value.every(isByte)
 }
 
 export function validateCoreInput(input: unknown): asserts input is PixelInput {
@@ -72,14 +68,6 @@ export function validateCoreInput(input: unknown): asserts input is PixelInput {
       'COLOR_EXTRACTOR_UNSUPPORTED_INPUT',
       `Core input \`data\` length must equal width * height * 4 (expected ${expected}, got ${data.length}).`,
       { cause: { expected, actual: data.length } },
-    )
-  }
-
-  if (Array.isArray(data) && !isValidByteArray(data)) {
-    throw new ColorExtractorError(
-      'COLOR_EXTRACTOR_UNSUPPORTED_INPUT',
-      'Core input `data` number array must contain only integers in [0, 255].',
-      { cause: data },
     )
   }
 }

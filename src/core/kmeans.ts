@@ -2,6 +2,29 @@ import type { HSL, Lab, RGB } from './types.js'
 import type { LabSample } from './sample.js'
 import { labSquaredDistance } from './color/lab.js'
 import { rgbToHsl } from './color/hsl.js'
+import { chromaFromLab } from './color/chroma-hue.js'
+
+export interface KMeansOptions {
+  readonly clusters: number
+  readonly iterations: number
+}
+
+export interface KMeansResult {
+  readonly centroids: readonly Lab[]
+  readonly populations: readonly number[]
+  readonly assignments: readonly number[]
+}
+
+export interface Cluster {
+  readonly index: number
+  readonly lab: Lab
+  readonly rgb: RGB
+  readonly hsl: HSL
+  readonly population: number
+  readonly proportion: number
+  readonly chroma: number
+  readonly score: number
+}
 
 function meanLab(samples: LabSample[]): Lab {
   let sumL = 0
@@ -16,7 +39,11 @@ function meanLab(samples: LabSample[]): Lab {
   return { L: sumL / n, a: suma / n, b: sumb / n }
 }
 
-function indexOfClosestTo(samples: LabSample[], target: Lab, exclude: Set<number>): number {
+function indexOfClosestTo(
+  samples: LabSample[],
+  target: Lab,
+  exclude: Set<number>,
+): number {
   let bestIdx = -1
   let bestDist = Number.POSITIVE_INFINITY
   for (let i = 0; i < samples.length; i++) {
@@ -30,86 +57,9 @@ function indexOfClosestTo(samples: LabSample[], target: Lab, exclude: Set<number
   return bestIdx
 }
 
-function indexOfFarthestFrom(
-  samples: LabSample[],
-  centroids: LabSample[],
-  exclude: Set<number>,
-): number {
-  let bestIdx = -1
-  let bestMinDist = -1
-  for (let i = 0; i < samples.length; i++) {
-    if (exclude.has(i)) continue
-    let minDist = Number.POSITIVE_INFINITY
-    for (const c of centroids) {
-      const d = labSquaredDistance(samples[i]!.lab, c.lab)
-      if (d < minDist) minDist = d
-    }
-    if (minDist > bestMinDist) {
-      bestMinDist = minDist
-      bestIdx = i
-    }
-  }
-  return bestIdx
-}
-
-export function initializeCentroids(
-  samples: LabSample[],
-  k: number,
-): LabSample[] {
-  if (k <= 0) {
-    throw new RangeError(`k must be a positive integer, got ${k}`)
-  }
-  if (k > samples.length) {
-    throw new RangeError(
-      `k (${k}) cannot exceed samples.length (${samples.length})`,
-    )
-  }
-
-  const mean = meanLab(samples)
-  const firstIdx = indexOfClosestTo(samples, mean, new Set())
-  const centroids: LabSample[] = [samples[firstIdx]!]
-  const exclude = new Set<number>([firstIdx])
-
-  for (let i = 1; i < k; i++) {
-    const nextIdx = indexOfFarthestFrom(samples, centroids, exclude)
-    centroids.push(samples[nextIdx]!)
-    exclude.add(nextIdx)
-  }
-
-  return centroids
-}
-
-export interface KMeansOptions {
-  readonly clusters: number
-  readonly iterations: number
-}
-
-export interface KMeansResult {
-  readonly centroids: readonly Lab[]
-  readonly populations: readonly number[]
-  readonly assignments: readonly number[]
-}
-
-function assignToClusters(samples: LabSample[], centroids: Lab[]): number[] {
-  const assignments = new Array<number>(samples.length)
-  for (let i = 0; i < samples.length; i++) {
-    let minDist = Number.POSITIVE_INFINITY
-    let minIdx = 0
-    for (let j = 0; j < centroids.length; j++) {
-      const d = labSquaredDistance(samples[i]!.lab, centroids[j]!)
-      if (d < minDist) {
-        minDist = d
-        minIdx = j
-      }
-    }
-    assignments[i] = minIdx
-  }
-  return assignments
-}
-
 function findFarthestFromCentroids(
   samples: LabSample[],
-  centroids: Lab[],
+  centroids: readonly Lab[],
   exclude: Set<number>,
 ): number {
   let bestIdx = 0
@@ -129,11 +79,59 @@ function findFarthestFromCentroids(
   return bestIdx
 }
 
+export function initializeCentroids(
+  samples: LabSample[],
+  k: number,
+): LabSample[] {
+  if (!Number.isInteger(k) || k <= 0) {
+    throw new RangeError(`k must be a positive integer, got ${k}`)
+  }
+  if (k > samples.length) {
+    throw new RangeError(
+      `k (${k}) cannot exceed samples.length (${samples.length})`,
+    )
+  }
+
+  const mean = meanLab(samples)
+  const firstIdx = indexOfClosestTo(samples, mean, new Set())
+  const centroids: LabSample[] = [samples[firstIdx]!]
+  const exclude = new Set<number>([firstIdx])
+
+  for (let i = 1; i < k; i++) {
+    const nextIdx = findFarthestFromCentroids(
+      samples,
+      centroids.map((c) => c.lab),
+      exclude,
+    )
+    centroids.push(samples[nextIdx]!)
+    exclude.add(nextIdx)
+  }
+
+  return centroids
+}
+
+function assignToClusters(samples: LabSample[], centroids: readonly Lab[]): number[] {
+  const assignments = new Array<number>(samples.length)
+  for (let i = 0; i < samples.length; i++) {
+    let minDist = Number.POSITIVE_INFINITY
+    let minIdx = 0
+    for (let j = 0; j < centroids.length; j++) {
+      const d = labSquaredDistance(samples[i]!.lab, centroids[j]!)
+      if (d < minDist) {
+        minDist = d
+        minIdx = j
+      }
+    }
+    assignments[i] = minIdx
+  }
+  return assignments
+}
+
 function recomputeCentroids(
   samples: LabSample[],
-  assignments: number[],
+  assignments: readonly number[],
   k: number,
-  previous: Lab[],
+  previous: readonly Lab[],
 ): Lab[] {
   const sums: { L: number; a: number; b: number }[] = Array.from(
     { length: k },
@@ -150,71 +148,35 @@ function recomputeCentroids(
     counts[c]!++
   }
 
-  const newCentroids: Lab[] = []
-  const usedSampleIndices = new Set<number>()
+  const newCentroids: Lab[] = new Array<Lab>(k)
+  const validReference: Lab[] = []
 
   for (let j = 0; j < k; j++) {
     if (counts[j]! > 0) {
       const sum = sums[j]!
       const count = counts[j]!
-      newCentroids.push({
+      newCentroids[j] = {
         L: sum.L / count,
         a: sum.a / count,
         b: sum.b / count,
-      })
-    } else {
-      const reference = newCentroids.length > 0 ? newCentroids : previous
-      const idx = findFarthestFromCentroids(samples, reference, usedSampleIndices)
-      usedSampleIndices.add(idx)
-      newCentroids.push({ ...samples[idx]!.lab })
+      }
+      validReference.push(newCentroids[j]!)
     }
   }
+
+  const usedSampleIndices = new Set<number>()
+  for (let j = 0; j < k; j++) {
+    if (counts[j] === 0) {
+      const reference = validReference.length > 0 ? validReference : previous
+      const idx = findFarthestFromCentroids(samples, reference, usedSampleIndices)
+      usedSampleIndices.add(idx)
+      const reinited: Lab = { ...samples[idx]!.lab }
+      newCentroids[j] = reinited
+      validReference.push(reinited)
+    }
+  }
+
   return newCentroids
-}
-
-export function kmeans(samples: LabSample[], options: KMeansOptions): KMeansResult {
-  if (options.clusters <= 0) {
-    throw new RangeError(`clusters must be a positive integer, got ${options.clusters}`)
-  }
-  if (options.clusters > samples.length) {
-    throw new RangeError(
-      `clusters (${options.clusters}) cannot exceed samples.length (${samples.length})`,
-    )
-  }
-  if (options.iterations < 0) {
-    throw new RangeError(`iterations must be non-negative, got ${options.iterations}`)
-  }
-
-  const initial = initializeCentroids(samples, options.clusters)
-  let centroids: Lab[] = initial.map((s) => ({ ...s.lab }))
-
-  for (let i = 0; i < options.iterations; i++) {
-    const assignments = assignToClusters(samples, centroids)
-    centroids = recomputeCentroids(samples, assignments, options.clusters, centroids)
-  }
-
-  const finalAssignments = assignToClusters(samples, centroids)
-  const populations = new Array<number>(options.clusters).fill(0)
-  for (const a of finalAssignments) {
-    populations[a]!++
-  }
-
-  return {
-    centroids,
-    populations,
-    assignments: finalAssignments,
-  }
-}
-
-export interface Cluster {
-  readonly index: number
-  readonly lab: Lab
-  readonly rgb: RGB
-  readonly hsl: HSL
-  readonly population: number
-  readonly proportion: number
-  readonly chroma: number
-  readonly score: number
 }
 
 function indexOfClosestToCentroids(
@@ -236,6 +198,41 @@ function indexOfClosestToCentroids(
   return bestIdx
 }
 
+export function kmeans(samples: LabSample[], options: KMeansOptions): KMeansResult {
+  if (!Number.isInteger(options.clusters) || options.clusters <= 0) {
+    throw new RangeError(
+      `clusters must be a positive integer, got ${options.clusters}`,
+    )
+  }
+  if (!Number.isInteger(options.iterations) || options.iterations < 0) {
+    throw new RangeError(
+      `iterations must be a non-negative integer, got ${options.iterations}`,
+    )
+  }
+  if (options.clusters > samples.length) {
+    throw new RangeError(
+      `clusters (${options.clusters}) cannot exceed samples.length (${samples.length})`,
+    )
+  }
+
+  const initial = initializeCentroids(samples, options.clusters)
+  let centroids: Lab[] = initial.map((s) => ({ ...s.lab }))
+
+  let assignments = assignToClusters(samples, centroids)
+
+  for (let i = 0; i < options.iterations; i++) {
+    centroids = recomputeCentroids(samples, assignments, options.clusters, centroids)
+    assignments = assignToClusters(samples, centroids)
+  }
+
+  const populations = new Array<number>(options.clusters).fill(0)
+  for (const a of assignments) {
+    populations[a]!++
+  }
+
+  return { centroids, populations, assignments }
+}
+
 export function buildClusters(
   samples: LabSample[],
   kmeansResult: KMeansResult,
@@ -243,24 +240,25 @@ export function buildClusters(
   const { centroids, populations, assignments } = kmeansResult
   const total = samples.length
 
-  return centroids.map((lab, i) => {
+  const clusters: Cluster[] = []
+  for (let i = 0; i < centroids.length; i++) {
+    if (populations[i]! === 0) continue
+
+    const lab = centroids[i]!
     const population = populations[i]!
     const proportion = total === 0 ? 0 : population / total
-    const chroma = Math.sqrt(lab.a * lab.a + lab.b * lab.b)
+    const chroma = chromaFromLab(lab.a, lab.b)
 
+    const repIdx = indexOfClosestToCentroids(samples, i, assignments, lab)
     let rgb: RGB = { r: 0, g: 0, b: 0 }
     let hsl: HSL = { h: 0, s: 0, l: 0 }
-
-    if (population > 0) {
-      const repIdx = indexOfClosestToCentroids(samples, i, assignments, lab)
-      if (repIdx >= 0) {
-        const rep = samples[repIdx]!
-        rgb = { ...rep.rgb }
-        hsl = rgbToHsl(rep.rgb.r, rep.rgb.g, rep.rgb.b)
-      }
+    if (repIdx >= 0) {
+      const rep = samples[repIdx]!
+      rgb = { ...rep.rgb }
+      hsl = rgbToHsl(rep.rgb.r, rep.rgb.g, rep.rgb.b)
     }
 
-    return {
+    clusters.push({
       index: i,
       lab,
       rgb,
@@ -269,6 +267,8 @@ export function buildClusters(
       proportion,
       chroma,
       score: 0,
-    }
-  })
+    })
+  }
+
+  return clusters
 }

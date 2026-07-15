@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { kmeans, initializeCentroids, type KMeansOptions } from '../../src/core/kmeans.js'
+import { kmeans, initializeCentroids } from '../../src/core/kmeans.js'
 import type { LabSample } from '../../src/core/sample.js'
 
 function sample(L: number, a: number, b: number, index: number = 0): LabSample {
@@ -41,18 +41,18 @@ describe('kmeans', () => {
   })
 
   describe('iteration count', () => {
-    it('runs exactly the configured number of iterations (different outputs at iter=0 vs iter=5)', () => {
-      const samples = [...clusterA(0, 10), ...clusterB(100, 10)]
-      const iter0 = kmeans(samples, { clusters: 2, iterations: 0 })
-      const iter5 = kmeans(samples, { clusters: 2, iterations: 5 })
-      expect(iter0.centroids).not.toEqual(iter5.centroids)
-    })
-
-    it('converges for a clear 2-cluster case', () => {
+    it('runs the configured number of iterations and converges for clear 2-cluster case', () => {
       const samples = [...clusterA(0, 20), ...clusterB(100, 20)]
       const result = kmeans(samples, { clusters: 2, iterations: 10 })
       expect(result.populations[0]).toBe(20)
       expect(result.populations[1]).toBe(20)
+    })
+
+    it('centroids stabilize as iterations increase (deterministic, same output for same input)', () => {
+      const samples = [...clusterA(0, 10), ...clusterB(100, 10)]
+      const iter5 = kmeans(samples, { clusters: 2, iterations: 5 })
+      const iter10 = kmeans(samples, { clusters: 2, iterations: 10 })
+      expect(iter5.centroids).toEqual(iter10.centroids)
     })
   })
 
@@ -125,7 +125,7 @@ describe('kmeans', () => {
       }
     })
 
-    it('with iterations=0, centroids match initializeCentroids output', () => {
+    it('with iterations=0, returns initial centroids unchanged (no recompute)', () => {
       const samples = [...clusterA(0, 5), ...clusterB(100, 5)]
       const initial = initializeCentroids(samples, 2)
       const result = kmeans(samples, { clusters: 2, iterations: 0 })

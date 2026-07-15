@@ -43,34 +43,10 @@ export {
   extractColorsFromImageData,
   type ImageDataLike,
 } from './extract.js'
-export type { PixelData, PixelInput } from './validation.js'
-export {
-  srgbToLinear,
-  srgbByteToLinear,
-} from './color/srgb.js'
+export { srgbToLinear, srgbByteToLinear } from './color/srgb.js'
 export { linearRgbToXyz } from './color/xyz.js'
 export { xyzToLab, labDistance, labSquaredDistance } from './color/lab.js'
-export {
-  chromaFromLab,
-  circularHueDistance,
-  hueFromLab,
-  normalizeHue,
-} from './color/chroma-hue.js'
+export { chromaFromLab, circularHueDistance, hueFromLab, normalizeHue } from './color/chroma-hue.js'
 export { rgbToHsl, hslToRgb } from './color/hsl.js'
 export { rgbToHex } from './color/hex.js'
-export {
-  normalizePixels,
-  type NormalizedPixels,
-  type Pixel,
-} from './pixels.js'
-export {
-  filterPixels,
-  passesFilter,
-  type FilterCriteria,
-} from './filter.js'
-export {
-  convertRgbSamplesToLab,
-  type LabSample,
-} from './sample.js'
-export { initializeCentroids } from './kmeans.js'
-export { kmeans, buildClusters, type KMeansOptions, type KMeansResult, type Cluster } from './kmeans.js'
+export type { PixelData, PixelInput } from './validation.js'

@@ -43,7 +43,7 @@ describe('normalizePixels', () => {
       expect(result.channels).toBe(4)
     })
 
-    it('accepts 10x10 RGB (300 bytes, 3 channels default)', () => {
+    it('accepts 10x10 RGB (300 bytes, 3 channels explicit)', () => {
       const data = makeRgb(10, 10)
       const result = normalizePixels(data, 10, 10, 3)
       expect(result.width).toBe(10)
