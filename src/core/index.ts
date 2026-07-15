@@ -63,3 +63,8 @@ export {
   type NormalizedPixels,
   type Pixel,
 } from './pixels.js'
+export {
+  filterPixels,
+  passesFilter,
+  type FilterCriteria,
+} from './filter.js'
