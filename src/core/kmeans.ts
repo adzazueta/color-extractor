@@ -1,6 +1,7 @@
-import type { Lab } from './types.js'
+import type { HSL, Lab, RGB } from './types.js'
 import type { LabSample } from './sample.js'
 import { labSquaredDistance } from './color/lab.js'
+import { rgbToHsl } from './color/hsl.js'
 
 function meanLab(samples: LabSample[]): Lab {
   let sumL = 0
@@ -203,4 +204,71 @@ export function kmeans(samples: LabSample[], options: KMeansOptions): KMeansResu
     populations,
     assignments: finalAssignments,
   }
+}
+
+export interface Cluster {
+  readonly index: number
+  readonly lab: Lab
+  readonly rgb: RGB
+  readonly hsl: HSL
+  readonly population: number
+  readonly proportion: number
+  readonly chroma: number
+  readonly score: number
+}
+
+function indexOfClosestToCentroids(
+  samples: LabSample[],
+  clusterIdx: number,
+  assignments: readonly number[],
+  target: Lab,
+): number {
+  let bestIdx = -1
+  let bestDist = Number.POSITIVE_INFINITY
+  for (let i = 0; i < samples.length; i++) {
+    if (assignments[i] !== clusterIdx) continue
+    const d = labSquaredDistance(samples[i]!.lab, target)
+    if (d < bestDist) {
+      bestDist = d
+      bestIdx = i
+    }
+  }
+  return bestIdx
+}
+
+export function buildClusters(
+  samples: LabSample[],
+  kmeansResult: KMeansResult,
+): Cluster[] {
+  const { centroids, populations, assignments } = kmeansResult
+  const total = samples.length
+
+  return centroids.map((lab, i) => {
+    const population = populations[i]!
+    const proportion = total === 0 ? 0 : population / total
+    const chroma = Math.sqrt(lab.a * lab.a + lab.b * lab.b)
+
+    let rgb: RGB = { r: 0, g: 0, b: 0 }
+    let hsl: HSL = { h: 0, s: 0, l: 0 }
+
+    if (population > 0) {
+      const repIdx = indexOfClosestToCentroids(samples, i, assignments, lab)
+      if (repIdx >= 0) {
+        const rep = samples[repIdx]!
+        rgb = { ...rep.rgb }
+        hsl = rgbToHsl(rep.rgb.r, rep.rgb.g, rep.rgb.b)
+      }
+    }
+
+    return {
+      index: i,
+      lab,
+      rgb,
+      hsl,
+      population,
+      proportion,
+      chroma,
+      score: 0,
+    }
+  })
 }

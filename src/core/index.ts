@@ -73,4 +73,4 @@ export {
   type LabSample,
 } from './sample.js'
 export { initializeCentroids } from './kmeans.js'
-export { kmeans, type KMeansOptions, type KMeansResult } from './kmeans.js'
+export { kmeans, buildClusters, type KMeansOptions, type KMeansResult, type Cluster } from './kmeans.js'
