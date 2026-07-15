@@ -106,6 +106,28 @@ function assignToClusters(samples: LabSample[], centroids: Lab[]): number[] {
   return assignments
 }
 
+function findFarthestFromCentroids(
+  samples: LabSample[],
+  centroids: Lab[],
+  exclude: Set<number>,
+): number {
+  let bestIdx = 0
+  let bestMinDist = -1
+  for (let i = 0; i < samples.length; i++) {
+    if (exclude.has(i)) continue
+    let minDist = Number.POSITIVE_INFINITY
+    for (const c of centroids) {
+      const d = labSquaredDistance(samples[i]!.lab, c)
+      if (d < minDist) minDist = d
+    }
+    if (minDist > bestMinDist) {
+      bestMinDist = minDist
+      bestIdx = i
+    }
+  }
+  return bestIdx
+}
+
 function recomputeCentroids(
   samples: LabSample[],
   assignments: number[],
@@ -126,16 +148,27 @@ function recomputeCentroids(
     sum.b += lab.b
     counts[c]!++
   }
-  return previous.map((centroid, j) => {
-    if (counts[j] === 0) return centroid
-    const sum = sums[j]!
-    const count = counts[j]!
-    return {
-      L: sum.L / count,
-      a: sum.a / count,
-      b: sum.b / count,
+
+  const newCentroids: Lab[] = []
+  const usedSampleIndices = new Set<number>()
+
+  for (let j = 0; j < k; j++) {
+    if (counts[j]! > 0) {
+      const sum = sums[j]!
+      const count = counts[j]!
+      newCentroids.push({
+        L: sum.L / count,
+        a: sum.a / count,
+        b: sum.b / count,
+      })
+    } else {
+      const reference = newCentroids.length > 0 ? newCentroids : previous
+      const idx = findFarthestFromCentroids(samples, reference, usedSampleIndices)
+      usedSampleIndices.add(idx)
+      newCentroids.push({ ...samples[idx]!.lab })
     }
-  })
+  }
+  return newCentroids
 }
 
 export function kmeans(samples: LabSample[], options: KMeansOptions): KMeansResult {
