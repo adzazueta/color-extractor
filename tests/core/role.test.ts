@@ -10,6 +10,7 @@ import {
   scoreSecondary,
   buildHarmonyFallback,
   selectSecondary,
+  buildPalette,
 } from '../../src/core/role.js'
 import type { Cluster } from '../../src/core/kmeans.js'
 import { DEFAULT_OPTIONS, type ResolvedOptions } from '../../src/core/defaults.js'
@@ -616,6 +617,121 @@ describe('selectSecondary (ADZ-45)', () => {
       const result = selectSecondary(primary, [candidate], options({ contrastMinDE: 5, fallback: 'null' }))
       expect(result).not.toBeNull()
       expect(result!.source).toBe('cluster')
+    })
+  })
+})
+
+describe('buildPalette (ADZ-46)', () => {
+  function indexedCluster(index: number, chroma: number, population: number, proportion: number = 0.1): Cluster {
+    return { ...cluster(chroma, population, proportion), index }
+  }
+
+  function options(overrides: { paletteSize?: number; preset?: 'strict' | 'balanced' | 'vibrant' | 'dominant' } = {}): ResolvedOptions {
+    return {
+      ...DEFAULT_OPTIONS,
+      paletteSize: overrides.paletteSize ?? 5,
+      primary: { preset: overrides.preset ?? 'strict' },
+    }
+  }
+
+  describe('AC: palette length respects paletteSize', () => {
+    it('returns at most paletteSize entries', () => {
+      const clusters = [
+        indexedCluster(0, 30, 100),
+        indexedCluster(1, 20, 80),
+        indexedCluster(2, 15, 60),
+        indexedCluster(3, 10, 40),
+      ]
+      const palette = buildPalette(clusters, options({ paletteSize: 2 }))
+      expect(palette).toHaveLength(2)
+    })
+
+    it('returns an empty array when paletteSize is 0', () => {
+      const clusters = [indexedCluster(0, 30, 100)]
+      const palette = buildPalette(clusters, options({ paletteSize: 0 }))
+      expect(palette).toEqual([])
+    })
+
+    it('returns all available clusters when fewer than paletteSize remain', () => {
+      const clusters = [indexedCluster(0, 30, 100), indexedCluster(1, 20, 80)]
+      const palette = buildPalette(clusters, options({ paletteSize: 5 }))
+      expect(palette).toHaveLength(2)
+    })
+  })
+
+  describe('AC: higher perceptual score appears earlier in the palette', () => {
+    it('orders by primary score (strict: chroma * log(pop+1))', () => {
+      const clusters = [
+        indexedCluster(0, 10, 100, 0.2),
+        indexedCluster(1, 50, 80, 0.4),
+        indexedCluster(2, 30, 50, 0.3),
+      ]
+      const palette = buildPalette(clusters, options({ paletteSize: 3, preset: 'strict' }))
+      const chromas = palette.map((c) => c.chroma)
+      const sortedDesc = [...chromas].sort((a, b) => (b ?? 0) - (a ?? 0))
+      expect(chromas).toEqual(sortedDesc)
+    })
+
+    it('orders by population when preset is dominant', () => {
+      const clusters = [
+        indexedCluster(0, 5, 500, 0.5),
+        indexedCluster(1, 80, 10, 0.05),
+        indexedCluster(2, 40, 200, 0.2),
+      ]
+      const palette = buildPalette(clusters, options({ paletteSize: 3, preset: 'dominant' }))
+      const pops = palette.map((c) => c.population)
+      const sortedDesc = [...pops].sort((a, b) => (b ?? 0) - (a ?? 0))
+      expect(pops).toEqual(sortedDesc)
+    })
+  })
+
+  describe('AC: palette output is deterministic', () => {
+    it('returns the same order on repeated calls with identical input', () => {
+      const clusters = [
+        indexedCluster(0, 30, 100),
+        indexedCluster(1, 20, 80),
+        indexedCluster(2, 25, 90),
+      ]
+      const a = buildPalette(clusters, options())
+      const b = buildPalette(clusters, options())
+      expect(a.map((c) => c.chroma)).toEqual(b.map((c) => c.chroma))
+    })
+
+    it('breaks ties by original cluster index', () => {
+      const clusters = [
+        indexedCluster(3, 20, 100, 0.1),
+        indexedCluster(0, 20, 100, 0.1),
+        indexedCluster(7, 20, 100, 0.1),
+      ]
+      const palette = buildPalette(clusters, options({ paletteSize: 3, preset: 'strict' }))
+      const chromas = palette.map((c) => c.chroma)
+      const proportions = palette.map((c) => c.proportion)
+      expect(chromas).toEqual([20, 20, 20])
+      expect(proportions).toEqual([0.1, 0.1, 0.1])
+    })
+  })
+
+  describe('AC: excludes primary/secondary consistently', () => {
+    it('excludes clusters by index via excludeIndices', () => {
+      const clusters = [
+        indexedCluster(0, 50, 200, 0.4),
+        indexedCluster(1, 30, 100, 0.2),
+        indexedCluster(2, 10, 50, 0.1),
+      ]
+      const palette = buildPalette(clusters, options({ paletteSize: 3 }), { excludeIndices: [0, 1] })
+      expect(palette).toHaveLength(1)
+      expect(palette[0]!.chroma).toBe(10)
+    })
+  })
+
+  describe('AC: palette colors are marked with role=palette and source=cluster', () => {
+    it('marks every palette entry with role=palette and source=cluster', () => {
+      const clusters = [indexedCluster(0, 30, 100), indexedCluster(1, 20, 80)]
+      const palette = buildPalette(clusters, options())
+      for (const c of palette) {
+        expect(c.role).toBe('palette')
+        expect(c.source).toBe('cluster')
+      }
     })
   })
 })

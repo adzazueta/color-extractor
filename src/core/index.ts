@@ -53,6 +53,7 @@ export type { PixelData, PixelInput } from './validation.js'
 export {
   applyGrayPenalty,
   buildHarmonyFallback,
+  buildPalette,
   buildPrimaryColor,
   contrastBoost,
   findPrimaryIndex,
@@ -61,5 +62,6 @@ export {
   scorePrimary,
   scoreSecondary,
   selectSecondary,
+  type BuildPaletteOptions,
   type RoleAssignment,
 } from './role.js'

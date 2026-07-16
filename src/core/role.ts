@@ -157,6 +157,45 @@ function clusterAsSecondaryColor(cluster: Cluster, source: ExtractedColor['sourc
   }
 }
 
+function clusterAsPaletteColor(cluster: Cluster): ExtractedColor {
+  return {
+    hex: FALLBACK_HEX,
+    rgb: cluster.rgb,
+    hsl: cluster.hsl,
+    lab: cluster.lab,
+    chroma: cluster.chroma,
+    population: cluster.population,
+    proportion: cluster.proportion,
+    score: cluster.score,
+    role: 'palette',
+    source: 'cluster',
+  }
+}
+
+export interface BuildPaletteOptions {
+  readonly excludeIndices?: readonly number[]
+}
+
+export function buildPalette(
+  clusters: readonly Cluster[],
+  options: ResolvedOptions,
+  paletteOptions: BuildPaletteOptions = {},
+): ExtractedColor[] {
+  const exclude = new Set(paletteOptions.excludeIndices ?? [])
+  const preset = options.primary.preset ?? 'strict'
+
+  const ranked = clusters
+    .filter((c) => !exclude.has(c.index))
+    .map((c) => ({ cluster: c, score: scorePrimary(c, preset) }))
+    .sort((a, b) => {
+      if (b.score !== a.score) return b.score - a.score
+      return a.cluster.index - b.cluster.index
+    })
+
+  const size = Math.max(0, options.paletteSize ?? 0)
+  return ranked.slice(0, size).map((r) => clusterAsPaletteColor(r.cluster))
+}
+
 export function selectSecondary(
   primary: Cluster,
   candidates: readonly Cluster[],
