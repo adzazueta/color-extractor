@@ -102,16 +102,16 @@ describe('Node extractColors (Phase 7)', () => {
     })
   })
 
-  describe('AC: remote URL is not yet implemented', () => {
-    it('throws COLOR_EXTRACTOR_UNSUPPORTED_INPUT for http URL', async () => {
+  describe('AC: remote URL pipeline validates content-type', () => {
+    it('throws COLOR_EXTRACTOR_UNSUPPORTED_FORMAT for http URL with text/html content-type', async () => {
       await expect(extractColors('http://example.com/image.png')).rejects.toMatchObject({
-        code: 'COLOR_EXTRACTOR_UNSUPPORTED_INPUT',
+        code: 'COLOR_EXTRACTOR_UNSUPPORTED_FORMAT',
       })
     })
 
-    it('throws COLOR_EXTRACTOR_UNSUPPORTED_INPUT for https URL', async () => {
+    it('throws COLOR_EXTRACTOR_UNSUPPORTED_FORMAT for https URL with text/html content-type', async () => {
       await expect(extractColors('https://example.com/image.png')).rejects.toMatchObject({
-        code: 'COLOR_EXTRACTOR_UNSUPPORTED_INPUT',
+        code: 'COLOR_EXTRACTOR_UNSUPPORTED_FORMAT',
       })
     })
   })

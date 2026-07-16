@@ -88,9 +88,10 @@ function isSvgBytes(bytes: Buffer | Uint8Array): boolean {
       const prefixTrimmed = nextChars.trimStart()
       if (prefixTrimmed.startsWith('<svg') || prefixTrimmed.startsWith('<SVG') || prefixTrimmed.startsWith('<?xml') || prefixTrimmed.startsWith('<?XML')) {
         return true
-      } else {
-        return false
       }
+      // Not SVG — keep scanning past this tag in case <svg> appears later
+      i++
+      continue
     }
     i++
   }
@@ -130,7 +131,7 @@ export async function decodeBufferToPixels(
       inputOptions = { page: 0 }
       break
     case 'all-frames':
-      inputOptions = { page: -1 }
+      inputOptions = { page: 0 }
       break
     case 'disabled':
       inputOptions = undefined

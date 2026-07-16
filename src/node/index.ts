@@ -1,7 +1,7 @@
 import { ColorExtractorError } from '../core/errors.js'
 import type { ExtractColorsOptions } from '../core/options.js'
 import type { ExtractColorsResult } from '../core/result.js'
-import { resolveOptions } from '../core/defaults.js'
+import { resolveOptions, type ResolvedOptions } from '../core/defaults.js'
 import { runExtractionPipeline } from '../core/extract.js'
 import type { NodeExtractColorsInput } from './types.js'
 import { detectNodeInputKind } from './detect.js'
@@ -10,7 +10,7 @@ import { loadLocalPath } from './load.js'
 import { validateRemoteProtocol } from './security.js'
 import { followRedirects } from './redirects.js'
 import { validateContentType } from './content-type.js'
-import { fetchRemoteBuffer } from './fetch.js'
+import { defaultResolveAndFetch } from './http-client.js'
 
 export const VERSION = '0.1.0'
 export type { NodeExtractColorsInput } from './types.js'
@@ -119,14 +119,14 @@ async function fetchRemoteWithPipeline(
     timeoutMs: resolved.remote.timeoutMs,
     allowPrivateNetworks: resolved.remote.allowPrivateNetworks,
     allowedProtocols: resolved.remote.allowedProtocols,
-    resolveAndFetch: (url, signal, hostOptions) => fetchRemoteBuffer(url, { timeoutMs: resolved.remote.timeoutMs, maxBytes: resolved.remote.maxBytes }, (input, init) => globalThis.fetch(input, init)),
+    resolveAndFetch: (url, signal, hostOptions) => defaultResolveAndFetch(url, signal, hostOptions),
   })
 
   // 2. Validate content type
   const contentType = finalResponse.headers.get('content-type')
   validateContentType(contentType, {
     validateContentType: resolved.remote.validateContentType ?? true,
-    svg: resolved.decode.svg,
+    svg: resolved.decode.svg ?? 'disabled-in-node',
   })
 
   // 3. Read response body with maxBytes enforcement (similar to fetchRemoteBuffer)
@@ -168,62 +168,5 @@ async function fetchRemoteWithPipeline(
       tmp.set(chunk, acc.length)
       return tmp
     }, new Uint8Array(0)),
-  )
-}
-  if (input === null || input === undefined) {
-    throw new ColorExtractorError(
-      'COLOR_EXTRACTOR_UNSUPPORTED_INPUT',
-      'Node input is required.',
-      { cause: input },
-    )
-  }
-
-  const kind = detectNodeInputKind(input)
-  if (kind === 'unsupported') {
-    throw new ColorExtractorError(
-      'COLOR_EXTRACTOR_UNSUPPORTED_INPUT',
-      'Node input must be a Buffer, Uint8Array, ArrayBuffer, http(s) URL string, or local path string.',
-      { cause: input },
-    )
-  }
-
-  const resolved = resolveOptions(options)
-
-  let bytes: Buffer | Uint8Array
-  switch (kind) {
-    case 'buffer':
-      bytes = input as Buffer
-      break
-    case 'bytes':
-      bytes = input as Uint8Array
-      break
-    case 'arrayBuffer':
-      bytes = new Uint8Array(input as ArrayBuffer)
-      break
-    case 'localPath':
-      bytes = await loadLocalPath(input as string)
-      break
-    case 'remoteUrl':
-      bytes = await fetchRemoteWithPipeline(input as string, resolved)
-      break
-    default:
-      throw new ColorExtractorError(
-        'COLOR_EXTRACTOR_UNSUPPORTED_INPUT',
-        'Node input must be a Buffer, Uint8Array, ArrayBuffer, http(s) URL string, or local path string.',
-        { cause: input },
-      )
-  }
-
-  const pixels = await decodeBufferToPixels(bytes, resolved.sampleSize, {
-    respectOrientation: resolved.decode.respectOrientation,
-    maxPixels: resolved.decode.maxPixels,
-    svg: resolved.decode.svg,
-    animated: resolved.decode.animated,
-    normalizeColorProfile: resolved.decode.normalizeColorProfile,
-  })
-
-  return runExtractionPipeline(
-    { data: pixels.data, width: pixels.width, height: pixels.height },
-    options,
   )
 }
