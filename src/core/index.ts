@@ -50,3 +50,9 @@ export { chromaFromLab, circularHueDistance, hueFromLab, normalizeHue } from './
 export { rgbToHsl, hslToRgb } from './color/hsl.js'
 export { rgbToHex } from './color/hex.js'
 export type { PixelData, PixelInput } from './validation.js'
+export {
+  buildPrimaryColor,
+  findPrimaryIndex,
+  scorePrimary,
+  type RoleAssignment,
+} from './role.js'
