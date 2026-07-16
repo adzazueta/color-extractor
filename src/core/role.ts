@@ -1,5 +1,6 @@
 import type { Cluster } from './kmeans.js'
 import type { PrimaryPreset } from './options.js'
+import type { ResolvedOptions } from './defaults.js'
 
 const FALLBACK_HEX = '#808080'
 
@@ -34,6 +35,24 @@ export function findPrimaryIndex(
     }
   }
   return bestIdx
+}
+
+export function isLowChromaCandidate(
+  cluster: Cluster,
+  options: ResolvedOptions,
+): boolean {
+  return cluster.chroma < options.scoring.chromaFloor!
+}
+
+export function applyGrayPenalty(
+  score: number,
+  cluster: Cluster,
+  options: ResolvedOptions,
+): number {
+  if (isLowChromaCandidate(cluster, options)) {
+    return score * options.scoring.grayPenalty!
+  }
+  return score
 }
 
 export function buildPrimaryColor(cluster: Cluster): import('./types.js').ExtractedColor {

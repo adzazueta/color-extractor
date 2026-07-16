@@ -3,8 +3,11 @@ import {
   scorePrimary,
   findPrimaryIndex,
   buildPrimaryColor,
+  applyGrayPenalty,
+  isLowChromaCandidate,
 } from '../../src/core/role.js'
 import type { Cluster } from '../../src/core/kmeans.js'
+import { DEFAULT_OPTIONS, type ResolvedOptions } from '../../src/core/defaults.js'
 
 function cluster(
   chroma: number,
@@ -161,6 +164,74 @@ describe('scorePrimary presets (ADZ-39)', () => {
       const vivid = cluster(80, 10, 0.05)
       const muted = cluster(5, 1000, 0.95)
       expect(findPrimaryIndex([vivid, muted], 'dominant')).toBe(1)
+    })
+  })
+})
+
+describe('applyGrayPenalty (ADZ-48)', () => {
+  function options(overrides: { chromaFloor?: number; grayPenalty?: number } = {}): ResolvedOptions {
+    return {
+      ...DEFAULT_OPTIONS,
+      scoring: {
+        chromaFloor: overrides.chromaFloor ?? 12,
+        grayPenalty: overrides.grayPenalty ?? 0.1,
+      },
+    }
+  }
+
+  describe('AC: defaults use chromaFloor 12 and grayPenalty 0.1', () => {
+    it('penalizes a cluster whose chroma is below the default floor of 12', () => {
+      const gray = cluster(5, 200, 0.5)
+      expect(isLowChromaCandidate(gray, DEFAULT_OPTIONS)).toBe(true)
+      expect(applyGrayPenalty(100, gray, DEFAULT_OPTIONS)).toBeCloseTo(10, 10)
+    })
+
+    it('does not penalize a cluster whose chroma is at or above the default floor', () => {
+      const vivid = cluster(12, 200, 0.5)
+      const vividAbove = cluster(40, 200, 0.5)
+      expect(isLowChromaCandidate(vivid, DEFAULT_OPTIONS)).toBe(false)
+      expect(isLowChromaCandidate(vividAbove, DEFAULT_OPTIONS)).toBe(false)
+      expect(applyGrayPenalty(100, vivid, DEFAULT_OPTIONS)).toBe(100)
+      expect(applyGrayPenalty(100, vividAbove, DEFAULT_OPTIONS)).toBe(100)
+    })
+  })
+
+  describe('AC: low-chroma candidates are not impossible to select, only penalized', () => {
+    it('a high-pop gray can still beat a low-pop vivid when the gap is large enough', () => {
+      const gray = cluster(5, 10_000, 0.9)
+      const vivid = cluster(40, 50, 0.05)
+      const opts = options()
+      const grayScore = applyGrayPenalty(gray.population, gray, opts)
+      const vividScore = applyGrayPenalty(vivid.population, vivid, opts)
+      expect(grayScore).toBeGreaterThan(vividScore)
+    })
+  })
+
+  describe('AC: keep behavior configurable', () => {
+    it('respects a custom chromaFloor', () => {
+      const c = cluster(8, 100, 0.5)
+      expect(isLowChromaCandidate(c, options({ chromaFloor: 5 }))).toBe(false)
+      expect(isLowChromaCandidate(c, options({ chromaFloor: 10 }))).toBe(true)
+    })
+
+    it('respects a custom grayPenalty', () => {
+      const c = cluster(5, 100, 0.5)
+      expect(applyGrayPenalty(100, c, options({ grayPenalty: 0.5 }))).toBeCloseTo(50, 10)
+      expect(applyGrayPenalty(100, c, options({ grayPenalty: 0.0 }))).toBe(0)
+    })
+
+    it('a grayPenalty of 1 effectively disables the penalty (still a no-op multiplier)', () => {
+      const c = cluster(5, 100, 0.5)
+      expect(applyGrayPenalty(100, c, options({ grayPenalty: 1 }))).toBe(100)
+    })
+  })
+
+  describe('AC: penalty is reflected in score output when enabled', () => {
+    it('reduces the score proportionally to grayPenalty', () => {
+      const c = cluster(5, 100, 0.5)
+      const base = 100
+      const result = applyGrayPenalty(base, c, DEFAULT_OPTIONS)
+      expect(result).toBeCloseTo(base * 0.1, 10)
     })
   })
 })

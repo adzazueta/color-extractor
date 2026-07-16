@@ -51,8 +51,10 @@ export { rgbToHsl, hslToRgb } from './color/hsl.js'
 export { rgbToHex } from './color/hex.js'
 export type { PixelData, PixelInput } from './validation.js'
 export {
+  applyGrayPenalty,
   buildPrimaryColor,
   findPrimaryIndex,
+  isLowChromaCandidate,
   scorePrimary,
   type RoleAssignment,
 } from './role.js'
