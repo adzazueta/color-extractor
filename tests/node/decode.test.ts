@@ -307,3 +307,33 @@ describe('animated first-frame handling (ADZ-66)', () => {
     expect(result1.height).toBe(result2.height)
   })
 })
+
+describe('sRGB normalization (ADZ-69)', () => {
+  it('normalizes to sRGB by default', async () => {
+    const png = await makePng(10, 10, { r: 200, g: 30, b: 30 })
+    const result = await decodeBufferToPixels(png, 150, { respectOrientation: true })
+    expect(result.width).toBe(10)
+    expect(result.height).toBe(10)
+  })
+
+  it('normalizes when normalizeColorProfile is true', async () => {
+    const png = await makePng(10, 10, { r: 200, g: 30, b: 30 })
+    const result = await decodeBufferToPixels(png, 150, { respectOrientation: true, normalizeColorProfile: true })
+    expect(result.width).toBe(10)
+    expect(result.height).toBe(10)
+  })
+
+  it('skips normalization when normalizeColorProfile is false', async () => {
+    const png = await makePng(10, 10, { r: 200, g: 30, b: 30 })
+    const result = await decodeBufferToPixels(png, 150, { respectOrientation: true, normalizeColorProfile: false })
+    expect(result.width).toBe(10)
+    expect(result.height).toBe(10)
+  })
+
+  it('produces consistent output with normalization enabled', async () => {
+    const png = await makePng(10, 10, { r: 100, g: 150, b: 200 })
+    const result1 = await decodeBufferToPixels(png, 150, { respectOrientation: true, normalizeColorProfile: true })
+    const result2 = await decodeBufferToPixels(png, 150, { respectOrientation: true, normalizeColorProfile: true })
+    expect(result1.data).toEqual(result2.data)
+  })
+})

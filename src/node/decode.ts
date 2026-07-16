@@ -29,6 +29,7 @@ type SharpPipeline = {
   ) => SharpPipeline
   ensureAlpha: () => SharpPipeline
   withMetadata: (options: { orientation?: number }) => SharpPipeline
+  toColourspace: (space: string) => SharpPipeline
   raw: (options?: { depth?: 'uchar' | 'ushort' | 'float' }) => {
     toBuffer: (options?: { resolveWithObject?: boolean }) => Promise<RawOutput>
   }
@@ -80,7 +81,7 @@ function isSvgBytes(bytes: Buffer | Uint8Array): boolean {
 export async function decodeBufferToPixels(
   bytes: Buffer | Uint8Array,
   sampleSize: number,
-  options: Pick<DecodeOptions, 'respectOrientation' | 'maxPixels' | 'svg' | 'animated'>,
+  options: Pick<DecodeOptions, 'respectOrientation' | 'maxPixels' | 'svg' | 'animated' | 'normalizeColorProfile'>,
 ): Promise<DecodedPixels> {
   if (!Number.isInteger(sampleSize) || sampleSize <= 0) {
     throw new ColorExtractorError(
@@ -165,13 +166,17 @@ export async function decodeBufferToPixels(
   // the pipeline shape uniform.
   const oriented: SharpPipeline = doRotate ? neutral.rotate() : neutral.rotate(0)
 
+  // Step 4.5: normalize color profile to sRGB when configured.
+  const doNormalize = options.normalizeColorProfile ?? true
+  const colorManaged: SharpPipeline = doNormalize ? oriented.toColourspace('srgb') : oriented
+
   // Step 5: compute the resize target using the oriented dimensions.
   const target = computeResizeTarget(physicalWidth, physicalHeight, sampleSize)
 
   // Step 6: resize, ensure RGBA, and emit raw.
   let sized: SharpPipeline
   try {
-    sized = oriented.resize(target.width, target.height, { fit: 'fill' })
+    sized = colorManaged.resize(target.width, target.height, { fit: 'fill' })
   } catch (err) {
     throw new ColorExtractorError(
       'COLOR_EXTRACTOR_DECODE_FAILED',
