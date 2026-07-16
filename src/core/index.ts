@@ -53,8 +53,11 @@ export type { PixelData, PixelInput } from './validation.js'
 export {
   applyGrayPenalty,
   buildPrimaryColor,
+  contrastBoost,
   findPrimaryIndex,
+  hueWeight,
   isLowChromaCandidate,
   scorePrimary,
+  scoreSecondary,
   type RoleAssignment,
 } from './role.js'

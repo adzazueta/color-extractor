@@ -5,6 +5,9 @@ import {
   buildPrimaryColor,
   applyGrayPenalty,
   isLowChromaCandidate,
+  hueWeight,
+  contrastBoost,
+  scoreSecondary,
 } from '../../src/core/role.js'
 import type { Cluster } from '../../src/core/kmeans.js'
 import { DEFAULT_OPTIONS, type ResolvedOptions } from '../../src/core/defaults.js'
@@ -22,6 +25,25 @@ function cluster(
     population,
     proportion,
     chroma,
+    score: 0,
+  }
+}
+
+function labCluster(
+  L: number,
+  a: number,
+  b: number,
+  population: number,
+  proportion: number = 0.1,
+): Cluster {
+  return {
+    index: 0,
+    lab: { L, a, b },
+    rgb: { r: 128, g: 128, b: 128 },
+    hsl: { h: 0, s: 0, l: 50 },
+    population,
+    proportion,
+    chroma: Math.sqrt(a * a + b * b),
     score: 0,
   }
 }
@@ -232,6 +254,151 @@ describe('applyGrayPenalty (ADZ-48)', () => {
       const base = 100
       const result = applyGrayPenalty(base, c, DEFAULT_OPTIONS)
       expect(result).toBeCloseTo(base * 0.1, 10)
+    })
+  })
+})
+
+describe('hueWeight (ADZ-42)', () => {
+  describe('AC: complementary candidates receive higher hue weight than same-hue candidates', () => {
+    it('returns 0.5 for exactly same-hue candidates', () => {
+      const primary = labCluster(50, 50, 0, 100)
+      const sameHue = labCluster(50, 50, 0, 100)
+      expect(hueWeight(primary, sameHue)).toBeCloseTo(0.5, 10)
+    })
+
+    it('returns 1.5 for exactly complementary candidates (180° apart)', () => {
+      const primary = labCluster(50, 50, 0, 100)
+      const complementary = labCluster(50, -50, 0, 100)
+      expect(hueWeight(primary, complementary)).toBeCloseTo(1.5, 10)
+    })
+
+    it('returns ~1.5 for split-complementary candidates (150° apart)', () => {
+      const primary = labCluster(50, 50, 0, 100)
+      const angle = (150 * Math.PI) / 180
+      const a = 50 * Math.cos(angle)
+      const b = 50 * Math.sin(angle)
+      const split = labCluster(50, a, b, 100)
+      expect(hueWeight(primary, split)).toBeCloseTo(1.5, 10)
+    })
+
+    it('complementary always outscores same-hue regardless of axis', () => {
+      const primary = labCluster(50, 0, 50, 100)
+      const sameHue = labCluster(50, 0, 50, 100)
+      const complementary = labCluster(50, 0, -50, 100)
+      expect(hueWeight(primary, complementary)).toBeGreaterThan(hueWeight(primary, sameHue))
+    })
+  })
+
+  describe('AC: weight is bounded and non-negative', () => {
+    it('returns at least 0.5 (max same-hue penalty)', () => {
+      const primary = labCluster(50, 50, 0, 100)
+      const sameHue = labCluster(50, 50, 0, 100)
+      expect(hueWeight(primary, sameHue)).toBeGreaterThanOrEqual(0.5)
+    })
+
+    it('returns at most 1.5 (max complementary boost)', () => {
+      const primary = labCluster(50, 50, 0, 100)
+      const complementary = labCluster(50, -50, 0, 100)
+      expect(hueWeight(primary, complementary)).toBeLessThanOrEqual(1.5)
+    })
+  })
+})
+
+describe('contrastBoost (ADZ-42)', () => {
+  function options(contrastMinDE: number = 20): ResolvedOptions {
+    return {
+      ...DEFAULT_OPTIONS,
+      secondary: {
+        fallback: 'harmony',
+        contrastMinDE,
+        harmonyFallbackDeg: 150,
+      },
+    }
+  }
+
+  describe('AC: candidates with sufficient contrast get full boost (1.0)', () => {
+    it('returns 1 when Delta E equals the minimum', () => {
+      const primary = labCluster(50, 0, 0, 100)
+      const far = labCluster(70, 0, 0, 100)
+      expect(contrastBoost(primary, far, options(20))).toBe(1)
+    })
+
+    it('returns 1 when Delta E exceeds the minimum', () => {
+      const primary = labCluster(50, 0, 0, 100)
+      const veryFar = labCluster(95, 0, 0, 100)
+      expect(contrastBoost(primary, veryFar, options(20))).toBe(1)
+    })
+  })
+
+  describe('AC: low-contrast candidates receive a reduced boost', () => {
+    it('returns proportional boost below the minimum Delta E', () => {
+      const primary = labCluster(50, 0, 0, 100)
+      const close = labCluster(60, 0, 0, 100)
+      const de = 10
+      const expected = de / 20
+      expect(contrastBoost(primary, close, options(20))).toBeCloseTo(expected, 10)
+    })
+
+    it('returns 0 for identical candidates', () => {
+      const primary = labCluster(50, 0, 0, 100)
+      expect(contrastBoost(primary, primary, options(20))).toBe(0)
+    })
+  })
+
+  describe('AC: respects custom contrastMinDE from options', () => {
+    it('a candidate that passes at contrastMinDE=10 fails at contrastMinDE=40', () => {
+      const primary = labCluster(50, 0, 0, 100)
+      const candidate = labCluster(65, 0, 0, 100)
+      expect(contrastBoost(primary, candidate, options(10))).toBe(1)
+      expect(contrastBoost(primary, candidate, options(40))).toBeCloseTo(15 / 40, 10)
+    })
+  })
+})
+
+describe('scoreSecondary (ADZ-42)', () => {
+  describe('AC: uses chroma^2 * log(population + 1) as the base score', () => {
+    it('matches chroma^2 * log(pop+1) for a neutral hue weight and full contrast', () => {
+      const primary = labCluster(50, 50, 0, 100)
+      const candidate = labCluster(95, 0, 50, 100, 0.1)
+      const options: ResolvedOptions = {
+        ...DEFAULT_OPTIONS,
+        secondary: { fallback: 'harmony', contrastMinDE: 0, harmonyFallbackDeg: 150 },
+      }
+      const expected = 50 * 50 * Math.log(101)
+      expect(scoreSecondary(primary, candidate, options)).toBeCloseTo(expected, 10)
+    })
+  })
+
+  describe('AC: same-hue candidates receive lower hue weight than complementary candidates', () => {
+    it('complementary wins over same-hue at equal chroma and population', () => {
+      const primary = labCluster(50, 50, 0, 100)
+      const sameHue = labCluster(50, 50, 0, 100, 0.1)
+      const complementary = labCluster(50, -50, 0, 100, 0.1)
+      const same = scoreSecondary(primary, sameHue, DEFAULT_OPTIONS)
+      const comp = scoreSecondary(primary, complementary, DEFAULT_OPTIONS)
+      expect(comp).toBeGreaterThan(same)
+    })
+  })
+
+  describe('AC: low-population candidates can still win when chroma and contrast are strong', () => {
+    it('a small vivid complementary candidate beats a large muted same-hue candidate', () => {
+      const primary = labCluster(50, 50, 0, 100)
+      const smallVivid = labCluster(50, -80, 0, 5, 0.01)
+      const largeMuted = labCluster(50, 5, 0, 5000, 0.9)
+      const smallScore = scoreSecondary(primary, smallVivid, DEFAULT_OPTIONS)
+      const largeScore = scoreSecondary(primary, largeMuted, DEFAULT_OPTIONS)
+      expect(smallScore).toBeGreaterThan(largeScore)
+    })
+  })
+
+  describe('AC: gray penalty still applies to low-chroma secondary candidates', () => {
+    it('a same-hue low-chroma candidate is heavily penalized', () => {
+      const primary = labCluster(50, 50, 0, 100)
+      const gray = labCluster(50, 5, 0, 200, 0.1)
+      const vivid = labCluster(50, -50, 0, 200, 0.1)
+      const grayScore = scoreSecondary(primary, gray, DEFAULT_OPTIONS)
+      const vividScore = scoreSecondary(primary, vivid, DEFAULT_OPTIONS)
+      expect(vividScore).toBeGreaterThan(grayScore)
     })
   })
 })
