@@ -27,6 +27,16 @@ export function convertRgbSamplesToLab(pixels: Pixel[]): LabSample[] {
   return result
 }
 
+/**
+ * Sample a square grid of pixels from the image.
+ *
+ * `sampleSize` is the side length of the grid in cells (not a sample cap).
+ * The image is sampled at uniform step `max(1, floor(max(W,H) / sampleSize))`
+ * along both axes, and every cell is visited. For a 300x300 image with
+ * `sampleSize = 150` the step is 2 and the grid covers all 150x150 = 22,500
+ * cells. For images smaller than `sampleSize`, step is 1 and every pixel
+ * is sampled (no top-left bias).
+ */
 export function sampleSquareGrid(
   pixels: NormalizedPixels,
   sampleSize: number,
@@ -34,25 +44,22 @@ export function sampleSquareGrid(
   if (!Number.isInteger(sampleSize) || sampleSize <= 0) {
     throw new RangeError(`sampleSize must be a positive integer, got ${sampleSize}`)
   }
-  const { width, height } = pixels
-  const total = width * height
-  if (total === 0) return []
+  const { width, height, channels, data } = pixels
+  if (width === 0 || height === 0) return []
 
-  const step = Math.max(1, Math.floor(Math.sqrt(total / sampleSize)))
+  const step = Math.max(1, Math.floor(Math.max(width, height) / sampleSize))
   const samples: Pixel[] = []
   let index = 0
   for (let y = 0; y < height; y += step) {
     for (let x = 0; x < width; x += step) {
-      const px = pixels.data
-      const o = (y * width + x) * pixels.channels
+      const o = (y * width + x) * channels
       samples.push({
         index: index++,
-        r: px[o]!,
-        g: px[o + 1]!,
-        b: px[o + 2]!,
-        a: pixels.channels === 4 ? px[o + 3]! : 255,
+        r: data[o]!,
+        g: data[o + 1]!,
+        b: data[o + 2]!,
+        a: channels === 4 ? data[o + 3]! : 255,
       })
-      if (samples.length >= sampleSize) return samples
     }
   }
   return samples

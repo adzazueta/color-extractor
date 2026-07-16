@@ -1,11 +1,13 @@
 import { describe, it, expect } from 'vitest'
 import {
   convertRgbSamplesToLab,
+  sampleSquareGrid,
   type LabSample,
 } from '../../src/core/sample.js'
 import { srgbByteToLinear } from '../../src/core/color/srgb.js'
 import { linearRgbToXyz } from '../../src/core/color/xyz.js'
 import { xyzToLab } from '../../src/core/color/lab.js'
+import { normalizePixels, type NormalizedPixels } from '../../src/core/pixels.js'
 import type { Pixel } from '../../src/core/pixels.js'
 
 function pixel(r: number, g: number, b: number, a: number = 255, index: number = 0): Pixel {
@@ -137,5 +139,77 @@ describe('convertRgbSamplesToLab', () => {
         expect(typeof result[i]!.lab.b).toBe('number')
       }
     })
+  })
+})
+
+function makePixels(width: number, height: number, fill: { r: number; g: number; b: number } = { r: 0, g: 0, b: 0 }): NormalizedPixels {
+  const data = new Uint8Array(width * height * 4)
+  for (let i = 0; i < width * height; i++) {
+    const o = i * 4
+    data[o] = fill.r
+    data[o + 1] = fill.g
+    data[o + 2] = fill.b
+    data[o + 3] = 255
+  }
+  return normalizePixels(data, width, height, 4)
+}
+
+describe('sampleSquareGrid (sampleSize is the grid side)', () => {
+  it('a 300x300 image with sampleSize=150 produces a 150x150 = 22,500 cell grid', () => {
+    const pixels = makePixels(300, 300)
+    const samples = sampleSquareGrid(pixels, 150)
+    expect(samples.length).toBe(22500)
+  })
+
+  it('uses step = floor(max(W,H) / sampleSize) to cover the full image', () => {
+    const pixels = makePixels(300, 300)
+    const samples = sampleSquareGrid(pixels, 150)
+    const step = 2
+    const expectedRows = Math.floor((300 - 1) / step) + 1
+    const expectedCols = Math.floor((300 - 1) / step) + 1
+    expect(expectedRows * expectedCols).toBe(22500)
+    expect(samples.length).toBe(expectedRows * expectedCols)
+  })
+
+  it('small image with sampleSize > size uses step=1 and covers every pixel (no top-left bias)', () => {
+    const pixels = makePixels(50, 50)
+    const samples = sampleSquareGrid(pixels, 150)
+    expect(samples.length).toBe(50 * 50)
+  })
+
+  it('sweeps every row and column, not just the top-left', () => {
+    const pixels = makePixels(100, 100)
+    const samples = sampleSquareGrid(pixels, 100)
+    const visitedYs = new Set<number>()
+    const visitedXs = new Set<number>()
+    const step = 1
+    for (const s of samples) {
+      const y = Math.floor(s.index / 100)
+      const x = s.index % 100
+      visitedYs.add(y)
+      visitedXs.add(x)
+    }
+    expect(visitedYs.size).toBe(100)
+    expect(visitedXs.size).toBe(100)
+    expect(visitedYs.has(99)).toBe(true)
+    expect(visitedXs.has(99)).toBe(true)
+    void step
+  })
+
+  it('preserves RGB values at each sampled cell', () => {
+    const pixels = makePixels(10, 10, { r: 200, g: 30, b: 30 })
+    const samples = sampleSquareGrid(pixels, 150)
+    for (const s of samples) {
+      expect(s.r).toBe(200)
+      expect(s.g).toBe(30)
+      expect(s.b).toBe(30)
+    }
+  })
+
+  it('throws RangeError for non-positive sampleSize', () => {
+    const pixels = makePixels(10, 10)
+    expect(() => sampleSquareGrid(pixels, 0)).toThrow(RangeError)
+    expect(() => sampleSquareGrid(pixels, -1)).toThrow(RangeError)
+    expect(() => sampleSquareGrid(pixels, 1.5)).toThrow(RangeError)
   })
 })
