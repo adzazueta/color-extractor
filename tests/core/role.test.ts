@@ -264,7 +264,7 @@ describe('applyGrayPenalty (ADZ-48)', () => {
 })
 
 describe('hueWeight (ADZ-42)', () => {
-  describe('AC: complementary candidates receive higher hue weight than same-hue candidates', () => {
+  describe('AC: implements 0.5 + hueDistance/180 as documented', () => {
     it('returns 0.5 for exactly same-hue candidates', () => {
       const primary = labCluster(50, 50, 0, 100)
       const sameHue = labCluster(50, 50, 0, 100)
@@ -277,34 +277,48 @@ describe('hueWeight (ADZ-42)', () => {
       expect(hueWeight(primary, complementary)).toBeCloseTo(1.5, 10)
     })
 
-    it('returns ~1.5 for split-complementary candidates (150° apart)', () => {
+    it('returns 0.5 + 90/180 = 1.0 for orthogonal candidates (90° apart)', () => {
+      const primary = labCluster(50, 50, 0, 100)
+      const angle = (90 * Math.PI) / 180
+      const a = 50 * Math.cos(angle)
+      const b = 50 * Math.sin(angle)
+      const ortho = labCluster(50, a, b, 100)
+      expect(hueWeight(primary, ortho)).toBeCloseTo(1.0, 10)
+    })
+
+    it('returns 0.5 + 150/180 for split-complementary (150° apart)', () => {
       const primary = labCluster(50, 50, 0, 100)
       const angle = (150 * Math.PI) / 180
       const a = 50 * Math.cos(angle)
       const b = 50 * Math.sin(angle)
       const split = labCluster(50, a, b, 100)
-      expect(hueWeight(primary, split)).toBeCloseTo(1.5, 10)
+      expect(hueWeight(primary, split)).toBeCloseTo(0.5 + 150 / 180, 10)
     })
 
-    it('complementary always outscores same-hue regardless of axis', () => {
-      const primary = labCluster(50, 0, 50, 100)
-      const sameHue = labCluster(50, 0, 50, 100)
-      const complementary = labCluster(50, 0, -50, 100)
-      expect(hueWeight(primary, complementary)).toBeGreaterThan(hueWeight(primary, sameHue))
-    })
-  })
-
-  describe('AC: weight is bounded and non-negative', () => {
-    it('returns at least 0.5 (max same-hue penalty)', () => {
+    it('is monotonically non-decreasing in hue distance from primary', () => {
       const primary = labCluster(50, 50, 0, 100)
-      const sameHue = labCluster(50, 50, 0, 100)
-      expect(hueWeight(primary, sameHue)).toBeGreaterThanOrEqual(0.5)
+      const angles = [0, 30, 60, 90, 120, 150, 180]
+      let prev = -Infinity
+      for (const deg of angles) {
+        const angle = (deg * Math.PI) / 180
+        const a = 50 * Math.cos(angle)
+        const b = 50 * Math.sin(angle)
+        const w = hueWeight(primary, labCluster(50, a, b, 100))
+        expect(w).toBeGreaterThanOrEqual(prev)
+        prev = w
+      }
     })
 
-    it('returns at most 1.5 (max complementary boost)', () => {
+    it('is bounded in [0.5, 1.5] for any hue distance', () => {
       const primary = labCluster(50, 50, 0, 100)
-      const complementary = labCluster(50, -50, 0, 100)
-      expect(hueWeight(primary, complementary)).toBeLessThanOrEqual(1.5)
+      for (let deg = 0; deg < 360; deg += 15) {
+        const angle = (deg * Math.PI) / 180
+        const a = 50 * Math.cos(angle)
+        const b = 50 * Math.sin(angle)
+        const w = hueWeight(primary, labCluster(50, a, b, 100))
+        expect(w).toBeGreaterThanOrEqual(0.5 - 1e-9)
+        expect(w).toBeLessThanOrEqual(1.5 + 1e-9)
+      }
     })
   })
 })

@@ -74,14 +74,7 @@ export function hueWeight(primary: Cluster, candidate: Cluster): number {
   const primaryHue = hueFromLab(primary.lab.a, primary.lab.b)
   const candidateHue = hueFromLab(candidate.lab.a, candidate.lab.b)
   const hueDelta = circularHueDistance(primaryHue, candidateHue)
-  const min = Math.min(hueDelta, 360 - hueDelta)
-  const sameHue = Math.max(0, 1 - min / 30)
-  const complementary = Math.max(0, 1 - Math.abs(min - 180) / 15)
-  const splitComplementary = Math.max(
-    0,
-    1 - Math.min(Math.abs(min - 150), Math.abs(min - 210)) / 15,
-  )
-  return 1 + 0.5 * Math.max(complementary, splitComplementary) - 0.5 * sameHue
+  return 0.5 + hueDelta / 180
 }
 
 export function contrastBoost(
