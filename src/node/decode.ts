@@ -123,7 +123,26 @@ export async function decodeBufferToPixels(
 
   const Ctor = await loadSharp()
   const animatedMode = options.animated ?? 'first-frame'
-  const inputOptions = animatedMode === 'first-frame' ? { page: 0 } : undefined
+  let inputOptions: { page?: number } | undefined
+
+  switch (animatedMode) {
+    case 'first-frame':
+      inputOptions = { page: 0 }
+      break
+    case 'all-frames':
+      inputOptions = { page: -1 }
+      break
+    case 'disabled':
+      inputOptions = undefined
+      break
+    default:
+      throw new ColorExtractorError(
+        'COLOR_EXTRACTOR_UNSUPPORTED_INPUT',
+        `Invalid animated mode: ${animatedMode}`,
+        { cause: animatedMode },
+      )
+  }
+
   let pipeline: unknown
   try {
     pipeline = new Ctor(bytes, inputOptions)
