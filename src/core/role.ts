@@ -197,27 +197,40 @@ export function buildPalette(
   return ranked.slice(0, size).map((r) => clusterAsPaletteColor(r.cluster))
 }
 
+export interface SelectSecondaryResult {
+  readonly color: ExtractedColor
+  readonly sourceClusterIndex: number | null
+}
+
 export function selectSecondary(
   primary: Cluster,
   candidates: readonly Cluster[],
   options: ResolvedOptions,
-): ExtractedColor | null {
+): SelectSecondaryResult | null {
   const { passing, rejected } = filterByContrastThreshold(primary, candidates, options)
   const passingRanked = rankBySecondaryScore(primary, passing, options)
   const rejectedRanked = rankBySecondaryScore(primary, rejected, options)
 
   if (passingRanked.length === 0) {
     if (options.secondary.fallback === 'harmony') {
-      return buildHarmonyFallback(primary, options)
+      return { color: buildHarmonyFallback(primary, options), sourceClusterIndex: null }
     }
     if (options.secondary.fallback === 'nearest') {
       if (rejectedRanked.length === 0) return null
-      return clusterAsSecondaryColor(rejectedRanked[0]!.cluster, 'fallback')
+      const top = rejectedRanked[0]!.cluster
+      return {
+        color: clusterAsSecondaryColor(top, 'fallback'),
+        sourceClusterIndex: top.index,
+      }
     }
     return null
   }
 
-  return clusterAsSecondaryColor(passingRanked[0]!.cluster, 'cluster')
+  const top = passingRanked[0]!.cluster
+  return {
+    color: clusterAsSecondaryColor(top, 'cluster'),
+    sourceClusterIndex: top.index,
+  }
 }
 
 export interface ContrastFilterResult {

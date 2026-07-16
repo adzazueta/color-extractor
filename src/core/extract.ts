@@ -118,12 +118,15 @@ export function runExtractionPipeline(
   const primaryCluster = clusters[primaryIdx]!
   const primary = buildPrimaryColor(primaryCluster)
   const others = clusters.filter((c) => c.index !== primaryCluster.index)
-  const rawSecondary = selectSecondary(primaryCluster, others, resolved)
-  const secondary = rawSecondary
-    ? applyLightnessGap(primaryCluster, rawSecondary, resolved)
+  const secondaryResult = selectSecondary(primaryCluster, others, resolved)
+  const secondaryColor = secondaryResult
+    ? applyLightnessGap(primaryCluster, secondaryResult.color, resolved)
     : null
 
-  const excludeIndices = [primaryCluster.index]
+  const excludeIndices: number[] = [primaryCluster.index]
+  if (secondaryResult?.sourceClusterIndex !== null && secondaryResult?.sourceClusterIndex !== undefined) {
+    excludeIndices.push(secondaryResult.sourceClusterIndex)
+  }
   const palette = buildPalette(clusters, resolved, { excludeIndices })
 
   const accentsCount = resolved.accents ?? 0
@@ -135,11 +138,11 @@ export function runExtractionPipeline(
     role: 'accent' as const,
   }))
 
-  const fallbackUsed = secondary?.source === 'fallback' || secondary?.source === 'adjusted'
+  const fallbackUsed = secondaryColor?.source === 'fallback' || secondaryColor?.source === 'adjusted'
 
   const fullResult: FullExtractionResult = {
     primary,
-    secondary,
+    secondary: secondaryColor,
     accents,
     palette,
     metadata: {

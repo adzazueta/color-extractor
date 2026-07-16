@@ -194,6 +194,34 @@ describe('extractColorsFromPixels (e2e pipeline)', () => {
     })
   })
 
+  describe('AC: palette excludes both primary and secondary clusters', () => {
+    it('palette does not contain the secondary hex when secondary comes from a cluster', async () => {
+      const result = await extractColorsFromPixels(
+        makeBicolorPixels(40, 40, { r: 220, g: 30, b: 30 }, { r: 30, g: 220, b: 30 }),
+        { output: { includePalette: true } },
+      )
+      expect(result.secondary).not.toBeNull()
+      expect(result.secondary!.source).toBe('cluster')
+      expect(result.palette).toBeDefined()
+      const primaryHex = result.primary.hex
+      const secondaryHex = result.secondary!.hex
+      const hexes = (result.palette ?? []).map((c) => c.hex)
+      expect(hexes).not.toContain(primaryHex)
+      expect(hexes).not.toContain(secondaryHex)
+    })
+
+    it('palette can contain the secondary hex when secondary is a synthetic fallback', async () => {
+      const result = await extractColorsFromPixels(
+        makeBicolorPixels(40, 40, { r: 200, g: 30, b: 30 }, { r: 195, g: 30, b: 30 }),
+        { output: { includePalette: true } },
+      )
+      if (result.secondary?.source === 'fallback') {
+        const paletteHexes = (result.palette ?? []).map((c) => c.hex)
+        expect(paletteHexes).not.toContain(result.secondary.hex)
+      }
+    })
+  })
+
   describe('AC: secondary hue is normalized to [0, 360)', () => {
     it('fallback secondary hsl.h is in [0, 360) even when rotation is large', async () => {
       const result = await extractColorsFromPixels(

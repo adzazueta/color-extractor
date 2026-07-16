@@ -72,4 +72,5 @@ export {
   type BuildPaletteOptions,
   type ContrastFilterResult,
   type RoleAssignment,
+  type SelectSecondaryResult,
 } from './role.js'

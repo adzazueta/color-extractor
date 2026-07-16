@@ -544,9 +544,10 @@ describe('selectSecondary (ADZ-45)', () => {
       const tooClose = labCluster(55, 50, 0, 100, 0.1)
       const result = selectSecondary(primary, [tooClose], options({ fallback: 'harmony' }))
       expect(result).not.toBeNull()
-      expect(result!.source).toBe('fallback')
-      expect(result!.role).toBe('secondary')
-      expect(result!.hsl).toBeDefined()
+      expect(result!.color.source).toBe('fallback')
+      expect(result!.color.role).toBe('secondary')
+      expect(result!.color.hsl).toBeDefined()
+      expect(result!.sourceClusterIndex).toBeNull()
     })
 
     it('uses a cluster when the top candidate passes the contrast threshold', () => {
@@ -554,8 +555,9 @@ describe('selectSecondary (ADZ-45)', () => {
       const passing = labCluster(95, 0, 50, 100, 0.1)
       const result = selectSecondary(primary, [passing], options({ fallback: 'harmony' }))
       expect(result).not.toBeNull()
-      expect(result!.source).toBe('cluster')
-      expect(result!.lab).toEqual(passing.lab)
+      expect(result!.color.source).toBe('cluster')
+      expect(result!.color.lab).toEqual(passing.lab)
+      expect(result!.sourceClusterIndex).toBe(passing.index)
     })
   })
 
@@ -572,7 +574,7 @@ describe('selectSecondary (ADZ-45)', () => {
       const passing = labCluster(95, 0, 50, 100, 0.1)
       const result = selectSecondary(primary, [passing], options({ fallback: 'null' }))
       expect(result).not.toBeNull()
-      expect(result!.source).toBe('cluster')
+      expect(result!.color.source).toBe('cluster')
     })
   })
 
@@ -583,8 +585,9 @@ describe('selectSecondary (ADZ-45)', () => {
       const b = labCluster(60, 50, 0, 200, 0.2)
       const result = selectSecondary(primary, [a, b], options({ fallback: 'nearest' }))
       expect(result).not.toBeNull()
-      expect(result!.source).toBe('fallback')
-      expect(result!.lab).toEqual(b.lab)
+      expect(result!.color.source).toBe('fallback')
+      expect(result!.color.lab).toEqual(b.lab)
+      expect(result!.sourceClusterIndex).toBe(b.index)
     })
 
     it('returns a cluster with source=cluster when top candidate passes contrast', () => {
@@ -592,7 +595,7 @@ describe('selectSecondary (ADZ-45)', () => {
       const passing = labCluster(95, 0, 50, 100, 0.1)
       const result = selectSecondary(primary, [passing], options({ fallback: 'nearest' }))
       expect(result).not.toBeNull()
-      expect(result!.source).toBe('cluster')
+      expect(result!.color.source).toBe('cluster')
     })
   })
 
@@ -601,21 +604,21 @@ describe('selectSecondary (ADZ-45)', () => {
       const primary = labCluster(50, 50, 0, 100)
       const tooClose = labCluster(55, 50, 0, 100, 0.1)
       const result = selectSecondary(primary, [tooClose], options({ fallback: 'harmony' }))
-      expect(result!.source).toBe('fallback')
+      expect(result!.color.source).toBe('fallback')
     })
 
     it('nearest fallback is marked with source=fallback', () => {
       const primary = labCluster(50, 50, 0, 100)
       const tooClose = labCluster(55, 50, 0, 100, 0.1)
       const result = selectSecondary(primary, [tooClose], options({ fallback: 'nearest' }))
-      expect(result!.source).toBe('fallback')
+      expect(result!.color.source).toBe('fallback')
     })
 
     it('cluster-derived secondary is marked with source=cluster', () => {
       const primary = labCluster(50, 50, 0, 100)
       const passing = labCluster(95, 0, 50, 100, 0.1)
       const result = selectSecondary(primary, [passing], options({ fallback: 'harmony' }))
-      expect(result!.source).toBe('cluster')
+      expect(result!.color.source).toBe('cluster')
     })
   })
 
@@ -632,7 +635,7 @@ describe('selectSecondary (ADZ-45)', () => {
       const candidate = labCluster(60, 0, 50, 100, 0.1)
       const result = selectSecondary(primary, [candidate], options({ contrastMinDE: 5, fallback: 'null' }))
       expect(result).not.toBeNull()
-      expect(result!.source).toBe('cluster')
+      expect(result!.color.source).toBe('cluster')
     })
   })
 })
@@ -801,7 +804,7 @@ describe('filterByContrastThreshold (ADZ-49)', () => {
       const tooClose = labCluster(55, 50, 0, 100, 0.1)
       const result = selectSecondary(primary, [tooClose], options())
       expect(result).not.toBeNull()
-      expect(result!.source).toBe('fallback')
+      expect(result!.color.source).toBe('fallback')
     })
 
     it('preserves rejected candidates so nearest mode can still pick them', () => {
@@ -814,8 +817,8 @@ describe('filterByContrastThreshold (ADZ-49)', () => {
         secondary: { fallback: 'nearest', contrastMinDE: 20, harmonyFallbackDeg: 150 },
       })
       expect(result).not.toBeNull()
-      expect(result!.source).toBe('fallback')
-      expect(result!.lab).toEqual(b.lab)
+      expect(result!.color.source).toBe('fallback')
+      expect(result!.color.lab).toEqual(b.lab)
     })
   })
 
