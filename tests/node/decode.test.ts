@@ -268,3 +268,42 @@ describe('SVG rejection in Node (ADZ-68)', () => {
     expect(result.width).toBe(10)
   })
 })
+
+describe('animated first-frame handling (ADZ-66)', () => {
+  it('accepts first-frame mode (default)', async () => {
+    const png = await makePng(10, 10, { r: 200, g: 30, b: 30 })
+    const result = await decodeBufferToPixels(png, 150, { respectOrientation: true, animated: 'first-frame' })
+    expect(result.width).toBe(10)
+    expect(result.height).toBe(10)
+  })
+
+  it('accepts all-frames mode', async () => {
+    const png = await makePng(10, 10, { r: 200, g: 30, b: 30 })
+    const result = await decodeBufferToPixels(png, 150, { respectOrientation: true, animated: 'all-frames' })
+    expect(result.width).toBe(10)
+    expect(result.height).toBe(10)
+  })
+
+  it('accepts disabled mode', async () => {
+    const png = await makePng(10, 10, { r: 200, g: 30, b: 30 })
+    const result = await decodeBufferToPixels(png, 150, { respectOrientation: true, animated: 'disabled' })
+    expect(result.width).toBe(10)
+    expect(result.height).toBe(10)
+  })
+
+  it('defaults to first-frame when animated option is omitted', async () => {
+    const png = await makePng(10, 10, { r: 200, g: 30, b: 30 })
+    const result = await decodeBufferToPixels(png, 150, { respectOrientation: true })
+    expect(result.width).toBe(10)
+    expect(result.height).toBe(10)
+  })
+
+  it('produces deterministic results for the same input', async () => {
+    const png = await makePng(10, 10, { r: 200, g: 30, b: 30 })
+    const result1 = await decodeBufferToPixels(png, 150, { respectOrientation: true, animated: 'first-frame' })
+    const result2 = await decodeBufferToPixels(png, 150, { respectOrientation: true, animated: 'first-frame' })
+    expect(result1.data).toEqual(result2.data)
+    expect(result1.width).toBe(result2.width)
+    expect(result1.height).toBe(result2.height)
+  })
+})

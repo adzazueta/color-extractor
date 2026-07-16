@@ -8,7 +8,7 @@ export interface SharpModule {
   readonly rotate: (angle?: number) => unknown
 }
 
-type SharpCtor = new (input?: unknown) => SharpModule
+type SharpCtor = new (input?: unknown, options?: { page?: number }) => SharpModule
 type DynamicImport = (specifier: string) => Promise<unknown>
 
 const defaultImport: DynamicImport = (specifier) => import(specifier)

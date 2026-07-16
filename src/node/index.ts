@@ -101,6 +101,7 @@ export async function extractColors(
     respectOrientation: resolved.decode.respectOrientation,
     maxPixels: resolved.decode.maxPixels,
     svg: resolved.decode.svg,
+    animated: resolved.decode.animated,
   })
 
   return runExtractionPipeline(

@@ -80,7 +80,7 @@ function isSvgBytes(bytes: Buffer | Uint8Array): boolean {
 export async function decodeBufferToPixels(
   bytes: Buffer | Uint8Array,
   sampleSize: number,
-  options: Pick<DecodeOptions, 'respectOrientation' | 'maxPixels' | 'svg'>,
+  options: Pick<DecodeOptions, 'respectOrientation' | 'maxPixels' | 'svg' | 'animated'>,
 ): Promise<DecodedPixels> {
   if (!Number.isInteger(sampleSize) || sampleSize <= 0) {
     throw new ColorExtractorError(
@@ -101,9 +101,11 @@ export async function decodeBufferToPixels(
   }
 
   const Ctor = await loadSharp()
+  const animatedMode = options.animated ?? 'first-frame'
+  const inputOptions = animatedMode === 'first-frame' ? { page: 0 } : undefined
   let pipeline: unknown
   try {
-    pipeline = new Ctor(bytes)
+    pipeline = new Ctor(bytes, inputOptions)
   } catch (err) {
     throw new ColorExtractorError(
       'COLOR_EXTRACTOR_DECODE_FAILED',
