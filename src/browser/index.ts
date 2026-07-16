@@ -2,8 +2,10 @@ import { ColorExtractorError } from '../core/errors.js'
 import type { ExtractColorsOptions } from '../core/options.js'
 import type { ExtractColorsResult } from '../core/result.js'
 import { resolveOptions } from '../core/defaults.js'
+import { extractColorsFromPixels } from '../core/extract.js'
 import type { BrowserExtractColorsInput } from './types.js'
-import { assertSupportedBrowserInput } from './detect.js'
+import { detectBrowserInputKind } from './detect.js'
+import { decodeFileOrBlob } from './decode.js'
 
 export const VERSION = '0.1.0'
 export type { BrowserExtractColorsInput } from './types.js'
@@ -41,23 +43,30 @@ export type {
   ExtractionMetadata,
   MinimalExtractColorsResult,
 } from '../core/index.js'
-export { DEFAULT_OPTIONS, resolveOptions, type ResolvedOptions } from '../core/index.js'
+export {
+  DEFAULT_OPTIONS,
+  resolveOptions,
+  type ResolvedOptions,
+} from '../core/index.js'
 
 export async function extractColors(
   input: BrowserExtractColorsInput,
   options?: ExtractColorsOptions,
 ): Promise<ExtractColorsResult> {
-  assertSupportedBrowserInput(input)
+  const resolved = resolveOptions(options)
+  const kind = detectBrowserInputKind(input)
 
-  resolveOptions(options)
-
-  return {
-    primary: {
-      hex: '#808080',
-      rgb: { r: 128, g: 128, b: 128 },
-      role: 'primary',
-      source: 'fallback',
-    },
-    secondary: null,
+  if (kind === 'file' || kind === 'blob') {
+    const decoded = await decodeFileOrBlob(input as File | Blob, resolved.sampleSize)
+    return extractColorsFromPixels(
+      { data: decoded.data, width: decoded.width, height: decoded.height },
+      options,
+    )
   }
+
+  throw new ColorExtractorError(
+    'COLOR_EXTRACTOR_UNSUPPORTED_INPUT',
+    `Browser input kind '${kind}' is not yet supported.`,
+    { cause: input },
+  )
 }
