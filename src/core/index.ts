@@ -52,6 +52,7 @@ export { rgbToHex } from './color/hex.js'
 export type { PixelData, PixelInput } from './validation.js'
 export {
   applyGrayPenalty,
+  applyLightnessGap,
   buildHarmonyFallback,
   buildPalette,
   buildPrimaryColor,

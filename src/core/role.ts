@@ -14,6 +14,12 @@ const HARMONY_SATURATION_FLOOR = 0.4
 const HARMONY_LIGHTNESS_FLOOR = 0.3
 const HARMONY_LIGHTNESS_CEILING = 0.7
 
+function clampUnit(value: number): number {
+  if (value < 0) return 0
+  if (value > 1) return 1
+  return value
+}
+
 export function scorePrimary(
   cluster: Cluster,
   preset: PrimaryPreset = 'strict',
@@ -249,6 +255,47 @@ export function filterByContrastThreshold(
     }
   }
   return { passing, rejected }
+}
+
+export function applyLightnessGap(
+  primary: Cluster,
+  secondary: ExtractedColor,
+  options: ResolvedOptions,
+): ExtractedColor {
+  if (!options.lightness.enforceGap) {
+    return secondary
+  }
+  if (secondary.hsl === undefined) {
+    return secondary
+  }
+
+  const minGapUnit = options.lightness.minGap! / 100
+  const currentGap = Math.abs(primary.hsl.l - secondary.hsl.l)
+  if (currentGap >= minGapUnit) {
+    return secondary
+  }
+
+  const direction = primary.hsl.l >= 0.5 ? -1 : 1
+  const targetL = clampUnit(primary.hsl.l + direction * minGapUnit)
+  const adjustedHsl = { h: secondary.hsl.h, s: secondary.hsl.s, l: targetL }
+  const adjustedRgb = hslToRgb(adjustedHsl.h, adjustedHsl.s, adjustedHsl.l)
+  const adjustedHex = rgbToHex(adjustedRgb)
+  const lr = srgbByteToLinear(adjustedRgb.r)
+  const lg = srgbByteToLinear(adjustedRgb.g)
+  const lb = srgbByteToLinear(adjustedRgb.b)
+  const xyz = linearRgbToXyz(lr, lg, lb)
+  const adjustedLab = xyzToLab(xyz.x, xyz.y, xyz.z)
+  const adjustedChroma = Math.sqrt(adjustedLab.a * adjustedLab.a + adjustedLab.b * adjustedLab.b)
+
+  return {
+    hex: adjustedHex,
+    rgb: adjustedRgb,
+    hsl: adjustedHsl,
+    lab: adjustedLab,
+    chroma: adjustedChroma,
+    role: 'secondary',
+    source: 'adjusted',
+  }
 }
 
 export function buildPrimaryColor(cluster: Cluster): import('./types.js').ExtractedColor {

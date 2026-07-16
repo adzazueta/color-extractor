@@ -12,6 +12,7 @@ import {
   selectSecondary,
   buildPalette,
   filterByContrastThreshold,
+  applyLightnessGap,
 } from '../../src/core/role.js'
 import type { Cluster } from '../../src/core/kmeans.js'
 import { DEFAULT_OPTIONS, type ResolvedOptions } from '../../src/core/defaults.js'
@@ -810,6 +811,129 @@ describe('filterByContrastThreshold (ADZ-49)', () => {
       const result = filterByContrastThreshold(primary, [], options())
       expect(result.passing).toEqual([])
       expect(result.rejected).toEqual([])
+    })
+  })
+})
+
+function secondaryFromHsl(h: number, s: number, l: number, source: 'cluster' | 'fallback' = 'cluster'): import('../../src/core/types.js').ExtractedColor {
+  const hueRad = (h * Math.PI) / 180
+  const a = 50 * Math.cos(hueRad)
+  const b = 50 * Math.sin(hueRad)
+  return {
+    hex: '#000000',
+    rgb: { r: 0, g: 0, b: 0 },
+    hsl: { h, s, l },
+    lab: { L: l * 100, a, b },
+    chroma: 50,
+    role: 'secondary',
+    source,
+  }
+}
+
+describe('applyLightnessGap (ADZ-40)', () => {
+  function options(overrides: { enforceGap?: boolean; minGap?: number } = {}): ResolvedOptions {
+    return {
+      ...DEFAULT_OPTIONS,
+      lightness: {
+        enforceGap: overrides.enforceGap ?? false,
+        minGap: overrides.minGap ?? 18,
+      },
+    }
+  }
+
+  function primaryWithL(l: number): Cluster {
+    return hslCluster(180, 0.5, l, 100)
+  }
+
+  describe('AC: default output does not modify extracted colors', () => {
+    it('returns the secondary unchanged when enforceGap is false', () => {
+      const primary = primaryWithL(0.5)
+      const secondary = secondaryFromHsl(0, 0.5, 0.52)
+      const result = applyLightnessGap(primary, secondary, options())
+      expect(result).toBe(secondary)
+    })
+
+    it('does not mark a no-op as adjusted', () => {
+      const primary = primaryWithL(0.5)
+      const secondary = secondaryFromHsl(0, 0.5, 0.52)
+      const result = applyLightnessGap(primary, secondary, options())
+      expect(result.source).toBe(secondary.source)
+    })
+  })
+
+  describe('AC: enforcement ensures the configured lightness gap (minGap in 0-100 scale)', () => {
+    it('darkens the secondary when primary is light and gap is too small', () => {
+      const primary = primaryWithL(0.7)
+      const secondary = secondaryFromHsl(0, 0.5, 0.6)
+      const result = applyLightnessGap(primary, secondary, options({ enforceGap: true, minGap: 18 }))
+      expect(result.hsl).toBeDefined()
+      const gap = Math.abs(result.hsl!.l - primary.hsl.l) * 100
+      expect(gap).toBeCloseTo(18, 5)
+      expect(result.hsl!.l).toBeLessThan(primary.hsl.l)
+    })
+
+    it('lightens the secondary when primary is dark and gap is too small', () => {
+      const primary = primaryWithL(0.2)
+      const secondary = secondaryFromHsl(0, 0.5, 0.3)
+      const result = applyLightnessGap(primary, secondary, options({ enforceGap: true, minGap: 18 }))
+      expect(result.hsl!.l).toBeGreaterThan(primary.hsl.l)
+      const gap = Math.abs(result.hsl!.l - primary.hsl.l) * 100
+      expect(gap).toBeCloseTo(18, 5)
+    })
+
+    it('keeps the secondary when the gap already satisfies the threshold', () => {
+      const primary = primaryWithL(0.5)
+      const secondary = secondaryFromHsl(0, 0.5, 0.2)
+      const result = applyLightnessGap(primary, secondary, options({ enforceGap: true, minGap: 18 }))
+      expect(result).toBe(secondary)
+    })
+  })
+
+  describe('AC: adjusted output remains valid RGB/HSL/HEX', () => {
+    it('produces a valid hex and rgb for the adjusted HSL', () => {
+      const primary = primaryWithL(0.8)
+      const secondary = secondaryFromHsl(90, 0.6, 0.7)
+      const result = applyLightnessGap(primary, secondary, options({ enforceGap: true, minGap: 30 }))
+      expect(result.hex).toMatch(/^#[0-9a-f]{6}$/)
+      expect(result.rgb.r).toBeGreaterThanOrEqual(0)
+      expect(result.rgb.r).toBeLessThanOrEqual(255)
+      expect(result.rgb.g).toBeGreaterThanOrEqual(0)
+      expect(result.rgb.g).toBeLessThanOrEqual(255)
+      expect(result.rgb.b).toBeGreaterThanOrEqual(0)
+      expect(result.rgb.b).toBeLessThanOrEqual(255)
+      expect(result.hsl).toBeDefined()
+      expect(result.lab).toBeDefined()
+    })
+
+    it('clamps L into [0, 1] when target exceeds boundaries', () => {
+      const primary = primaryWithL(0.95)
+      const secondary = secondaryFromHsl(0, 0.5, 0.93)
+      const result = applyLightnessGap(primary, secondary, options({ enforceGap: true, minGap: 80 }))
+      expect(result.hsl!.l).toBeGreaterThanOrEqual(0)
+      expect(result.hsl!.l).toBeLessThanOrEqual(1)
+    })
+  })
+
+  describe('AC: adjusted colors are marked with source=adjusted', () => {
+    it('marks an enforced adjustment with source=adjusted', () => {
+      const primary = primaryWithL(0.7)
+      const secondary = secondaryFromHsl(0, 0.5, 0.6)
+      const result = applyLightnessGap(primary, secondary, options({ enforceGap: true, minGap: 18 }))
+      expect(result.source).toBe('adjusted')
+    })
+  })
+
+  describe('AC: tolerance for secondary without HSL', () => {
+    it('returns the secondary unchanged when HSL is missing', () => {
+      const primary = primaryWithL(0.5)
+      const secondary: import('../../src/core/types.js').ExtractedColor = {
+        hex: '#000000',
+        rgb: { r: 0, g: 0, b: 0 },
+        role: 'secondary',
+        source: 'cluster',
+      }
+      const result = applyLightnessGap(primary, secondary, options({ enforceGap: true, minGap: 18 }))
+      expect(result).toBe(secondary)
     })
   })
 })
