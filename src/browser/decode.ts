@@ -109,6 +109,53 @@ export function sampleImageBitmap(
   return decodeCanvasResult(result)
 }
 
+export function sampleCanvasElement(
+  canvas: HTMLCanvasElement,
+  sampleSize: number,
+): DecodedPixels {
+  if (canvas.width === 0 || canvas.height === 0) {
+    throw new ColorExtractorError(
+      'COLOR_EXTRACTOR_DECODE_FAILED',
+      'Canvas has zero dimensions and cannot be decoded.',
+    )
+  }
+  try {
+    const result = sampleImageToCanvas(canvas, canvas.width, canvas.height, sampleSize)
+    return decodeCanvasResult(result)
+  } catch (cause) {
+    if (cause instanceof DOMException && cause.name === 'SecurityError') {
+      throw new ColorExtractorError(
+        'COLOR_EXTRACTOR_CORS_ERROR',
+        'Canvas is tainted by cross-origin content and cannot be read.',
+        { cause },
+      )
+    }
+    throw cause
+  }
+}
+
+export function sampleImageDataInput(
+  imageData: ImageData,
+  sampleSize: number,
+): DecodedPixels {
+  if (imageData.width === 0 || imageData.height === 0) {
+    throw new ColorExtractorError(
+      'COLOR_EXTRACTOR_DECODE_FAILED',
+      'ImageData has zero dimensions and cannot be decoded.',
+    )
+  }
+  return {
+    width: imageData.width,
+    height: imageData.height,
+    channels: 4 as const,
+    data: new Uint8Array(
+      imageData.data.buffer,
+      imageData.data.byteOffset,
+      imageData.data.byteLength,
+    ),
+  }
+}
+
 export async function decodeFileOrBlob(
   input: File | Blob,
   sampleSize: number,

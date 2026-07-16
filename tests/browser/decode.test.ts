@@ -1,5 +1,11 @@
 import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest'
-import { decodeFileOrBlob, sampleImageBitmap, sampleImageElement } from '../../src/browser/decode.js'
+import {
+  decodeFileOrBlob,
+  sampleImageBitmap,
+  sampleImageElement,
+  sampleCanvasElement,
+  sampleImageDataInput,
+} from '../../src/browser/decode.js'
 import { ColorExtractorError } from '../../src/core/errors.js'
 
 class MockImageData {
@@ -154,6 +160,77 @@ describe('sampleImageElement (ADZ-59)', () => {
     } as unknown as HTMLImageElement
 
     expect(() => sampleImageElement(img, 150)).toThrow(ColorExtractorError)
+  })
+})
+
+describe('sampleCanvasElement (ADZ-61)', () => {
+  beforeAll(() => {
+    drawCalls = []
+    vi.stubGlobal('OffscreenCanvas', createMockOffscreenCanvas())
+    vi.stubGlobal('ImageData', MockImageData)
+  })
+
+  afterAll(() => {
+    vi.unstubAllGlobals()
+  })
+
+  it('decodes a canvas element with downsampling', () => {
+    const canvas = { width: 2000, height: 1000 } as HTMLCanvasElement
+    const result = sampleCanvasElement(canvas, 100)
+
+    expect(result.width).toBe(100)
+    expect(result.height).toBe(50)
+    expect(result.channels).toBe(4)
+    expect(result.data).toBeInstanceOf(Uint8Array)
+  })
+
+  it('throws for zero-width canvas', () => {
+    const canvas = { width: 0, height: 100 } as HTMLCanvasElement
+    expect(() => sampleCanvasElement(canvas, 150)).toThrow(ColorExtractorError)
+  })
+
+  it('throws for zero-height canvas', () => {
+    const canvas = { width: 100, height: 0 } as HTMLCanvasElement
+    expect(() => sampleCanvasElement(canvas, 150)).toThrow(ColorExtractorError)
+  })
+})
+
+describe('sampleImageDataInput (ADZ-61)', () => {
+  it('returns pixels from ImageData directly', () => {
+    const data = new Uint8ClampedArray(100 * 80 * 4)
+    const imageData = { data, width: 100, height: 80 } as ImageData
+    const result = sampleImageDataInput(imageData, 150)
+
+    expect(result.width).toBe(100)
+    expect(result.height).toBe(80)
+    expect(result.channels).toBe(4)
+    expect(result.data).toBeInstanceOf(Uint8Array)
+    expect(result.data.length).toBe(100 * 80 * 4)
+  })
+
+  it('returns pixel data with same buffer content', () => {
+    const buffer = new Uint8ClampedArray(16)
+    buffer[0] = 255
+    buffer[1] = 128
+    buffer[2] = 64
+    buffer[3] = 32
+    const imageData = { data: buffer, width: 2, height: 2 } as ImageData
+    const result = sampleImageDataInput(imageData, 150)
+
+    expect(result.data[0]).toBe(255)
+    expect(result.data[1]).toBe(128)
+    expect(result.data[2]).toBe(64)
+    expect(result.data[3]).toBe(32)
+  })
+
+  it('throws for zero-width ImageData', () => {
+    const imageData = { data: new Uint8ClampedArray(0), width: 0, height: 100 } as ImageData
+    expect(() => sampleImageDataInput(imageData, 150)).toThrow(ColorExtractorError)
+  })
+
+  it('throws for zero-height ImageData', () => {
+    const imageData = { data: new Uint8ClampedArray(0), width: 100, height: 0 } as ImageData
+    expect(() => sampleImageDataInput(imageData, 150)).toThrow(ColorExtractorError)
   })
 })
 
