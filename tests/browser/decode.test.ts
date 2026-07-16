@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest'
 import {
   decodeFileOrBlob,
+  decodeRemoteUrl,
   sampleImageBitmap,
   sampleImageElement,
   sampleCanvasElement,
@@ -393,5 +394,78 @@ describe('decodeFileOrBlob (ADZ-54)', () => {
 
       await expect(decodeFileOrBlob(blob, 150)).rejects.toThrow(ColorExtractorError)
     })
+  })
+})
+
+describe('decodeRemoteUrl (ADZ-50)', () => {
+  beforeAll(() => {
+    drawCalls = []
+    vi.stubGlobal('OffscreenCanvas', createMockOffscreenCanvas())
+    vi.stubGlobal('ImageData', MockImageData)
+    vi.stubGlobal('createImageBitmap', vi.fn())
+  })
+
+  afterAll(() => {
+    vi.unstubAllGlobals()
+  })
+
+  it('fetches a URL and decodes the blob', async () => {
+    const mockBlob = new Blob(['fake-image'], { type: 'image/png' })
+    const mockResponse = {
+      ok: true,
+      status: 200,
+      blob: vi.fn().mockResolvedValue(mockBlob),
+    }
+    const mockFetch = vi.fn().mockResolvedValue(mockResponse)
+
+    const mockCreateImageBitmap = vi.fn().mockResolvedValue({
+      width: 100,
+      height: 100,
+      close: vi.fn(),
+    })
+    vi.stubGlobal('fetch', mockFetch)
+    vi.stubGlobal('createImageBitmap', mockCreateImageBitmap)
+
+    const result = await decodeRemoteUrl('https://example.com/image.png', 150)
+
+    expect(mockFetch).toHaveBeenCalledWith('https://example.com/image.png')
+    expect(result.width).toBe(100)
+    expect(result.height).toBe(100)
+    expect(result.channels).toBe(4)
+  })
+
+  it('throws on fetch failure', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Network error')))
+
+    await expect(
+      decodeRemoteUrl('https://example.com/image.png', 150),
+    ).rejects.toThrow(ColorExtractorError)
+  })
+
+  it('throws on non-2xx status', async () => {
+    const mockResponse = {
+      ok: false,
+      status: 404,
+      blob: vi.fn(),
+    }
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(mockResponse))
+
+    await expect(
+      decodeRemoteUrl('https://example.com/image.png', 150),
+    ).rejects.toThrow(ColorExtractorError)
+  })
+
+  it('throws on empty body', async () => {
+    const mockBlob = new Blob([], { type: '' })
+    const mockResponse = {
+      ok: true,
+      status: 200,
+      blob: vi.fn().mockResolvedValue(mockBlob),
+    }
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(mockResponse))
+
+    await expect(
+      decodeRemoteUrl('https://example.com/image.png', 150),
+    ).rejects.toThrow(ColorExtractorError)
   })
 })

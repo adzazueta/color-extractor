@@ -156,6 +156,49 @@ export function sampleImageDataInput(
   }
 }
 
+export async function decodeRemoteUrl(
+  url: string,
+  sampleSize: number,
+): Promise<DecodedPixels> {
+  let response: Response
+  try {
+    response = await fetch(url)
+  } catch (cause) {
+    throw new ColorExtractorError(
+      'COLOR_EXTRACTOR_FETCH_FAILED',
+      `Failed to fetch remote URL: ${url}.`,
+      { cause },
+    )
+  }
+
+  if (!response.ok) {
+    throw new ColorExtractorError(
+      'COLOR_EXTRACTOR_FETCH_FAILED',
+      `Remote fetch to ${url} failed with status ${response.status}.`,
+    )
+  }
+
+  let blob: Blob
+  try {
+    blob = await response.blob()
+  } catch (cause) {
+    throw new ColorExtractorError(
+      'COLOR_EXTRACTOR_DECODE_FAILED',
+      `Failed to read response body from ${url} as blob.`,
+      { cause },
+    )
+  }
+
+  if (blob.size === 0) {
+    throw new ColorExtractorError(
+      'COLOR_EXTRACTOR_FETCH_FAILED',
+      `Remote fetch to ${url} returned an empty body.`,
+    )
+  }
+
+  return decodeFileOrBlob(blob, sampleSize)
+}
+
 export async function decodeFileOrBlob(
   input: File | Blob,
   sampleSize: number,

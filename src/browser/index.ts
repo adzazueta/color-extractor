@@ -7,6 +7,7 @@ import type { BrowserExtractColorsInput } from './types.js'
 import { detectBrowserInputKind } from './detect.js'
 import {
   decodeFileOrBlob,
+  decodeRemoteUrl,
   sampleImageBitmap,
   sampleImageElement,
   sampleCanvasElement,
@@ -96,6 +97,14 @@ export async function extractColors(
 
   if (kind === 'imageData') {
     const decoded = sampleImageDataInput(input as ImageData, resolved.sampleSize)
+    return extractColorsFromPixels(
+      { data: decoded.data, width: decoded.width, height: decoded.height },
+      options,
+    )
+  }
+
+  if (kind === 'url') {
+    const decoded = await decodeRemoteUrl(input as string, resolved.sampleSize)
     return extractColorsFromPixels(
       { data: decoded.data, width: decoded.width, height: decoded.height },
       options,
