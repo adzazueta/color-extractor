@@ -69,7 +69,7 @@ function computeResizeTarget(
 export async function decodeBufferToPixels(
   bytes: Buffer | Uint8Array,
   sampleSize: number,
-  options: Pick<DecodeOptions, 'respectOrientation'>,
+  options: Pick<DecodeOptions, 'respectOrientation' | 'maxPixels'>,
 ): Promise<DecodedPixels> {
   if (!Number.isInteger(sampleSize) || sampleSize <= 0) {
     throw new ColorExtractorError(
@@ -126,6 +126,16 @@ export async function decodeBufferToPixels(
 
   const physicalWidth = doRotate ? storageHeight : storageWidth
   const physicalHeight = doRotate ? storageWidth : storageHeight
+
+  const maxPixels = options.maxPixels ?? 25_000_000
+  const totalPixels = physicalWidth * physicalHeight
+  if (totalPixels > maxPixels) {
+    throw new ColorExtractorError(
+      'COLOR_EXTRACTOR_IMAGE_TOO_LARGE',
+      `Image is too large (${totalPixels} pixels, max ${maxPixels}).`,
+      { cause: { width: physicalWidth, height: physicalHeight, maxPixels } },
+    )
+  }
 
   // Step 4: apply EXIF rotation explicitly. rotate(0) is a no-op but keeps
   // the pipeline shape uniform.

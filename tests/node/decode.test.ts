@@ -200,3 +200,26 @@ describe('isSharpPipeline (ADZ-71)', () => {
     expect(_internalIsSharpPipelineForTests(42)).toBe(false)
   })
 })
+
+describe('maxPixels enforcement (ADZ-64)', () => {
+  it('throws COLOR_EXTRACTOR_IMAGE_TOO_LARGE when image exceeds maxPixels', async () => {
+    const png = await makePng(10, 10, { r: 200, g: 30, b: 30 })
+    await expect(
+      decodeBufferToPixels(png, 150, { respectOrientation: true, maxPixels: 50 }),
+    ).rejects.toMatchObject({ code: 'COLOR_EXTRACTOR_IMAGE_TOO_LARGE' })
+  })
+
+  it('succeeds when image is within maxPixels limit', async () => {
+    const png = await makePng(10, 10, { r: 200, g: 30, b: 30 })
+    const result = await decodeBufferToPixels(png, 150, { respectOrientation: true, maxPixels: 200 })
+    expect(result.width).toBe(10)
+    expect(result.height).toBe(10)
+  })
+
+  it('defaults to 25 MP when maxPixels is omitted', async () => {
+    const png = await makePng(10, 10, { r: 200, g: 30, b: 30 })
+    const result = await decodeBufferToPixels(png, 150, { respectOrientation: true })
+    expect(result.width).toBe(10)
+    expect(result.height).toBe(10)
+  })
+})
