@@ -9,7 +9,7 @@ const REDIRECT_STATUSES = new Set([301, 302, 303, 307, 308])
 
 export type ProtocolValidator = (
   href: string,
-  options?: Pick<RemoteOptions, 'allowedProtocols'>,
+  allowed?: readonly string[],
 ) => ParsedRemoteUrl
 
 export type PublicHostValidator = (
@@ -17,7 +17,8 @@ export type PublicHostValidator = (
   options: Pick<RemoteOptions, 'allowPrivateNetworks'>,
 ) => void
 
-const defaultProtocolValidator: ProtocolValidator = assertAllowedProtocol
+const defaultProtocolValidator: ProtocolValidator = (href, allowed) =>
+  assertAllowedProtocol(href, allowed)
 const defaultPublicHostValidator: PublicHostValidator = assertPublicHostnameSync
 
 export interface FollowedRedirectsResult {
@@ -56,9 +57,7 @@ export async function followRedirects(
   let currentUrl = startUrl
   const chain: string[] = []
   for (let hop = 0; hop <= maxRedirects; hop++) {
-    const parsed = options.allowedProtocols
-      ? validateProtocol(currentUrl, { allowedProtocols: options.allowedProtocols })
-      : validateProtocol(currentUrl)
+    const parsed = validateProtocol(currentUrl, options.allowedProtocols)
     validatePublicHost(parsed, { allowPrivateNetworks: options.allowPrivateNetworks ?? false })
 
     let response: Response

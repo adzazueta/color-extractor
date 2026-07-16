@@ -3,14 +3,22 @@ import { ColorExtractorError } from '../../src/core/errors.js'
 import { followRedirects, parseLocationHeader } from '../../src/node/redirects.js'
 import type { Fetcher } from '../../src/node/fetch.js'
 
-function redirectFetch(map: Record<string, { status: number; location: string } | { status: number; body: Uint8Array; contentType?: string }>): Fetcher {
+type RedirectEntry = { status: number; location: string }
+type BodyEntry = { status: number; body: Uint8Array; contentType?: string }
+type Map = Record<string, RedirectEntry | BodyEntry>
+
+function redirectFetch(map: Map): Fetcher {
   return async (url) => {
-    const entry = map[url]
-    if (!entry) throw new Error(`unexpected URL: ${url}`)
+    const href = typeof url === 'string' ? url : url.toString()
+    const entry = map[href]
+    if (!entry) throw new Error(`unexpected URL: ${href}`)
     if ('location' in entry) {
       return new Response(null, { status: entry.status, headers: { location: entry.location } })
     }
-    return new Response(Buffer.from(entry.body), { status: entry.status, headers: entry.contentType ? { 'content-type': entry.contentType } : undefined })
+    return new Response(Buffer.from(entry.body), {
+      status: entry.status,
+      headers: entry.contentType ? { 'content-type': entry.contentType } : undefined,
+    })
   }
 }
 
@@ -69,13 +77,13 @@ describe('followRedirects (ADZ-57)', () => {
 
   describe('AC: redirect chains beyond the limit fail with typed error', () => {
     it('throws COLOR_EXTRACTOR_UNSAFE_URL after maxRedirects hops', async () => {
-      const map: Record<string, { status: number; location: string }> = {
+      const map: Map = {
         'https://a.com/': { status: 302, location: 'https://b.com/' },
         'https://b.com/': { status: 302, location: 'https://c.com/' },
         'https://c.com/': { status: 302, location: 'https://d.com/' },
-        'https://d.com/': { status: 200, body: new Uint8Array([1]) as never },
+        'https://d.com/': { status: 200, body: new Uint8Array([1]) },
       }
-      const fetcher = redirectFetch(map as never)
+      const fetcher = redirectFetch(map)
       let threw = false
       try {
         await followRedirects('https://a.com/', { maxRedirects: 2 }, fetcher)
