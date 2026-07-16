@@ -3,6 +3,8 @@ import type { ExtractColorsOptions } from '../core/options.js'
 import type { ExtractColorsResult } from '../core/result.js'
 import { resolveOptions } from '../core/defaults.js'
 import type { NodeExtractColorsInput } from './types.js'
+export { detectNodeInputKind } from './detect.js'
+export type { NodeInputKind } from './detect.js'
 
 export const VERSION = '0.1.0'
 export type { NodeExtractColorsInput } from './types.js'
