@@ -252,6 +252,25 @@ describe('assertPublicHostname async (ADZ-73)', () => {
     })
   })
 
+  describe('AC: Finding #2 — empty DNS resolution is rejected', () => {
+    it('throws when the resolver returns an empty array', async () => {
+      const parsed = parseRemoteUrl('https://empty.test/x.png')
+      let threw = false
+      try {
+        await assertPublicHostname(
+          parsed,
+          { allowPrivateNetworks: false },
+          async () => [],
+        )
+      } catch (e) {
+        threw = true
+        expect((e as ColorExtractorError).code).toBe('COLOR_EXTRACTOR_UNSAFE_URL')
+        expect((e as Error).message).toMatch(/empty address list/)
+      }
+      expect(threw).toBe(true)
+    })
+  })
+
   describe('AC: resolver failures are converted to typed errors', () => {
     it('rejects when the resolver throws', async () => {
       const parsed = parseRemoteUrl('https://no-such-host.test/x.png')

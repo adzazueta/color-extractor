@@ -181,6 +181,14 @@ export async function assertPublicHostname(
       { cause: err },
     )
   }
+  if (resolved.length === 0) {
+    throw new ColorExtractorError(
+      'COLOR_EXTRACTOR_UNSAFE_URL',
+      `Hostname "${host}" resolved to an empty address list; blocked.`,
+      { cause: { hostname: host } },
+    )
+  }
+
   for (const entry of resolved) {
     if (isLocalHostname(entry.address)) {
       throw new ColorExtractorError(

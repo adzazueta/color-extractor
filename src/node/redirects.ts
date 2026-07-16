@@ -1,11 +1,7 @@
 import { ColorExtractorError } from '../core/errors.js'
-import type { Fetcher } from './fetch.js'
-import { assertAllowedProtocol, parseRemoteUrl, type ParsedRemoteUrl } from './security.js'
-import {
-  assertPublicHostname,
-  type ResolveHostname,
-} from './security-private.js'
-import type { RemoteOptions } from '../core/options.js'
+import { assertAllowedProtocol, type ParsedRemoteUrl } from './security.js'
+import { safeCancelBody } from './fetch.js'
+import type { ResolveAndFetch } from './http-client.js'
 
 const DEFAULT_MAX_REDIRECTS = 3
 const DEFAULT_TIMEOUT_MS = 10_000
@@ -39,19 +35,7 @@ export interface FollowRedirectsOptions {
   readonly timeoutMs?: number
   readonly allowPrivateNetworks?: boolean
   readonly allowedProtocols?: readonly string[]
-  readonly resolveHostname?: ResolveHostname
-  readonly fetcher?: Fetcher
-}
-
-const noopResolver: ResolveHostname = async (hostname: string) => {
-  // Default: treat any unresolvable hostname as blocked (fail closed) when
-  // the caller did not provide a real resolver. The Phase 7 wiring will inject
-  // node:dns.lookup here.
-  void hostname
-  throw new ColorExtractorError(
-    'COLOR_EXTRACTOR_UNSAFE_URL',
-    'Hostname resolution is not configured for the redirect follow path. Pass resolveHostname in tests; production callers must supply a DNS resolver.',
-  )
+  readonly resolveAndFetch?: ResolveAndFetch
 }
 
 export async function followRedirects(
@@ -75,14 +59,13 @@ export async function followRedirects(
     )
   }
 
-  const fetcher = options.fetcher
-  if (!fetcher) {
+  const resolveAndFetch = options.resolveAndFetch
+  if (!resolveAndFetch) {
     throw new ColorExtractorError(
       'COLOR_EXTRACTOR_DECODE_FAILED',
-      'followRedirects requires a fetcher. Pass { fetcher } in production or in tests.',
+      'followRedirects requires a resolveAndFetch. Pass { resolveAndFetch } in production or in tests.',
     )
   }
-  const resolver = options.resolveHostname ?? noopResolver
 
   const controller = new AbortController()
   const timeoutHandle = setTimeout(() => {
@@ -94,8 +77,6 @@ export async function followRedirects(
     )
   }, timeoutMs)
 
-  const hostOptions = { allowPrivateNetworks: options.allowPrivateNetworks ?? false }
-
   try {
     let currentUrl = startUrl
     const chain: string[] = []
@@ -103,11 +84,10 @@ export async function followRedirects(
       const parsed = options.allowedProtocols
         ? assertAllowedProtocol(currentUrl, options.allowedProtocols)
         : assertAllowedProtocol(currentUrl)
-      await assertPublicHostname(parsed, hostOptions, resolver)
 
       let response: Response
       try {
-        response = await fetcher(parsed.href, { signal: controller.signal, redirect: 'manual' })
+        response = await resolveAndFetch(parsed.href, controller.signal)
       } catch (err) {
         if (err instanceof ColorExtractorError) throw err
         if ((err as { name?: string })?.name === 'AbortError') {
@@ -147,6 +127,7 @@ export async function followRedirects(
         )
       }
 
+      await safeCancelBody(response)
       chain.push(parsed.href)
       currentUrl = location
     }
@@ -158,14 +139,5 @@ export async function followRedirects(
     )
   } finally {
     clearTimeout(timeoutHandle)
-  }
-}
-
-export async function safeCancelBody(response: Response): Promise<void> {
-  if (!response.body) return
-  try {
-    await response.body.cancel()
-  } catch {
-    // best effort
   }
 }
