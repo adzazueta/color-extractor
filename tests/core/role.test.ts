@@ -11,6 +11,7 @@ import {
   buildHarmonyFallback,
   selectSecondary,
   buildPalette,
+  filterByContrastThreshold,
 } from '../../src/core/role.js'
 import type { Cluster } from '../../src/core/kmeans.js'
 import { DEFAULT_OPTIONS, type ResolvedOptions } from '../../src/core/defaults.js'
@@ -732,6 +733,83 @@ describe('buildPalette (ADZ-46)', () => {
         expect(c.role).toBe('palette')
         expect(c.source).toBe('cluster')
       }
+    })
+  })
+})
+
+describe('filterByContrastThreshold (ADZ-49)', () => {
+  function options(overrides: { contrastMinDE?: number } = {}): ResolvedOptions {
+    return {
+      ...DEFAULT_OPTIONS,
+      secondary: {
+        fallback: 'harmony',
+        contrastMinDE: overrides.contrastMinDE ?? 20,
+        harmonyFallbackDeg: 150,
+      },
+    }
+  }
+
+  describe('AC: candidates below contrastMinDE are excluded from passing set', () => {
+    it('puts a low-contrast candidate into rejected', () => {
+      const primary = labCluster(50, 50, 0, 100)
+      const close = labCluster(55, 50, 0, 100, 0.1)
+      const result = filterByContrastThreshold(primary, [close], options())
+      expect(result.passing).toHaveLength(0)
+      expect(result.rejected).toHaveLength(1)
+      expect(result.rejected[0]).toBe(close)
+    })
+
+    it('puts a high-contrast candidate into passing', () => {
+      const primary = labCluster(50, 50, 0, 100)
+      const far = labCluster(95, 0, 50, 100, 0.1)
+      const result = filterByContrastThreshold(primary, [far], options())
+      expect(result.passing).toHaveLength(1)
+      expect(result.passing[0]).toBe(far)
+      expect(result.rejected).toHaveLength(0)
+    })
+
+    it('partitions a mixed batch by contrast threshold', () => {
+      const primary = labCluster(50, 50, 0, 100)
+      const a = labCluster(95, 0, 50, 100, 0.1)
+      const b = labCluster(55, 50, 0, 100, 0.1)
+      const c = labCluster(60, 0, 50, 100, 0.1)
+      const result = filterByContrastThreshold(primary, [a, b, c], options())
+      expect(result.passing).toContain(a)
+      expect(result.passing).toContain(c)
+      expect(result.rejected).toContain(b)
+    })
+  })
+
+  describe('AC: integration with selectSecondary in normal mode', () => {
+    it('a low-contrast candidate is not selected in normal mode', () => {
+      const primary = labCluster(50, 50, 0, 100)
+      const tooClose = labCluster(55, 50, 0, 100, 0.1)
+      const result = selectSecondary(primary, [tooClose], options())
+      expect(result).not.toBeNull()
+      expect(result!.source).toBe('fallback')
+    })
+
+    it('preserves rejected candidates so nearest mode can still pick them', () => {
+      const primary = labCluster(50, 50, 0, 100)
+      const a = labCluster(55, 50, 0, 100, 0.1)
+      const b = labCluster(60, 50, 0, 200, 0.2)
+      const filtered = filterByContrastThreshold(primary, [a, b], options())
+      const result = selectSecondary(primary, [...filtered.passing, ...filtered.rejected], {
+        ...options(),
+        secondary: { fallback: 'nearest', contrastMinDE: 20, harmonyFallbackDeg: 150 },
+      })
+      expect(result).not.toBeNull()
+      expect(result!.source).toBe('fallback')
+      expect(result!.lab).toEqual(b.lab)
+    })
+  })
+
+  describe('AC: empty input is handled', () => {
+    it('returns empty arrays for empty candidates', () => {
+      const primary = labCluster(50, 50, 0, 100)
+      const result = filterByContrastThreshold(primary, [], options())
+      expect(result.passing).toEqual([])
+      expect(result.rejected).toEqual([])
     })
   })
 })

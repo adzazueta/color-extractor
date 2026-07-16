@@ -228,6 +228,29 @@ export function selectSecondary(
   }
 }
 
+export interface ContrastFilterResult {
+  readonly passing: readonly Cluster[]
+  readonly rejected: readonly Cluster[]
+}
+
+export function filterByContrastThreshold(
+  primary: Cluster,
+  candidates: readonly Cluster[],
+  options: ResolvedOptions,
+): ContrastFilterResult {
+  const minDe = options.secondary.contrastMinDE!
+  const passing: Cluster[] = []
+  const rejected: Cluster[] = []
+  for (const c of candidates) {
+    if (labDistance(primary.lab, c.lab) >= minDe) {
+      passing.push(c)
+    } else {
+      rejected.push(c)
+    }
+  }
+  return { passing, rejected }
+}
+
 export function buildPrimaryColor(cluster: Cluster): import('./types.js').ExtractedColor {
   return {
     hex: FALLBACK_HEX,

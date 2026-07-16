@@ -56,6 +56,7 @@ export {
   buildPalette,
   buildPrimaryColor,
   contrastBoost,
+  filterByContrastThreshold,
   findPrimaryIndex,
   hueWeight,
   isLowChromaCandidate,
@@ -63,5 +64,6 @@ export {
   scoreSecondary,
   selectSecondary,
   type BuildPaletteOptions,
+  type ContrastFilterResult,
   type RoleAssignment,
 } from './role.js'
