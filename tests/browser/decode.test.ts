@@ -474,7 +474,6 @@ describe('decodeRemoteUrl (ADZ-50)', () => {
   function stubAbortableFetch(resolvedValue: unknown) {
     mockFetch = vi.fn().mockImplementation((url: string, init?: { signal?: AbortSignal }) => {
       if (init?.signal) {
-        // Attach abort listener to prevent AbortError propagation in test
         init.signal.addEventListener('abort', () => {})
       }
       return Promise.resolve(resolvedValue)
@@ -565,5 +564,73 @@ describe('decodeRemoteUrl (ADZ-50)', () => {
     await expect(
       decodeRemoteUrl('https://example.com/image.png', 150, MAX_PIXELS, TIMEOUT_MS, MAX_BYTES),
     ).rejects.toThrow(ColorExtractorError)
+  })
+
+  it('throws COLOR_EXTRACTOR_UNSUPPORTED_INPUT for invalid timeoutMs (0)', async () => {
+    await expect(
+      decodeRemoteUrl('https://example.com/image.png', 150, MAX_PIXELS, 0, MAX_BYTES),
+    ).rejects.toThrowError(
+      expect.objectContaining({ code: 'COLOR_EXTRACTOR_UNSUPPORTED_INPUT' }),
+    )
+  })
+
+  it('throws COLOR_EXTRACTOR_UNSUPPORTED_INPUT for invalid timeoutMs (negative)', async () => {
+    await expect(
+      decodeRemoteUrl('https://example.com/image.png', 150, MAX_PIXELS, -1, MAX_BYTES),
+    ).rejects.toThrowError(
+      expect.objectContaining({ code: 'COLOR_EXTRACTOR_UNSUPPORTED_INPUT' }),
+    )
+  })
+
+  it('throws COLOR_EXTRACTOR_UNSUPPORTED_INPUT for invalid timeoutMs (NaN)', async () => {
+    await expect(
+      decodeRemoteUrl('https://example.com/image.png', 150, MAX_PIXELS, Number.NaN, MAX_BYTES),
+    ).rejects.toThrowError(
+      expect.objectContaining({ code: 'COLOR_EXTRACTOR_UNSUPPORTED_INPUT' }),
+    )
+  })
+
+  it('throws COLOR_EXTRACTOR_UNSUPPORTED_INPUT for invalid maxBytes (0)', async () => {
+    await expect(
+      decodeRemoteUrl('https://example.com/image.png', 150, MAX_PIXELS, TIMEOUT_MS, 0),
+    ).rejects.toThrowError(
+      expect.objectContaining({ code: 'COLOR_EXTRACTOR_UNSUPPORTED_INPUT' }),
+    )
+  })
+
+  it('throws COLOR_EXTRACTOR_UNSUPPORTED_INPUT for invalid maxBytes (negative)', async () => {
+    await expect(
+      decodeRemoteUrl('https://example.com/image.png', 150, MAX_PIXELS, TIMEOUT_MS, -1),
+    ).rejects.toThrowError(
+      expect.objectContaining({ code: 'COLOR_EXTRACTOR_UNSUPPORTED_INPUT' }),
+    )
+  })
+})
+
+describe('decode.maxPixels enforced post-decode (platform limitation)', () => {
+  beforeAll(() => {
+    drawCalls = []
+    vi.stubGlobal('OffscreenCanvas', createMockOffscreenCanvas())
+    vi.stubGlobal('ImageData', MockImageData)
+    vi.stubGlobal('createImageBitmap', vi.fn())
+  })
+
+  afterAll(() => {
+    vi.unstubAllGlobals()
+  })
+
+  it('validates maxPixels after createImageBitmap decodes the image', async () => {
+    vi.stubGlobal(
+      'createImageBitmap',
+      vi.fn().mockResolvedValue({
+        width: 100,
+        height: 100,
+        close: vi.fn(),
+      } as unknown as ImageBitmap),
+    )
+
+    await expect(decodeFileOrBlob(new Blob(['x'.repeat(100)]), 150, 10)).rejects.toThrowError(
+      expect.objectContaining({ code: 'COLOR_EXTRACTOR_IMAGE_TOO_LARGE' }),
+    )
   })
 })

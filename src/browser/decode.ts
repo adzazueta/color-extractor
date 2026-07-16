@@ -210,6 +210,13 @@ export function sampleImageDataInput(
   }
 }
 
+function isAbortError(cause: unknown): boolean {
+  return (
+    cause instanceof DOMException &&
+    (cause.name === 'AbortError' || cause.name === 'TimeoutError')
+  )
+}
+
 export async function decodeRemoteUrl(
   url: string,
   sampleSize: number,
@@ -217,6 +224,21 @@ export async function decodeRemoteUrl(
   timeoutMs: number,
   maxBytes: number,
 ): Promise<DecodedPixels> {
+  if (!Number.isFinite(timeoutMs) || timeoutMs <= 0) {
+    throw new ColorExtractorError(
+      'COLOR_EXTRACTOR_UNSUPPORTED_INPUT',
+      `remote.timeoutMs must be a positive number, got ${timeoutMs}`,
+      { cause: timeoutMs },
+    )
+  }
+  if (!Number.isFinite(maxBytes) || maxBytes <= 0) {
+    throw new ColorExtractorError(
+      'COLOR_EXTRACTOR_UNSUPPORTED_INPUT',
+      `remote.maxBytes must be a positive number, got ${maxBytes}`,
+      { cause: maxBytes },
+    )
+  }
+
   const controller = new AbortController()
   const timeoutHandle = setTimeout(() => {
     controller.abort(
@@ -232,7 +254,7 @@ export async function decodeRemoteUrl(
     try {
       response = await fetch(url, { signal: controller.signal })
     } catch (cause) {
-      if (cause instanceof DOMException && cause.name === 'AbortError') {
+      if (isAbortError(cause)) {
         throw new ColorExtractorError(
           'COLOR_EXTRACTOR_TIMEOUT',
           `Remote fetch to ${url} aborted after ${timeoutMs}ms.`,
@@ -270,10 +292,22 @@ export async function decodeRemoteUrl(
       let received = 0
       try {
         while (true) {
-          const { done, value } = await reader.read()
-          if (done) break
-          if (value) {
-            received += value.byteLength
+          let result: ReadableStreamReadResult<Uint8Array>
+          try {
+            result = await reader.read()
+          } catch (cause) {
+            if (isAbortError(cause)) {
+              throw new ColorExtractorError(
+                'COLOR_EXTRACTOR_TIMEOUT',
+                `Remote fetch to ${url} timed out while reading body after ${timeoutMs}ms.`,
+                { cause },
+              )
+            }
+            throw cause
+          }
+          if (result.done) break
+          if (result.value) {
+            received += result.value.byteLength
             if (received > maxBytes) {
               await reader.cancel()
               throw new ColorExtractorError(
@@ -282,7 +316,7 @@ export async function decodeRemoteUrl(
                 { cause: { url, maxBytes, received } },
               )
             }
-            chunks.push(value)
+            chunks.push(result.value)
           }
         }
       } finally {
@@ -313,6 +347,19 @@ export async function decodeRemoteUrl(
   }
 }
 
+/**
+ * Decodes a File or Blob into raw pixel data.
+ *
+ * **Platform limitation — `maxPixels` cannot be enforced before decode:**
+ * No browser API provides image dimensions without first decoding (or at least
+ * partially decoding) the image. `createImageBitmap` only surfaces `width` and
+ * `height` after the full bitmap has been allocated, and there is no portable
+ * way to parse format headers (PNG, JPEG, WebP, etc.) for pre-decode validation.
+ * As a result, `maxPixels` is checked *after* `createImageBitmap` completes;
+ * a highly-compressible image (e.g. uniform 10 000×10 000 PNG) will still be
+ * fully decoded into memory before the check rejects it. This is an accepted
+ * trade-off of the browser decode pipeline.
+ */
 export async function decodeFileOrBlob(
   input: File | Blob,
   sampleSize: number,
