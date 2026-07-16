@@ -60,60 +60,82 @@ export async function extractColors(
   input: BrowserExtractColorsInput,
   options?: ExtractColorsOptions,
 ): Promise<ExtractColorsResult> {
-  const resolved = resolveOptions(options)
-  const kind = detectBrowserInputKind(input)
+  try {
+    const resolved = resolveOptions(options)
+    const kind = detectBrowserInputKind(input)
 
-  if (kind === 'file' || kind === 'blob') {
-    const decoded = await decodeFileOrBlob(input as File | Blob, resolved.sampleSize)
-    return extractColorsFromPixels(
-      { data: decoded.data, width: decoded.width, height: decoded.height },
-      options,
+    if (kind === 'file' || kind === 'blob') {
+      const decoded = await decodeFileOrBlob(input as File | Blob, resolved.sampleSize)
+      return extractColorsFromPixels(
+        { data: decoded.data, width: decoded.width, height: decoded.height },
+        options,
+      )
+    }
+
+    if (kind === 'image') {
+      const decoded = sampleImageElement(input as HTMLImageElement, resolved.sampleSize)
+      return extractColorsFromPixels(
+        { data: decoded.data, width: decoded.width, height: decoded.height },
+        options,
+      )
+    }
+
+    if (kind === 'bitmap') {
+      const decoded = sampleImageBitmap(input as ImageBitmap, resolved.sampleSize)
+      return extractColorsFromPixels(
+        { data: decoded.data, width: decoded.width, height: decoded.height },
+        options,
+      )
+    }
+
+    if (kind === 'canvas') {
+      const decoded = sampleCanvasElement(input as HTMLCanvasElement, resolved.sampleSize)
+      return extractColorsFromPixels(
+        { data: decoded.data, width: decoded.width, height: decoded.height },
+        options,
+      )
+    }
+
+    if (kind === 'imageData') {
+      const decoded = sampleImageDataInput(input as ImageData, resolved.sampleSize)
+      return extractColorsFromPixels(
+        { data: decoded.data, width: decoded.width, height: decoded.height },
+        options,
+      )
+    }
+
+    if (kind === 'url') {
+      const decoded = await decodeRemoteUrl(input as string, resolved.sampleSize)
+      return extractColorsFromPixels(
+        { data: decoded.data, width: decoded.width, height: decoded.height },
+        options,
+      )
+    }
+
+    throw new ColorExtractorError(
+      'COLOR_EXTRACTOR_UNSUPPORTED_INPUT',
+      `Browser input kind '${kind}' is not yet supported.`,
+      { cause: input },
+    )
+  } catch (cause) {
+    if (cause instanceof ColorExtractorError) {
+      throw cause
+    }
+    throw new ColorExtractorError(
+      'COLOR_EXTRACTOR_DECODE_FAILED',
+      'Unexpected error during color extraction.',
+      { cause },
     )
   }
-
-  if (kind === 'image') {
-    const decoded = sampleImageElement(input as HTMLImageElement, resolved.sampleSize)
-    return extractColorsFromPixels(
-      { data: decoded.data, width: decoded.width, height: decoded.height },
-      options,
-    )
-  }
-
-  if (kind === 'bitmap') {
-    const decoded = sampleImageBitmap(input as ImageBitmap, resolved.sampleSize)
-    return extractColorsFromPixels(
-      { data: decoded.data, width: decoded.width, height: decoded.height },
-      options,
-    )
-  }
-
-  if (kind === 'canvas') {
-    const decoded = sampleCanvasElement(input as HTMLCanvasElement, resolved.sampleSize)
-    return extractColorsFromPixels(
-      { data: decoded.data, width: decoded.width, height: decoded.height },
-      options,
-    )
-  }
-
-  if (kind === 'imageData') {
-    const decoded = sampleImageDataInput(input as ImageData, resolved.sampleSize)
-    return extractColorsFromPixels(
-      { data: decoded.data, width: decoded.width, height: decoded.height },
-      options,
-    )
-  }
-
-  if (kind === 'url') {
-    const decoded = await decodeRemoteUrl(input as string, resolved.sampleSize)
-    return extractColorsFromPixels(
-      { data: decoded.data, width: decoded.width, height: decoded.height },
-      options,
-    )
-  }
-
-  throw new ColorExtractorError(
-    'COLOR_EXTRACTOR_UNSUPPORTED_INPUT',
-    `Browser input kind '${kind}' is not yet supported.`,
-    { cause: input },
-  )
 }
+
+export type { DecodedPixels } from './decode.js'
+export {
+  decodeFileOrBlob,
+  decodeRemoteUrl,
+  sampleImageBitmap,
+  sampleImageElement,
+  sampleCanvasElement,
+  sampleImageDataInput,
+} from './decode.js'
+export { detectBrowserInputKind, type BrowserInputKind } from './detect.js'
