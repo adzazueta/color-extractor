@@ -2,8 +2,11 @@ import { ColorExtractorError } from '../core/errors.js'
 import type { ExtractColorsOptions } from '../core/options.js'
 import type { ExtractColorsResult } from '../core/result.js'
 import { resolveOptions } from '../core/defaults.js'
+import { runExtractionPipeline } from '../core/extract.js'
 import type { NodeExtractColorsInput } from './types.js'
 import { detectNodeInputKind } from './detect.js'
+import { decodeBufferToPixels } from './decode.js'
+import { loadLocalPath } from './load.js'
 
 export const VERSION = '0.1.0'
 export type { NodeExtractColorsInput } from './types.js'
@@ -55,10 +58,6 @@ export async function extractColors(
     )
   }
 
-  // Phase 5: validate the input kind and resolve options. The actual decode
-  // pipeline (bytes → core extraction) is wired in Phase 7 (Node Decode
-  // Pipeline). Until then we surface a clear typed error so consumers do not
-  // silently receive a placeholder.
   const kind = detectNodeInputKind(input)
   if (kind === 'unsupported') {
     throw new ColorExtractorError(
@@ -67,11 +66,43 @@ export async function extractColors(
       { cause: input },
     )
   }
-  resolveOptions(options)
 
-  throw new ColorExtractorError(
-    'COLOR_EXTRACTOR_UNSUPPORTED_INPUT',
-    'Node input decoding is not implemented yet. The Node decode pipeline is added in Phase 7 (Node Decode Pipeline).',
-    { cause: { kind } },
+  const resolved = resolveOptions(options)
+
+  let bytes: Buffer | Uint8Array
+  switch (kind) {
+    case 'buffer':
+      bytes = input as Buffer
+      break
+    case 'bytes':
+      bytes = input as Uint8Array
+      break
+    case 'arrayBuffer':
+      bytes = new Uint8Array(input as ArrayBuffer)
+      break
+    case 'localPath':
+      bytes = await loadLocalPath(input as string)
+      break
+    case 'remoteUrl':
+      throw new ColorExtractorError(
+        'COLOR_EXTRACTOR_UNSUPPORTED_INPUT',
+        'Remote URL decoding is not yet implemented (planned for later in Phase 7).',
+        { cause: { kind } },
+      )
+    default:
+      throw new ColorExtractorError(
+        'COLOR_EXTRACTOR_UNSUPPORTED_INPUT',
+        'Node input must be a Buffer, Uint8Array, ArrayBuffer, http(s) URL string, or local path string.',
+        { cause: input },
+      )
+  }
+
+  const pixels = await decodeBufferToPixels(bytes, resolved.sampleSize, {
+    respectOrientation: resolved.decode.respectOrientation,
+  })
+
+  return runExtractionPipeline(
+    { data: pixels.data, width: pixels.width, height: pixels.height },
+    options,
   )
 }
