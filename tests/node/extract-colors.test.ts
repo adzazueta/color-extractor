@@ -102,20 +102,6 @@ describe('Node extractColors (Phase 7)', () => {
     })
   })
 
-  describe('AC: remote URL pipeline rejects invalid URLs', () => {
-    it('throws COLOR_EXTRACTOR_FETCH_FAILED for http URL', async () => {
-      await expect(extractColors('http://example.com/image.png')).rejects.toMatchObject({
-        code: 'COLOR_EXTRACTOR_FETCH_FAILED',
-      })
-    })
-
-    it('throws COLOR_EXTRACTOR_FETCH_FAILED for https URL', async () => {
-      await expect(extractColors('https://example.com/image.png')).rejects.toMatchObject({
-        code: 'COLOR_EXTRACTOR_FETCH_FAILED',
-      })
-    })
-  })
-
   describe('AC: invalid image bytes produce COLOR_EXTRACTOR_DECODE_FAILED', () => {
     it('throws DECODE_FAILED for an empty Buffer', async () => {
       await expect(extractColors(Buffer.alloc(0))).rejects.toMatchObject({

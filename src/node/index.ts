@@ -145,6 +145,7 @@ async function fetchRemoteWithPipeline(
   // 3. Read response body with maxBytes enforcement and timeout
   const maxBytes = resolved.remote.maxBytes ?? 10_000_000
   if (!Number.isFinite(maxBytes) || maxBytes <= 0) {
+    await safeCancelBody(finalResponse)
     throw new ColorExtractorError(
       'COLOR_EXTRACTOR_UNSUPPORTED_INPUT',
       `remote.maxBytes must be a positive finite number, got ${maxBytes}`,
@@ -172,6 +173,7 @@ async function fetchRemoteWithPipeline(
     let received = 0
 
     while (true) {
+      const { done, value } = await reader.read()
       if (bodyController.signal.aborted) {
         throw new ColorExtractorError(
           'COLOR_EXTRACTOR_TIMEOUT',
@@ -179,8 +181,6 @@ async function fetchRemoteWithPipeline(
           { cause: { url: finalUrl, timeoutMs } },
         )
       }
-
-      const { done, value } = await reader.read()
       if (done) break
       if (!value) continue
 
