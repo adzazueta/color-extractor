@@ -42,6 +42,13 @@ function isIPv6(s: string): boolean {
   return s.includes(':')
 }
 
+function stripIPv6Brackets(hostname: string): string {
+  if (hostname.startsWith('[') && hostname.endsWith(']')) {
+    return hostname.slice(1, -1)
+  }
+  return hostname
+}
+
 function toResponseHeaders(
   incoming: Record<string, string | string[] | undefined>,
 ): Headers {
@@ -57,6 +64,39 @@ function toResponseHeaders(
     }
   }
   return headers
+}
+
+function lookupWithAbortSignal(
+  lookupFn: LookupFunction,
+  hostname: string,
+  signal: AbortSignal,
+): Promise<Array<{ address: string; family: number }>> {
+  if (signal.aborted) {
+    const err = new Error('The operation was aborted')
+    err.name = 'AbortError'
+    return Promise.reject(err)
+  }
+
+  return new Promise((resolveLookup, reject) => {
+    const onAbort = (): void => {
+      const err = new Error('The operation was aborted')
+      err.name = 'AbortError'
+      reject(err)
+    }
+
+    signal.addEventListener('abort', onAbort, { once: true })
+
+    lookupFn(hostname, { all: true }).then(
+      (result) => {
+        signal.removeEventListener('abort', onAbort)
+        resolveLookup(result)
+      },
+      (err) => {
+        signal.removeEventListener('abort', onAbort)
+        reject(err)
+      },
+    )
+  })
 }
 
 export function createResolveAndFetch(
@@ -80,7 +120,7 @@ export function createResolveAndFetch(
       }
       addresses = [{ address: hostname, family: isIPv4(hostname) ? 4 : 6 }]
     } else {
-      addresses = await lookup(hostname, { all: true, signal })
+      addresses = await lookupWithAbortSignal(lookup, hostname, signal)
     }
 
     if (addresses.length === 0) {
@@ -103,7 +143,8 @@ export function createResolveAndFetch(
       }
     }
 
-    const targetIp = addresses[0]!.address
+    const rawIp = addresses[0]!.address
+    const targetIp = stripIPv6Brackets(rawIp)
     const isHttps = parsedUrl.protocol === 'https:'
     const port = parsedUrl.port ? Number(parsedUrl.port) : isHttps ? 443 : 80
     const path = parsedUrl.pathname + parsedUrl.search
@@ -124,13 +165,38 @@ export function createResolveAndFetch(
     return new Promise<Response>((resolve, reject) => {
       const mod = isHttps ? https : http
       const req = mod.request(httpOptions as HttpReqOptions, (res) => {
+        let cancelled = false
         const body = new ReadableStream({
           start(controller) {
             res.on('data', (chunk: Buffer) => {
-              controller.enqueue(new Uint8Array(chunk))
+              if (cancelled) return
+              try {
+                controller.enqueue(new Uint8Array(chunk))
+              } catch {
+                // controller already errored/closed
+              }
             })
-            res.on('end', () => controller.close())
-            res.on('error', (err: Error) => controller.error(err))
+            res.on('end', () => {
+              if (cancelled) return
+              try {
+                controller.close()
+              } catch {
+                // already closed
+              }
+            })
+            res.on('error', (err: Error) => {
+              if (cancelled) return
+              try {
+                controller.error(err)
+              } catch {
+                // already errored
+              }
+            })
+          },
+          cancel() {
+            cancelled = true
+            res.destroy()
+            req.destroy()
           },
         })
         const headers = toResponseHeaders(

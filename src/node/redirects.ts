@@ -1,7 +1,7 @@
 import { ColorExtractorError } from '../core/errors.js'
 import { assertAllowedProtocol, type ParsedRemoteUrl } from './security.js'
 import { safeCancelBody } from './fetch.js'
-import type { ResolveAndFetch } from './http-client.js'
+import { defaultResolveAndFetch, type ResolveAndFetch } from './http-client.js'
 
 const DEFAULT_MAX_REDIRECTS = 3
 const DEFAULT_TIMEOUT_MS = 10_000
@@ -59,13 +59,7 @@ export async function followRedirects(
     )
   }
 
-  const resolveAndFetch = options.resolveAndFetch
-  if (!resolveAndFetch) {
-    throw new ColorExtractorError(
-      'COLOR_EXTRACTOR_DECODE_FAILED',
-      'followRedirects requires a resolveAndFetch. Pass { resolveAndFetch } in production or in tests.',
-    )
-  }
+  const resolveAndFetch = options.resolveAndFetch ?? defaultResolveAndFetch
 
   const controller = new AbortController()
   const timeoutHandle = setTimeout(() => {
