@@ -133,6 +133,17 @@ describe('extractColorsFromPixels (e2e pipeline)', () => {
         }
       }
     })
+
+    it('secondary.score is the scoreSecondary value (not the primary score) for cluster-derived secondaries', async () => {
+      const result = await extractColorsFromPixels(
+        makeBicolorPixels(40, 40, { r: 220, g: 30, b: 30 }, { r: 30, g: 220, b: 30 }),
+        { output: { includeScores: true } },
+      )
+      expect(result.secondary).not.toBeNull()
+      expect(result.secondary!.source).toBe('cluster')
+      expect(result.secondary!.score).toBeDefined()
+      expect(result.secondary!.score).toBeGreaterThan(0)
+    })
   })
 
   describe('AC: includeMetadata returns full metadata', () => {
@@ -144,6 +155,7 @@ describe('extractColorsFromPixels (e2e pipeline)', () => {
       expect(result.metadata).toBeDefined()
       expect(result.metadata!.algorithm).toBe('lab-kmeans-chroma-weighted')
       expect(result.metadata!.packageVersion).toBe('0.1.0')
+      expect(result.metadata!.cacheVersion).toBe('3.6')
       expect(result.metadata!.sampleSize).toBe(150)
       expect(result.metadata!.sampledPixels).toBeGreaterThan(0)
       expect(result.metadata!.validPixels).toBeGreaterThan(0)

@@ -11,6 +11,7 @@ import {
   buildPalette,
   buildPrimaryColor,
   findPrimaryIndex,
+  scoreSecondary,
   selectSecondary,
 } from './role.js'
 import { applyOutputFlags, type FullExtractionResult } from './output.js'
@@ -94,7 +95,7 @@ export function runExtractionPipeline(
         metadata: {
           algorithm: 'lab-kmeans-chroma-weighted',
           packageVersion: PACKAGE_VERSION,
-          cacheVersion: '1',
+          cacheVersion: '3.6',
           sampleSize: resolved.sampleSize,
           sampledPixels: samples.length,
           validPixels: validSamples.length,
@@ -119,9 +120,20 @@ export function runExtractionPipeline(
   const primary = buildPrimaryColor(primaryCluster)
   const others = clusters.filter((c) => c.index !== primaryCluster.index)
   const secondaryResult = selectSecondary(primaryCluster, others, resolved)
-  const secondaryColor = secondaryResult
+  let secondaryColor = secondaryResult
     ? applyLightnessGap(primaryCluster, secondaryResult.color, resolved)
     : null
+  if (
+    secondaryResult &&
+    secondaryResult.sourceClusterIndex !== null &&
+    secondaryResult.color.source === 'cluster'
+  ) {
+    const secondaryCluster = clusters.find((c) => c.index === secondaryResult.sourceClusterIndex)
+    if (secondaryCluster) {
+      const ssScore = scoreSecondary(primaryCluster, secondaryCluster, resolved)
+      secondaryColor = { ...secondaryColor!, score: ssScore }
+    }
+  }
 
   const excludeIndices: number[] = [primaryCluster.index]
   if (secondaryResult?.sourceClusterIndex !== null && secondaryResult?.sourceClusterIndex !== undefined) {
@@ -148,7 +160,7 @@ export function runExtractionPipeline(
     metadata: {
       algorithm: 'lab-kmeans-chroma-weighted',
       packageVersion: PACKAGE_VERSION,
-      cacheVersion: '1',
+      cacheVersion: '3.6',
       sampleSize: resolved.sampleSize,
       sampledPixels: samples.length,
       validPixels: validSamples.length,
