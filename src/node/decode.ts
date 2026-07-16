@@ -68,14 +68,34 @@ function computeResizeTarget(
 }
 
 function isSvgBytes(bytes: Buffer | Uint8Array): boolean {
-  if (bytes.length < 4) return false
-  let offset = 0
-  if (bytes[0] === 0xEF && bytes[1] === 0xBB && bytes[2] === 0xBF) {
-    offset = 3
+  const buffer = Buffer.isBuffer(bytes) ? bytes : Buffer.from(bytes)
+  let i = 0
+
+  // Skip BOM
+  if (i < buffer.length && buffer[i] === 0xEF && buffer[i + 1] === 0xBB && buffer[i + 2] === 0xBF) {
+    i += 3
   }
-  if (offset + 4 > bytes.length) return false
-  const prefix = Buffer.from(bytes.buffer, bytes.byteOffset + offset, 4).toString('ascii')
-  return prefix === '<?xm' || prefix === '<svg' || prefix === '<SVG' || prefix === '<?XML'
+  if (i < buffer.length && buffer[i] === 0xFF && buffer[i + 1] === 0xFE) i += 2
+  if (i < buffer.length && buffer[i] === 0xFE && buffer[i + 1] === 0xFF) i += 2
+
+  // Skip whitespace, comments, DOCTYPE, etc. until we find '<'
+  while (i < buffer.length) {
+    if (buffer[i] === 0x3C) {
+      // '<' found - check if it's SVG
+      if (i + 1 >= buffer.length) return false
+
+      const nextChars = new TextDecoder('utf-8').decode(buffer.subarray(i, i + 256))
+      const prefixTrimmed = nextChars.trimStart()
+      if (prefixTrimmed.startsWith('<svg') || prefixTrimmed.startsWith('<SVG') || prefixTrimmed.startsWith('<?xml') || prefixTrimmed.startsWith('<?XML')) {
+        return true
+      } else {
+        return false
+      }
+    }
+    i++
+  }
+
+  return false
 }
 
 export async function decodeBufferToPixels(
@@ -153,6 +173,13 @@ export async function decodeBufferToPixels(
   const physicalHeight = doRotate ? storageWidth : storageHeight
 
   const maxPixels = options.maxPixels ?? 25_000_000
+  if (!Number.isFinite(maxPixels) || maxPixels <= 0) {
+    throw new ColorExtractorError(
+      'COLOR_EXTRACTOR_UNSUPPORTED_INPUT',
+      `maxPixels must be a positive finite number, got ${maxPixels}`,
+      { cause: maxPixels },
+    )
+  }
   const totalPixels = physicalWidth * physicalHeight
   if (totalPixels > maxPixels) {
     throw new ColorExtractorError(
