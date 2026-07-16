@@ -62,11 +62,16 @@ export function runExtractionPipeline(
   const pixels = normalizePixels(toUint8Array(input.data), input.width, input.height, 4)
   const samples = sampleSquareGrid(pixels, resolved.sampleSize)
   const validSamples = samples.filter((p) => passesFilter(p, criteria))
-  const labSamples = convertRgbSamplesToLab(validSamples)
 
-  if (labSamples.length === 0) {
-    return emptyResult()
+  if (validSamples.length === 0) {
+    throw new ColorExtractorError(
+      'COLOR_EXTRACTOR_NO_VALID_PIXELS',
+      'No valid pixels remain after filtering. The image may be fully transparent, fully out of the configured brightness or saturation range, or smaller than the sample grid can cover.',
+      { cause: { sampled: samples.length, passed: 0 } },
+    )
   }
+
+  const labSamples = convertRgbSamplesToLab(validSamples)
 
   const k = Math.min(resolved.kmeans.clusters!, labSamples.length)
   const kmeansResult = kmeans(labSamples, {

@@ -256,12 +256,43 @@ describe('runExtractionPipeline sync variant', () => {
   })
 })
 
-describe('extractColorsFromPixels edge cases', () => {
-  it('returns a fallback primary when no pixel passes the filter', async () => {
+describe('extractColorsFromPixels edge cases (ADZ-65)', () => {
+  it('throws COLOR_EXTRACTOR_NO_VALID_PIXELS when no pixel passes the filter', async () => {
     const transparent = makePixels(4, 4, { r: 128, g: 128, b: 128, a: 0 })
-    const result = await extractColorsFromPixels(transparent)
-    expect(result.primary.source).toBe('fallback')
-    expect(result.secondary).toBeNull()
+    await expect(extractColorsFromPixels(transparent)).rejects.toMatchObject({
+      code: 'COLOR_EXTRACTOR_NO_VALID_PIXELS',
+    })
+  })
+
+  it('throws COLOR_EXTRACTOR_NO_VALID_PIXELS when all pixels are below the brightness range', async () => {
+    const dark = makePixels(4, 4, { r: 0, g: 0, b: 0, a: 255 })
+    await expect(extractColorsFromPixels(dark)).rejects.toMatchObject({
+      code: 'COLOR_EXTRACTOR_NO_VALID_PIXELS',
+    })
+  })
+
+  it('throws COLOR_EXTRACTOR_NO_VALID_PIXELS when all pixels are above the brightness range', async () => {
+    const bright = makePixels(4, 4, { r: 255, g: 255, b: 255, a: 255 })
+    await expect(extractColorsFromPixels(bright)).rejects.toMatchObject({
+      code: 'COLOR_EXTRACTOR_NO_VALID_PIXELS',
+    })
+  })
+
+  it('throws COLOR_EXTRACTOR_NO_VALID_PIXELS when all pixels are pure gray (below minSaturation)', async () => {
+    const gray = makePixels(4, 4, { r: 128, g: 128, b: 128, a: 255 })
+    await expect(extractColorsFromPixels(gray)).rejects.toMatchObject({
+      code: 'COLOR_EXTRACTOR_NO_VALID_PIXELS',
+    })
+  })
+
+  it('error message hints at filtering options', async () => {
+    const transparent = makePixels(4, 4, { r: 0, g: 0, b: 0, a: 0 })
+    try {
+      await extractColorsFromPixels(transparent)
+      expect.fail('should have thrown')
+    } catch (e) {
+      expect((e as Error).message).toMatch(/filter/i)
+    }
   })
 
   it('returns the result with ExtractedColor shape on primary', async () => {
