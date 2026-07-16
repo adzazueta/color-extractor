@@ -11,61 +11,82 @@ function readDist(relPath: string): string {
   return readFileSync(resolve(rootDir, 'dist', relPath), 'utf-8')
 }
 
-describe('Node extractColors', () => {
-  it('returns a result for a Buffer input', async () => {
-    const result = await extractColors(Buffer.from([0, 0, 0, 0]))
-    expect(result.primary).toBeDefined()
-    expect(result.primary.hex).toBe('#808080')
-    expect(result.secondary).toBeNull()
-  })
-
-  it('returns a result for a Uint8Array input', async () => {
-    const result = await extractColors(new Uint8Array(4))
-    expect(result.primary).toBeDefined()
-  })
-
-  it('returns a result for an ArrayBuffer input', async () => {
-    const result = await extractColors(new ArrayBuffer(4))
-    expect(result.primary).toBeDefined()
-  })
-
-  it('returns a result for a string (URL or path) input', async () => {
-    const result = await extractColors('/path/to/image.png')
-    expect(result.primary).toBeDefined()
-  })
-
-  it('returns a result for a string URL input', async () => {
-    const result = await extractColors('https://example.com/image.png')
-    expect(result.primary).toBeDefined()
-  })
-
-  it('accepts options without error (stub ignores them for now)', async () => {
-    const result = await extractColors(Buffer.from([0, 0, 0, 0]), {
-      sampleSize: 200,
-      output: { includePalette: true },
+describe('Node extractColors (Phase 5)', () => {
+  describe('AC: input kind detection rejects unsupported inputs', () => {
+    it('throws COLOR_EXTRACTOR_UNSUPPORTED_INPUT for null', async () => {
+      await expect(extractColors(null as unknown as NodeExtractColorsInput)).rejects.toThrow(
+        ColorExtractorError,
+      )
     })
-    expect(result).toBeDefined()
+
+    it('throws COLOR_EXTRACTOR_UNSUPPORTED_INPUT for undefined', async () => {
+      await expect(extractColors(undefined as unknown as NodeExtractColorsInput)).rejects.toThrow(
+        ColorExtractorError,
+      )
+    })
+
+    it('throws COLOR_EXTRACTOR_UNSUPPORTED_INPUT for a number', async () => {
+      await expect(extractColors(42 as unknown as NodeExtractColorsInput)).rejects.toMatchObject({
+        code: 'COLOR_EXTRACTOR_UNSUPPORTED_INPUT',
+      })
+    })
+
+    it('thrown error has code COLOR_EXTRACTOR_UNSUPPORTED_INPUT', async () => {
+      try {
+        await extractColors(null as unknown as NodeExtractColorsInput)
+        expect.fail('expected throw')
+      } catch (error) {
+        expect((error as ColorExtractorError).code).toBe('COLOR_EXTRACTOR_UNSUPPORTED_INPUT')
+      }
+    })
   })
 
-  it('throws COLOR_EXTRACTOR_UNSUPPORTED_INPUT for null', async () => {
-    await expect(extractColors(null as unknown as NodeExtractColorsInput)).rejects.toThrow(
-      ColorExtractorError,
-    )
-  })
+  describe('AC: detected input kinds are accepted and reach the decode wiring boundary (review #3)', () => {
+    it('Buffer input is accepted by kind detection and reaches the not-yet-wired decode boundary', async () => {
+      try {
+        await extractColors(Buffer.from([0, 0, 0, 0]))
+        expect.fail('expected throw (decode not wired in this phase)')
+      } catch (error) {
+        expect((error as ColorExtractorError).code).toBe('COLOR_EXTRACTOR_UNSUPPORTED_INPUT')
+        expect((error as Error).message).toMatch(/not implemented/i)
+      }
+    })
 
-  it('throws COLOR_EXTRACTOR_UNSUPPORTED_INPUT for undefined', async () => {
-    await expect(extractColors(undefined as unknown as NodeExtractColorsInput)).rejects.toThrow(
-      ColorExtractorError,
-    )
-  })
+    it('Uint8Array input is accepted by kind detection and reaches the decode wiring boundary', async () => {
+      try {
+        await extractColors(new Uint8Array(4))
+        expect.fail('expected throw (decode not wired in this phase)')
+      } catch (error) {
+        expect((error as ColorExtractorError).code).toBe('COLOR_EXTRACTOR_UNSUPPORTED_INPUT')
+      }
+    })
 
-  it('thrown error has code COLOR_EXTRACTOR_UNSUPPORTED_INPUT', async () => {
-    try {
-      await extractColors(null as unknown as NodeExtractColorsInput)
-      expect.fail('expected throw')
-    } catch (error) {
-      expect((error as ColorExtractorError).code).toBe('COLOR_EXTRACTOR_UNSUPPORTED_INPUT')
-    }
+    it('ArrayBuffer input is accepted by kind detection and reaches the decode wiring boundary', async () => {
+      try {
+        await extractColors(new ArrayBuffer(4))
+        expect.fail('expected throw (decode not wired in this phase)')
+      } catch (error) {
+        expect((error as ColorExtractorError).code).toBe('COLOR_EXTRACTOR_UNSUPPORTED_INPUT')
+      }
+    })
+
+    it('string URL input is accepted by kind detection and reaches the decode wiring boundary', async () => {
+      try {
+        await extractColors('https://example.com/image.png')
+        expect.fail('expected throw (decode not wired in this phase)')
+      } catch (error) {
+        expect((error as ColorExtractorError).code).toBe('COLOR_EXTRACTOR_UNSUPPORTED_INPUT')
+      }
+    })
+
+    it('local path string is accepted by kind detection and reaches the decode wiring boundary', async () => {
+      try {
+        await extractColors('/path/to/image.png')
+        expect.fail('expected throw (decode not wired in this phase)')
+      } catch (error) {
+        expect((error as ColorExtractorError).code).toBe('COLOR_EXTRACTOR_UNSUPPORTED_INPUT')
+      }
+    })
   })
 })
 

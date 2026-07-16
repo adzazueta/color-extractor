@@ -1,12 +1,11 @@
 import { ColorExtractorError } from '../core/errors.js'
-import type { SharpModule } from './sharp.js'
-import { loadSharp } from './sharp.js'
+import { loadSharp, type SharpModule } from './sharp.js'
 import type { DecodeOptions } from '../core/options.js'
 
 export interface DecodedPixels {
   readonly width: number
   readonly height: number
-  readonly channels: number
+  readonly channels: 4
   readonly data: Uint8Array
 }
 
@@ -18,6 +17,7 @@ interface RawOutput {
 interface SharpMetadata {
   width?: number
   height?: number
+  orientation?: number
 }
 
 type SharpPipeline = {
@@ -25,9 +25,13 @@ type SharpPipeline = {
   resize: (
     width: number,
     height: number,
-    options?: { fit?: 'cover' | 'contain' | 'fill'; withoutEnlargement?: boolean },
+    options?: { fit?: 'cover' | 'contain' | 'fill' },
   ) => SharpPipeline
-  raw: (options?: { depth?: 'uchar' | 'ushort' | 'float' }) => { toBuffer: (options?: { resolveWithObject?: boolean }) => Promise<RawOutput> }
+  ensureAlpha: () => SharpPipeline
+  withMetadata: (options: { orientation?: number }) => SharpPipeline
+  raw: (options?: { depth?: 'uchar' | 'ushort' | 'float' }) => {
+    toBuffer: (options?: { resolveWithObject?: boolean }) => Promise<RawOutput>
+  }
   metadata: () => Promise<SharpMetadata>
 }
 
@@ -37,6 +41,8 @@ function isSharpPipeline(value: unknown): value is SharpPipeline {
   return (
     typeof v['rotate'] === 'function' &&
     typeof v['resize'] === 'function' &&
+    typeof v['ensureAlpha'] === 'function' &&
+    typeof v['withMetadata'] === 'function' &&
     typeof v['raw'] === 'function' &&
     typeof v['metadata'] === 'function'
   )
@@ -91,14 +97,14 @@ export async function decodeBufferToPixels(
     )
   }
 
-  let probe: SharpPipeline = pipeline
-  if (options.respectOrientation) {
-    probe = pipeline.rotate()
-  }
+  // Step 1: Strip implicit EXIF rotation. We control rotation explicitly so
+  // that metadata(), resize(), and raw() all see the same coordinate space.
+  const neutral: SharpPipeline = pipeline.withMetadata({ orientation: 1 })
 
-  let meta: SharpMetadata
+  // Step 2: probe dimensions on the now-rotation-neutral pipeline.
+  let neutralMeta: SharpMetadata
   try {
-    meta = await probe.metadata()
+    neutralMeta = await neutral.metadata()
   } catch (err) {
     throw new ColorExtractorError(
       'COLOR_EXTRACTOR_DECODE_FAILED',
@@ -106,11 +112,32 @@ export async function decodeBufferToPixels(
       { cause: err },
     )
   }
-  const target = computeResizeTarget(meta.width ?? sampleSize, meta.height ?? sampleSize, sampleSize)
+  const storageWidth = neutralMeta.width ?? sampleSize
+  const storageHeight = neutralMeta.height ?? sampleSize
 
+  // Step 3: only swap width/height when the EXIF orientation is a 90°/270°
+  // rotation (orientations 5, 6, 7, 8). Mirrors (2, 3, 4) do not change
+  // the storage dimensions.
+  const requires90Swap = (o: number | undefined): boolean =>
+    o === 5 || o === 6 || o === 7 || o === 8
+
+  const doRotate =
+    options.respectOrientation && requires90Swap(neutralMeta.orientation)
+
+  const physicalWidth = doRotate ? storageHeight : storageWidth
+  const physicalHeight = doRotate ? storageWidth : storageHeight
+
+  // Step 4: apply EXIF rotation explicitly. rotate(0) is a no-op but keeps
+  // the pipeline shape uniform.
+  const oriented: SharpPipeline = doRotate ? neutral.rotate() : neutral.rotate(0)
+
+  // Step 5: compute the resize target using the oriented dimensions.
+  const target = computeResizeTarget(physicalWidth, physicalHeight, sampleSize)
+
+  // Step 6: resize, ensure RGBA, and emit raw.
   let sized: SharpPipeline
   try {
-    sized = probe.resize(target.width, target.height, { fit: 'fill' })
+    sized = oriented.resize(target.width, target.height, { fit: 'fill' })
   } catch (err) {
     throw new ColorExtractorError(
       'COLOR_EXTRACTOR_DECODE_FAILED',
@@ -121,7 +148,7 @@ export async function decodeBufferToPixels(
 
   let rawOut: RawOutput
   try {
-    rawOut = await sized.raw({ depth: 'uchar' }).toBuffer({ resolveWithObject: true })
+    rawOut = await sized.ensureAlpha().raw({ depth: 'uchar' }).toBuffer({ resolveWithObject: true })
   } catch (err) {
     throw new ColorExtractorError(
       'COLOR_EXTRACTOR_DECODE_FAILED',
@@ -130,10 +157,18 @@ export async function decodeBufferToPixels(
     )
   }
 
+  if (rawOut.info.channels !== 4) {
+    throw new ColorExtractorError(
+      'COLOR_EXTRACTOR_DECODE_FAILED',
+      `Expected 4 channels (RGBA) from sharp, got ${rawOut.info.channels}.`,
+      { cause: { channels: rawOut.info.channels, width: rawOut.info.width, height: rawOut.info.height } },
+    )
+  }
+
   return {
     width: rawOut.info.width,
     height: rawOut.info.height,
-    channels: rawOut.info.channels,
+    channels: 4 as const,
     data: new Uint8Array(rawOut.data.buffer, rawOut.data.byteOffset, rawOut.data.byteLength),
   }
 }

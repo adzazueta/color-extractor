@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll } from 'vitest'
 import sharp from 'sharp'
 import { ColorExtractorError } from '../../src/core/errors.js'
-import { _resetSharpCacheForTests, _setSharpImporterForTests } from '../../src/node/sharp.js'
+import { _setSharpImporterForTests } from '../../src/node/sharp.js'
 import {
   _internalComputeResizeTargetForTests,
   _internalIsSharpPipelineForTests,
@@ -19,6 +19,21 @@ async function makePng(width: number, height: number, color: { r: number; g: num
   })
     .png()
     .toBuffer()
+}
+
+async function makeJpeg(width: number, height: number, color: { r: number; g: number; b: number }, orientation?: number): Promise<Buffer> {
+  let s = sharp({
+    create: {
+      width,
+      height,
+      channels: 3,
+      background: color,
+    },
+  }).jpeg()
+  if (orientation !== undefined) {
+    s = s.withMetadata({ orientation })
+  }
+  return s.toBuffer()
 }
 
 beforeAll(() => {
@@ -40,10 +55,34 @@ describe('decodeBufferToPixels (ADZ-71)', () => {
       const png = await makePng(8, 8, { r: 200, g: 30, b: 30 })
       const out = await decodeBufferToPixels(png, 150, { respectOrientation: true })
       const px = out.data
-      expect(out.channels).toBeGreaterThanOrEqual(3)
+      expect(out.channels).toBe(4)
       expect(px[0]).toBe(200)
       expect(px[1]).toBe(30)
       expect(px[2]).toBe(30)
+    })
+  })
+
+  describe('AC: output is always 4-channel RGBA (review #1)', () => {
+    it('returns channels = 4 for a PNG without alpha', async () => {
+      const png = await makePng(20, 20, { r: 200, g: 30, b: 30 })
+      const out = await decodeBufferToPixels(png, 150, { respectOrientation: true })
+      expect(out.channels).toBe(4)
+      expect(out.data.length).toBe(out.width * out.height * 4)
+    })
+
+    it('returns channels = 4 for a JPEG (which has 3 native channels)', async () => {
+      const jpeg = await makeJpeg(20, 10, { r: 200, g: 30, b: 30 })
+      const out = await decodeBufferToPixels(jpeg, 150, { respectOrientation: true })
+      expect(out.channels).toBe(4)
+      expect(out.data.length).toBe(20 * 10 * 4)
+    })
+
+    it('opaque JPEG has alpha byte set to 255 for every pixel', async () => {
+      const jpeg = await makeJpeg(8, 6, { r: 200, g: 30, b: 30 })
+      const out = await decodeBufferToPixels(jpeg, 150, { respectOrientation: true })
+      for (let i = 3; i < out.data.length; i += 4) {
+        expect(out.data[i]).toBe(255)
+      }
     })
   })
 
@@ -61,6 +100,31 @@ describe('decodeBufferToPixels (ADZ-71)', () => {
       const out = await decodeBufferToPixels(png, 150, { respectOrientation: true })
       expect(out.width).toBe(40)
       expect(out.height).toBe(40)
+    })
+  })
+
+  describe('AC: EXIF orientation rotates the image before resize (review #2)', () => {
+    it('a 300x100 JPEG with EXIF orientation 6 (rotate 90° CW) is treated as 100x300 before sampleSize resize', async () => {
+      // Use a large enough sampleSize that the post-rotation size is preserved.
+      const jpeg = await makeJpeg(300, 100, { r: 0, g: 200, b: 0 }, 6)
+      const out = await decodeBufferToPixels(jpeg, 500, { respectOrientation: true })
+      expect(out.width).toBe(100)
+      expect(out.height).toBe(300)
+    })
+
+    it('a 300x100 JPEG with EXIF orientation 6 downsized to sampleSize=150 keeps the rotated ratio', async () => {
+      const jpeg = await makeJpeg(300, 100, { r: 0, g: 200, b: 0 }, 6)
+      const out = await decodeBufferToPixels(jpeg, 150, { respectOrientation: true })
+      expect(out.width).toBe(50)
+      expect(out.height).toBe(150)
+      expect(out.width / out.height).toBeCloseTo(1 / 3, 1)
+    })
+
+    it('respectOrientation=false keeps the unrotated dimensions at 300x100', async () => {
+      const jpeg = await makeJpeg(300, 100, { r: 0, g: 200, b: 0 }, 6)
+      const out = await decodeBufferToPixels(jpeg, 500, { respectOrientation: false })
+      expect(out.width).toBe(300)
+      expect(out.height).toBe(100)
     })
   })
 
@@ -118,10 +182,12 @@ describe('computeResizeTarget (ADZ-71)', () => {
 })
 
 describe('isSharpPipeline (ADZ-71)', () => {
-  it('returns true for objects with rotate, resize, raw, metadata methods', () => {
+  it('returns true for objects with rotate, resize, ensureAlpha, withMetadata, raw, metadata methods', () => {
     expect(_internalIsSharpPipelineForTests({
       rotate: () => ({}),
       resize: () => ({}),
+      ensureAlpha: () => ({}),
+      withMetadata: () => ({}),
       raw: () => ({}),
       metadata: () => ({}),
     })).toBe(true)

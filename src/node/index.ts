@@ -3,12 +3,7 @@ import type { ExtractColorsOptions } from '../core/options.js'
 import type { ExtractColorsResult } from '../core/result.js'
 import { resolveOptions } from '../core/defaults.js'
 import type { NodeExtractColorsInput } from './types.js'
-export { detectNodeInputKind } from './detect.js'
-export type { NodeInputKind } from './detect.js'
-export { loadSharp } from './sharp.js'
-export type { SharpModule } from './sharp.js'
-export { decodeBufferToPixels } from './decode.js'
-export type { DecodedPixels } from './decode.js'
+import { detectNodeInputKind } from './detect.js'
 
 export const VERSION = '0.1.0'
 export type { NodeExtractColorsInput } from './types.js'
@@ -60,15 +55,23 @@ export async function extractColors(
     )
   }
 
+  // Phase 5: validate the input kind and resolve options. The actual decode
+  // pipeline (bytes → core extraction) is wired in Phase 7 (Node Decode
+  // Pipeline). Until then we surface a clear typed error so consumers do not
+  // silently receive a placeholder.
+  const kind = detectNodeInputKind(input)
+  if (kind === 'unsupported') {
+    throw new ColorExtractorError(
+      'COLOR_EXTRACTOR_UNSUPPORTED_INPUT',
+      'Node input must be a Buffer, Uint8Array, ArrayBuffer, http(s) URL string, or local path string.',
+      { cause: input },
+    )
+  }
   resolveOptions(options)
 
-  return {
-    primary: {
-      hex: '#808080',
-      rgb: { r: 128, g: 128, b: 128 },
-      role: 'primary',
-      source: 'fallback',
-    },
-    secondary: null,
-  }
+  throw new ColorExtractorError(
+    'COLOR_EXTRACTOR_UNSUPPORTED_INPUT',
+    'Node input decoding is not implemented yet. The Node decode pipeline is added in Phase 7 (Node Decode Pipeline).',
+    { cause: { kind } },
+  )
 }
