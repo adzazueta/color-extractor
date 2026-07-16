@@ -21,12 +21,6 @@ class MockImageData {
   }
 }
 
-type MockBitmap = {
-  width: number
-  height: number
-  close: ReturnType<typeof vi.fn>
-}
-
 type MockDrawCall = {
   image: unknown
   dx: number
@@ -68,6 +62,10 @@ function createMockOffscreenCanvas() {
   } as unknown as typeof OffscreenCanvas
 }
 
+const MAX_PIXELS = 25_000_000
+const TIMEOUT_MS = 10_000
+const MAX_BYTES = 10_000_000
+
 describe('sampleImageBitmap (ADZ-59)', () => {
   beforeAll(() => {
     drawCalls = []
@@ -81,7 +79,7 @@ describe('sampleImageBitmap (ADZ-59)', () => {
 
   it('decodes a valid ImageBitmap', () => {
     const bitmap = { width: 2000, height: 1000, close: vi.fn() } as unknown as ImageBitmap
-    const result = sampleImageBitmap(bitmap, 100)
+    const result = sampleImageBitmap(bitmap, 100, MAX_PIXELS)
 
     expect(result.width).toBe(100)
     expect(result.height).toBe(50)
@@ -92,18 +90,23 @@ describe('sampleImageBitmap (ADZ-59)', () => {
   it('closes the bitmap after sampling', () => {
     const close = vi.fn()
     const bitmap = { width: 100, height: 100, close } as unknown as ImageBitmap
-    sampleImageBitmap(bitmap, 150)
+    sampleImageBitmap(bitmap, 150, MAX_PIXELS)
     expect(close).toHaveBeenCalledOnce()
   })
 
   it('throws for zero-width bitmap', () => {
     const bitmap = { width: 0, height: 100, close: vi.fn() } as unknown as ImageBitmap
-    expect(() => sampleImageBitmap(bitmap, 150)).toThrow(ColorExtractorError)
+    expect(() => sampleImageBitmap(bitmap, 150, MAX_PIXELS)).toThrow(ColorExtractorError)
   })
 
   it('throws for zero-height bitmap', () => {
     const bitmap = { width: 100, height: 0, close: vi.fn() } as unknown as ImageBitmap
-    expect(() => sampleImageBitmap(bitmap, 150)).toThrow(ColorExtractorError)
+    expect(() => sampleImageBitmap(bitmap, 150, MAX_PIXELS)).toThrow(ColorExtractorError)
+  })
+
+  it('throws COLOR_EXTRACTOR_IMAGE_TOO_LARGE when bitmap exceeds maxPixels', () => {
+    const bitmap = { width: 10000, height: 10000, close: vi.fn() } as unknown as ImageBitmap
+    expect(() => sampleImageBitmap(bitmap, 150, 1_000_000)).toThrow(ColorExtractorError)
   })
 })
 
@@ -125,7 +128,7 @@ describe('sampleImageElement (ADZ-59)', () => {
       naturalHeight: 2000,
     } as unknown as HTMLImageElement
 
-    const result = sampleImageElement(img, 150)
+    const result = sampleImageElement(img, 150, MAX_PIXELS)
 
     expect(result.width).toBe(150)
     expect(result.height).toBe(100)
@@ -140,7 +143,7 @@ describe('sampleImageElement (ADZ-59)', () => {
       naturalHeight: 100,
     } as unknown as HTMLImageElement
 
-    expect(() => sampleImageElement(img, 150)).toThrow(ColorExtractorError)
+    expect(() => sampleImageElement(img, 150, MAX_PIXELS)).toThrow(ColorExtractorError)
   })
 
   it('throws for image with zero naturalWidth', () => {
@@ -150,7 +153,7 @@ describe('sampleImageElement (ADZ-59)', () => {
       naturalHeight: 100,
     } as unknown as HTMLImageElement
 
-    expect(() => sampleImageElement(img, 150)).toThrow(ColorExtractorError)
+    expect(() => sampleImageElement(img, 150, MAX_PIXELS)).toThrow(ColorExtractorError)
   })
 
   it('throws for image with zero naturalHeight', () => {
@@ -160,7 +163,26 @@ describe('sampleImageElement (ADZ-59)', () => {
       naturalHeight: 0,
     } as unknown as HTMLImageElement
 
-    expect(() => sampleImageElement(img, 150)).toThrow(ColorExtractorError)
+    expect(() => sampleImageElement(img, 150, MAX_PIXELS)).toThrow(ColorExtractorError)
+  })
+
+  it('throws COLOR_EXTRACTOR_IMAGE_TOO_LARGE when image exceeds maxPixels', () => {
+    const small = {
+      complete: true,
+      naturalWidth: 1000,
+      naturalHeight: 1000,
+    } as unknown as HTMLImageElement
+
+    const large = {
+      complete: true,
+      naturalWidth: 10000,
+      naturalHeight: 10000,
+    } as unknown as HTMLImageElement
+
+    expect(() => sampleImageElement(small, 150, 50_000_000)).not.toThrow()
+    expect(() => sampleImageElement(large, 150, 1_000_000)).toThrowError(
+      expect.objectContaining({ code: 'COLOR_EXTRACTOR_IMAGE_TOO_LARGE' }),
+    )
   })
 })
 
@@ -177,7 +199,7 @@ describe('sampleCanvasElement (ADZ-61)', () => {
 
   it('decodes a canvas element with downsampling', () => {
     const canvas = { width: 2000, height: 1000 } as HTMLCanvasElement
-    const result = sampleCanvasElement(canvas, 100)
+    const result = sampleCanvasElement(canvas, 100, MAX_PIXELS)
 
     expect(result.width).toBe(100)
     expect(result.height).toBe(50)
@@ -187,12 +209,19 @@ describe('sampleCanvasElement (ADZ-61)', () => {
 
   it('throws for zero-width canvas', () => {
     const canvas = { width: 0, height: 100 } as HTMLCanvasElement
-    expect(() => sampleCanvasElement(canvas, 150)).toThrow(ColorExtractorError)
+    expect(() => sampleCanvasElement(canvas, 150, MAX_PIXELS)).toThrow(ColorExtractorError)
   })
 
   it('throws for zero-height canvas', () => {
     const canvas = { width: 100, height: 0 } as HTMLCanvasElement
-    expect(() => sampleCanvasElement(canvas, 150)).toThrow(ColorExtractorError)
+    expect(() => sampleCanvasElement(canvas, 150, MAX_PIXELS)).toThrow(ColorExtractorError)
+  })
+
+  it('throws COLOR_EXTRACTOR_IMAGE_TOO_LARGE when canvas exceeds maxPixels', () => {
+    const canvas = { width: 10000, height: 10000 } as HTMLCanvasElement
+    expect(() => sampleCanvasElement(canvas, 150, 1_000_000)).toThrow(
+      ColorExtractorError,
+    )
   })
 })
 
@@ -200,7 +229,7 @@ describe('sampleImageDataInput (ADZ-61)', () => {
   it('returns pixels from ImageData directly', () => {
     const data = new Uint8ClampedArray(100 * 80 * 4)
     const imageData = { data, width: 100, height: 80 } as ImageData
-    const result = sampleImageDataInput(imageData, 150)
+    const result = sampleImageDataInput(imageData, 150, MAX_PIXELS)
 
     expect(result.width).toBe(100)
     expect(result.height).toBe(80)
@@ -216,7 +245,7 @@ describe('sampleImageDataInput (ADZ-61)', () => {
     buffer[2] = 64
     buffer[3] = 32
     const imageData = { data: buffer, width: 2, height: 2 } as ImageData
-    const result = sampleImageDataInput(imageData, 150)
+    const result = sampleImageDataInput(imageData, 150, MAX_PIXELS)
 
     expect(result.data[0]).toBe(255)
     expect(result.data[1]).toBe(128)
@@ -226,12 +255,21 @@ describe('sampleImageDataInput (ADZ-61)', () => {
 
   it('throws for zero-width ImageData', () => {
     const imageData = { data: new Uint8ClampedArray(0), width: 0, height: 100 } as ImageData
-    expect(() => sampleImageDataInput(imageData, 150)).toThrow(ColorExtractorError)
+    expect(() => sampleImageDataInput(imageData, 150, MAX_PIXELS)).toThrow(ColorExtractorError)
   })
 
   it('throws for zero-height ImageData', () => {
     const imageData = { data: new Uint8ClampedArray(0), width: 100, height: 0 } as ImageData
-    expect(() => sampleImageDataInput(imageData, 150)).toThrow(ColorExtractorError)
+    expect(() => sampleImageDataInput(imageData, 150, MAX_PIXELS)).toThrow(ColorExtractorError)
+  })
+
+  it('throws COLOR_EXTRACTOR_IMAGE_TOO_LARGE when ImageData exceeds maxPixels', () => {
+    const imageData = {
+      data: new Uint8ClampedArray(50000 * 50000 * 4),
+      width: 50000,
+      height: 50000,
+    } as ImageData
+    expect(() => sampleImageDataInput(imageData, 150, 1_000_000)).toThrow(ColorExtractorError)
   })
 })
 
@@ -270,15 +308,15 @@ describe('decodeFileOrBlob (ADZ-54)', () => {
     })
 
     it('decodes a blob via createImageBitmap and canvas downsample', async () => {
-      const bitmap: MockBitmap = {
+      const bitmap = {
         width: 3000,
         height: 2000,
         close: bitmapClose,
-      }
+      } as unknown as ImageBitmap
       mockCreateImageBitmap.mockResolvedValue(bitmap)
 
       const blob = new Blob(['fake-image-data'], { type: 'image/png' })
-      const result = await decodeFileOrBlob(blob, 150)
+      const result = await decodeFileOrBlob(blob, 150, MAX_PIXELS)
 
       expect(mockCreateImageBitmap).toHaveBeenCalledWith(blob)
       expect(result.width).toBe(150)
@@ -290,35 +328,49 @@ describe('decodeFileOrBlob (ADZ-54)', () => {
 
     it('closes the bitmap after use', async () => {
       bitmapClose.mockClear()
-      const bitmap: MockBitmap = {
+      const bitmap = {
         width: 100,
         height: 100,
         close: bitmapClose,
-      }
+      } as unknown as ImageBitmap
       mockCreateImageBitmap.mockResolvedValue(bitmap)
 
       const blob = new Blob(['x'], { type: 'image/png' })
-      await decodeFileOrBlob(blob, 150)
+      await decodeFileOrBlob(blob, 150, MAX_PIXELS)
 
       expect(bitmapClose).toHaveBeenCalledOnce()
     })
 
     it('draws the bitmap to canvas at target size', async () => {
       drawCalls = []
-      const bitmap: MockBitmap = {
+      const bitmap = {
         width: 2000,
         height: 1000,
         close: vi.fn(),
-      }
+      } as unknown as ImageBitmap
       mockCreateImageBitmap.mockResolvedValue(bitmap)
 
       const blob = new Blob(['y'], { type: 'image/png' })
-      await decodeFileOrBlob(blob, 100)
+      await decodeFileOrBlob(blob, 100, MAX_PIXELS)
 
       expect(drawCalls).toHaveLength(1)
       expect(drawCalls[0]!.image).toBe(bitmap)
       expect(drawCalls[0]!.dw).toBe(100)
       expect(drawCalls[0]!.dh).toBe(50)
+    })
+
+    it('throws COLOR_EXTRACTOR_IMAGE_TOO_LARGE when bitmap exceeds maxPixels', async () => {
+      const bitmap = {
+        width: 10000,
+        height: 10000,
+        close: vi.fn(),
+      } as unknown as ImageBitmap
+      mockCreateImageBitmap.mockResolvedValue(bitmap)
+
+      const blob = new Blob(['x'], { type: 'image/png' })
+      const err = await decodeFileOrBlob(blob, 150, 1_000_000).catch(e => e)
+      expect(err).toBeInstanceOf(ColorExtractorError)
+      expect((err as ColorExtractorError).code).toBe('COLOR_EXTRACTOR_IMAGE_TOO_LARGE')
     })
   })
 
@@ -365,10 +417,13 @@ describe('decodeFileOrBlob (ADZ-54)', () => {
       }
 
       vi.stubGlobal('Image', MockImageConstructor as unknown as typeof Image)
-      vi.stubGlobal('URL', { createObjectURL: mockCreateObjectURL, revokeObjectURL: mockRevokeObjectURL })
+      vi.stubGlobal('URL', {
+        createObjectURL: mockCreateObjectURL,
+        revokeObjectURL: mockRevokeObjectURL,
+      })
 
       const blob = new Blob(['fake'], { type: 'image/png' })
-      const result = await decodeFileOrBlob(blob, 150)
+      const result = await decodeFileOrBlob(blob, 150, MAX_PIXELS)
 
       expect(result.width).toBe(100)
       expect(result.height).toBe(80)
@@ -382,7 +437,10 @@ describe('decodeFileOrBlob (ADZ-54)', () => {
     beforeAll(() => {
       vi.stubGlobal('createImageBitmap', undefined)
       vi.stubGlobal('Image', undefined)
-      vi.stubGlobal('URL', { createObjectURL: mockCreateObjectURL, revokeObjectURL: mockRevokeObjectURL })
+      vi.stubGlobal('URL', {
+        createObjectURL: mockCreateObjectURL,
+        revokeObjectURL: mockRevokeObjectURL,
+      })
     })
 
     afterAll(() => {
@@ -392,53 +450,72 @@ describe('decodeFileOrBlob (ADZ-54)', () => {
     it('throws ColorExtractorError when no decoding method is available', async () => {
       const blob = new Blob(['fake'], { type: 'image/png' })
 
-      await expect(decodeFileOrBlob(blob, 150)).rejects.toThrow(ColorExtractorError)
+      await expect(decodeFileOrBlob(blob, 150, MAX_PIXELS)).rejects.toThrow(
+        ColorExtractorError,
+      )
     })
   })
 })
 
 describe('decodeRemoteUrl (ADZ-50)', () => {
+  let mockFetch: ReturnType<typeof vi.fn>
+  let mockCreateImageBitmap: ReturnType<typeof vi.fn>
+
   beforeAll(() => {
     drawCalls = []
     vi.stubGlobal('OffscreenCanvas', createMockOffscreenCanvas())
     vi.stubGlobal('ImageData', MockImageData)
-    vi.stubGlobal('createImageBitmap', vi.fn())
   })
 
   afterAll(() => {
     vi.unstubAllGlobals()
   })
 
-  it('fetches a URL and decodes the blob', async () => {
+  function stubAbortableFetch(resolvedValue: unknown) {
+    mockFetch = vi.fn().mockImplementation((url: string, init?: { signal?: AbortSignal }) => {
+      if (init?.signal) {
+        // Attach abort listener to prevent AbortError propagation in test
+        init.signal.addEventListener('abort', () => {})
+      }
+      return Promise.resolve(resolvedValue)
+    })
+    vi.stubGlobal('fetch', mockFetch)
+  }
+
+  it('fetches a URL with timeout and decodes the blob', async () => {
     const mockBlob = new Blob(['fake-image'], { type: 'image/png' })
     const mockResponse = {
       ok: true,
       status: 200,
+      headers: { get: vi.fn().mockReturnValue(null) },
+      body: null,
       blob: vi.fn().mockResolvedValue(mockBlob),
     }
-    const mockFetch = vi.fn().mockResolvedValue(mockResponse)
-
-    const mockCreateImageBitmap = vi.fn().mockResolvedValue({
+    mockCreateImageBitmap = vi.fn().mockResolvedValue({
       width: 100,
       height: 100,
       close: vi.fn(),
-    })
-    vi.stubGlobal('fetch', mockFetch)
+    } as unknown as ImageBitmap)
     vi.stubGlobal('createImageBitmap', mockCreateImageBitmap)
+    stubAbortableFetch(mockResponse)
 
-    const result = await decodeRemoteUrl('https://example.com/image.png', 150)
+    const result = await decodeRemoteUrl('https://example.com/image.png', 150, MAX_PIXELS, TIMEOUT_MS, MAX_BYTES)
 
-    expect(mockFetch).toHaveBeenCalledWith('https://example.com/image.png')
+    expect(mockFetch).toHaveBeenCalledWith(
+      'https://example.com/image.png',
+      expect.objectContaining({ signal: expect.any(AbortSignal) }),
+    )
     expect(result.width).toBe(100)
     expect(result.height).toBe(100)
     expect(result.channels).toBe(4)
   })
 
   it('throws on fetch failure', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Network error')))
+    mockFetch = vi.fn().mockRejectedValue(new TypeError('Network error'))
+    vi.stubGlobal('fetch', mockFetch)
 
     await expect(
-      decodeRemoteUrl('https://example.com/image.png', 150),
+      decodeRemoteUrl('https://example.com/image.png', 150, MAX_PIXELS, TIMEOUT_MS, MAX_BYTES),
     ).rejects.toThrow(ColorExtractorError)
   })
 
@@ -446,13 +523,32 @@ describe('decodeRemoteUrl (ADZ-50)', () => {
     const mockResponse = {
       ok: false,
       status: 404,
+      headers: { get: vi.fn().mockReturnValue(null) },
+      body: null,
       blob: vi.fn(),
     }
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(mockResponse))
+    stubAbortableFetch(mockResponse)
 
     await expect(
-      decodeRemoteUrl('https://example.com/image.png', 150),
+      decodeRemoteUrl('https://example.com/image.png', 150, MAX_PIXELS, TIMEOUT_MS, MAX_BYTES),
     ).rejects.toThrow(ColorExtractorError)
+  })
+
+  it('throws on Content-Length exceeding maxBytes', async () => {
+    const mockResponse = {
+      ok: true,
+      status: 200,
+      headers: { get: vi.fn().mockReturnValue('99999999999') },
+      body: { cancel: vi.fn() },
+      blob: vi.fn(),
+    }
+    stubAbortableFetch(mockResponse)
+
+    await expect(
+      decodeRemoteUrl('https://example.com/image.png', 150, MAX_PIXELS, TIMEOUT_MS, 100),
+    ).rejects.toThrowError(
+      expect.objectContaining({ code: 'COLOR_EXTRACTOR_INPUT_TOO_LARGE' }),
+    )
   })
 
   it('throws on empty body', async () => {
@@ -460,12 +556,14 @@ describe('decodeRemoteUrl (ADZ-50)', () => {
     const mockResponse = {
       ok: true,
       status: 200,
+      headers: { get: vi.fn().mockReturnValue(null) },
+      body: null,
       blob: vi.fn().mockResolvedValue(mockBlob),
     }
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(mockResponse))
+    stubAbortableFetch(mockResponse)
 
     await expect(
-      decodeRemoteUrl('https://example.com/image.png', 150),
+      decodeRemoteUrl('https://example.com/image.png', 150, MAX_PIXELS, TIMEOUT_MS, MAX_BYTES),
     ).rejects.toThrow(ColorExtractorError)
   })
 })

@@ -5,6 +5,7 @@ import { resolveOptions } from '../core/defaults.js'
 import { extractColorsFromPixels } from '../core/extract.js'
 import type { BrowserExtractColorsInput } from './types.js'
 import { detectBrowserInputKind } from './detect.js'
+import type { BrowserInputKind } from './detect.js'
 import {
   decodeFileOrBlob,
   decodeRemoteUrl,
@@ -56,6 +57,25 @@ export {
   type ResolvedOptions,
 } from '../core/index.js'
 
+function decoderForKind(kind: BrowserInputKind): 'canvas' | 'image-data' {
+  return kind === 'imageData' ? 'image-data' : 'canvas'
+}
+
+function overrideMetadata(
+  result: ExtractColorsResult,
+  kind: BrowserInputKind,
+): ExtractColorsResult {
+  if (!result.metadata) return result
+  return {
+    ...result,
+    metadata: {
+      ...result.metadata,
+      runtime: 'browser',
+      decoder: decoderForKind(kind),
+    },
+  }
+}
+
 export async function extractColors(
   input: BrowserExtractColorsInput,
   options?: ExtractColorsOptions,
@@ -63,53 +83,88 @@ export async function extractColors(
   try {
     const resolved = resolveOptions(options)
     const kind = detectBrowserInputKind(input)
+    const maxPixels = resolved.decode.maxPixels ?? 25_000_000
+    const timeoutMs = resolved.remote.timeoutMs ?? 10_000
+    const maxBytes = resolved.remote.maxBytes ?? 10_000_000
 
     if (kind === 'file' || kind === 'blob') {
-      const decoded = await decodeFileOrBlob(input as File | Blob, resolved.sampleSize)
-      return extractColorsFromPixels(
+      const decoded = await decodeFileOrBlob(
+        input as File | Blob,
+        resolved.sampleSize,
+        maxPixels,
+      )
+      const result = await extractColorsFromPixels(
         { data: decoded.data, width: decoded.width, height: decoded.height },
         options,
       )
+      return overrideMetadata(result, kind)
     }
 
     if (kind === 'image') {
-      const decoded = sampleImageElement(input as HTMLImageElement, resolved.sampleSize)
-      return extractColorsFromPixels(
+      const decoded = sampleImageElement(
+        input as HTMLImageElement,
+        resolved.sampleSize,
+        maxPixels,
+      )
+      const result = await extractColorsFromPixels(
         { data: decoded.data, width: decoded.width, height: decoded.height },
         options,
       )
+      return overrideMetadata(result, kind)
     }
 
     if (kind === 'bitmap') {
-      const decoded = sampleImageBitmap(input as ImageBitmap, resolved.sampleSize)
-      return extractColorsFromPixels(
+      const decoded = sampleImageBitmap(
+        input as ImageBitmap,
+        resolved.sampleSize,
+        maxPixels,
+      )
+      const result = await extractColorsFromPixels(
         { data: decoded.data, width: decoded.width, height: decoded.height },
         options,
       )
+      return overrideMetadata(result, kind)
     }
 
     if (kind === 'canvas') {
-      const decoded = sampleCanvasElement(input as HTMLCanvasElement, resolved.sampleSize)
-      return extractColorsFromPixels(
+      const decoded = sampleCanvasElement(
+        input as HTMLCanvasElement,
+        resolved.sampleSize,
+        maxPixels,
+      )
+      const result = await extractColorsFromPixels(
         { data: decoded.data, width: decoded.width, height: decoded.height },
         options,
       )
+      return overrideMetadata(result, kind)
     }
 
     if (kind === 'imageData') {
-      const decoded = sampleImageDataInput(input as ImageData, resolved.sampleSize)
-      return extractColorsFromPixels(
+      const decoded = sampleImageDataInput(
+        input as ImageData,
+        resolved.sampleSize,
+        maxPixels,
+      )
+      const result = await extractColorsFromPixels(
         { data: decoded.data, width: decoded.width, height: decoded.height },
         options,
       )
+      return overrideMetadata(result, kind)
     }
 
     if (kind === 'url') {
-      const decoded = await decodeRemoteUrl(input as string, resolved.sampleSize)
-      return extractColorsFromPixels(
+      const decoded = await decodeRemoteUrl(
+        input as string,
+        resolved.sampleSize,
+        maxPixels,
+        timeoutMs,
+        maxBytes,
+      )
+      const result = await extractColorsFromPixels(
         { data: decoded.data, width: decoded.width, height: decoded.height },
         options,
       )
+      return overrideMetadata(result, kind)
     }
 
     throw new ColorExtractorError(
