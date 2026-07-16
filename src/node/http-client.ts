@@ -6,6 +6,7 @@ import { isPrivateAddress } from './security-private.js'
 export type ResolveAndFetch = (
   url: string,
   signal: AbortSignal,
+  hostOptions?: { allowPrivateNetworks?: boolean },
 ) => Promise<Response>
 
 export type LookupFunction = (
@@ -86,7 +87,7 @@ function lookupWithAbortSignal(
 
     signal.addEventListener('abort', onAbort, { once: true })
 
-    lookupFn(hostname, { all: true }).then(
+    lookupFn(hostname, { all: true, signal }).then(
       (result) => {
         signal.removeEventListener('abort', onAbort)
         resolveLookup(result)
@@ -105,13 +106,14 @@ export function createResolveAndFetch(
   const lookup = options.lookup ?? defaultLookup
   const allowPrivateNetworks = options.allowPrivateNetworks ?? false
 
-  return async (url: string, signal: AbortSignal): Promise<Response> => {
+  return async (url: string, signal: AbortSignal, hostOptions?: { allowPrivateNetworks?: boolean }): Promise<Response> => {
     const parsedUrl = new URL(url)
     const hostname = parsedUrl.hostname
+    const privateOk = hostOptions?.allowPrivateNetworks ?? allowPrivateNetworks
 
     let addresses: Array<{ address: string; family: number }>
     if (isIPv4(hostname) || isIPv6(hostname)) {
-      if (!allowPrivateNetworks && isPrivateAddress(hostname)) {
+      if (!privateOk && isPrivateAddress(hostname)) {
         throw new ColorExtractorError(
           'COLOR_EXTRACTOR_UNSAFE_URL',
           `Hostname "${hostname}" is a private network address and is blocked.`,
@@ -131,7 +133,7 @@ export function createResolveAndFetch(
       )
     }
 
-    if (!allowPrivateNetworks) {
+    if (!privateOk) {
       for (const entry of addresses) {
         if (isPrivateAddress(entry.address)) {
           throw new ColorExtractorError(
@@ -158,7 +160,7 @@ export function createResolveAndFetch(
       signal,
       rejectUnauthorized: true,
     }
-    if (isHttps) {
+    if (isHttps && !isIPv4(hostname) && !isIPv6(hostname)) {
       httpOptions.servername = hostname
     }
 

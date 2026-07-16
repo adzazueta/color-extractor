@@ -247,9 +247,11 @@ describe('followRedirects (ADZ-57)', () => {
 
   describe('AC: resolveAndFetch defaults to defaultResolveAndFetch', () => {
     it('does not throw DECODE_FAILED when resolveAndFetch is omitted', async () => {
+      // 0.0.0.0 is blocked synchronously by defaultResolveAndFetch, no
+      // network I/O needed — deterministic assertion.
       let threw = false
       try {
-        await followRedirects('https://a.com/', { timeoutMs: 50, maxRedirects: 0 })
+        await followRedirects('http://0.0.0.0:1/', { maxRedirects: 0 })
       } catch (e) {
         threw = true
         expect((e as ColorExtractorError).code).not.toBe('COLOR_EXTRACTOR_DECODE_FAILED')

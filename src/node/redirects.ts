@@ -81,7 +81,9 @@ export async function followRedirects(
 
       let response: Response
       try {
-        response = await resolveAndFetch(parsed.href, controller.signal)
+        response = await resolveAndFetch(parsed.href, controller.signal, {
+          allowPrivateNetworks: options.allowPrivateNetworks,
+        })
       } catch (err) {
         if (err instanceof ColorExtractorError) throw err
         if ((err as { name?: string })?.name === 'AbortError') {
