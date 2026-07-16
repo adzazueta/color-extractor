@@ -5,6 +5,8 @@ import { resolveOptions } from '../core/defaults.js'
 import type { NodeExtractColorsInput } from './types.js'
 export { detectNodeInputKind } from './detect.js'
 export type { NodeInputKind } from './detect.js'
+export { loadSharp } from './sharp.js'
+export type { SharpModule } from './sharp.js'
 
 export const VERSION = '0.1.0'
 export type { NodeExtractColorsInput } from './types.js'
