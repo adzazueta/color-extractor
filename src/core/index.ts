@@ -60,5 +60,6 @@ export {
   isLowChromaCandidate,
   scorePrimary,
   scoreSecondary,
+  selectSecondary,
   type RoleAssignment,
 } from './role.js'

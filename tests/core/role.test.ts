@@ -9,6 +9,7 @@ import {
   contrastBoost,
   scoreSecondary,
   buildHarmonyFallback,
+  selectSecondary,
 } from '../../src/core/role.js'
 import type { Cluster } from '../../src/core/kmeans.js'
 import { DEFAULT_OPTIONS, type ResolvedOptions } from '../../src/core/defaults.js'
@@ -504,6 +505,117 @@ describe('buildHarmonyFallback (ADZ-43)', () => {
       expect(fb.hsl).toBeDefined()
       expect(fb.lab).toBeDefined()
       expect(fb.chroma).toBeGreaterThan(0)
+    })
+  })
+})
+
+describe('selectSecondary (ADZ-45)', () => {
+  function options(overrides: { harmonyFallbackDeg?: number; contrastMinDE?: number; fallback?: 'harmony' | 'null' | 'nearest' } = {}): ResolvedOptions {
+    return {
+      ...DEFAULT_OPTIONS,
+      secondary: {
+        fallback: overrides.fallback ?? 'harmony',
+        contrastMinDE: overrides.contrastMinDE ?? 20,
+        harmonyFallbackDeg: overrides.harmonyFallbackDeg ?? 150,
+      },
+    }
+  }
+
+  describe('AC: harmony mode returns generated fallback when no candidate passes', () => {
+    it('returns a harmony fallback with source=fallback when candidates fail contrast', () => {
+      const primary = labCluster(50, 50, 0, 100)
+      const tooClose = labCluster(55, 50, 0, 100, 0.1)
+      const result = selectSecondary(primary, [tooClose], options({ fallback: 'harmony' }))
+      expect(result).not.toBeNull()
+      expect(result!.source).toBe('fallback')
+      expect(result!.role).toBe('secondary')
+      expect(result!.hsl).toBeDefined()
+    })
+
+    it('uses a cluster when the top candidate passes the contrast threshold', () => {
+      const primary = labCluster(50, 50, 0, 100)
+      const passing = labCluster(95, 0, 50, 100, 0.1)
+      const result = selectSecondary(primary, [passing], options({ fallback: 'harmony' }))
+      expect(result).not.toBeNull()
+      expect(result!.source).toBe('cluster')
+      expect(result!.lab).toEqual(passing.lab)
+    })
+  })
+
+  describe('AC: null mode returns null when no candidate passes', () => {
+    it('returns null when the only candidate fails contrast', () => {
+      const primary = labCluster(50, 50, 0, 100)
+      const tooClose = labCluster(55, 50, 0, 100, 0.1)
+      const result = selectSecondary(primary, [tooClose], options({ fallback: 'null' }))
+      expect(result).toBeNull()
+    })
+
+    it('returns a cluster when a candidate passes contrast', () => {
+      const primary = labCluster(50, 50, 0, 100)
+      const passing = labCluster(95, 0, 50, 100, 0.1)
+      const result = selectSecondary(primary, [passing], options({ fallback: 'null' }))
+      expect(result).not.toBeNull()
+      expect(result!.source).toBe('cluster')
+    })
+  })
+
+  describe('AC: nearest mode returns the best candidate even below threshold', () => {
+    it('returns the best-scoring cluster with source=fallback when no candidate passes', () => {
+      const primary = labCluster(50, 50, 0, 100)
+      const a = labCluster(55, 50, 0, 100, 0.1)
+      const b = labCluster(60, 50, 0, 200, 0.2)
+      const result = selectSecondary(primary, [a, b], options({ fallback: 'nearest' }))
+      expect(result).not.toBeNull()
+      expect(result!.source).toBe('fallback')
+      expect(result!.lab).toEqual(b.lab)
+    })
+
+    it('returns a cluster with source=cluster when top candidate passes contrast', () => {
+      const primary = labCluster(50, 50, 0, 100)
+      const passing = labCluster(95, 0, 50, 100, 0.1)
+      const result = selectSecondary(primary, [passing], options({ fallback: 'nearest' }))
+      expect(result).not.toBeNull()
+      expect(result!.source).toBe('cluster')
+    })
+  })
+
+  describe('AC: metadata marks when fallback behavior is used', () => {
+    it('harmony fallback is marked with source=fallback', () => {
+      const primary = labCluster(50, 50, 0, 100)
+      const tooClose = labCluster(55, 50, 0, 100, 0.1)
+      const result = selectSecondary(primary, [tooClose], options({ fallback: 'harmony' }))
+      expect(result!.source).toBe('fallback')
+    })
+
+    it('nearest fallback is marked with source=fallback', () => {
+      const primary = labCluster(50, 50, 0, 100)
+      const tooClose = labCluster(55, 50, 0, 100, 0.1)
+      const result = selectSecondary(primary, [tooClose], options({ fallback: 'nearest' }))
+      expect(result!.source).toBe('fallback')
+    })
+
+    it('cluster-derived secondary is marked with source=cluster', () => {
+      const primary = labCluster(50, 50, 0, 100)
+      const passing = labCluster(95, 0, 50, 100, 0.1)
+      const result = selectSecondary(primary, [passing], options({ fallback: 'harmony' }))
+      expect(result!.source).toBe('cluster')
+    })
+  })
+
+  describe('AC: respects custom contrastMinDE', () => {
+    it('raises the contrast threshold to filter out marginal candidates', () => {
+      const primary = labCluster(50, 50, 0, 100)
+      const candidate = labCluster(60, 0, 50, 100, 0.1)
+      const result = selectSecondary(primary, [candidate], options({ contrastMinDE: 200, fallback: 'null' }))
+      expect(result).toBeNull()
+    })
+
+    it('lowers the contrast threshold so a marginal candidate passes', () => {
+      const primary = labCluster(50, 50, 0, 100)
+      const candidate = labCluster(60, 0, 50, 100, 0.1)
+      const result = selectSecondary(primary, [candidate], options({ contrastMinDE: 5, fallback: 'null' }))
+      expect(result).not.toBeNull()
+      expect(result!.source).toBe('cluster')
     })
   })
 })

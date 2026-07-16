@@ -1,5 +1,5 @@
 import type { Cluster } from './kmeans.js'
-import type { PrimaryPreset } from './options.js'
+import type { PrimaryPreset, SecondaryFallbackMode } from './options.js'
 import type { ResolvedOptions } from './defaults.js'
 import { circularHueDistance, hueFromLab } from './color/chroma-hue.js'
 import { labDistance, xyzToLab } from './color/lab.js'
@@ -129,6 +129,63 @@ export function buildHarmonyFallback(
     chroma,
     role: 'secondary',
     source: 'fallback',
+  }
+}
+
+function rankBySecondaryScore(
+  primary: Cluster,
+  candidates: readonly Cluster[],
+  options: ResolvedOptions,
+): { cluster: Cluster; score: number }[] {
+  return candidates
+    .map((c) => ({ cluster: c, score: scoreSecondary(primary, c, options) }))
+    .sort((a, b) => b.score - a.score)
+}
+
+function clusterAsSecondaryColor(cluster: Cluster, source: ExtractedColor['source']): ExtractedColor {
+  return {
+    hex: FALLBACK_HEX,
+    rgb: cluster.rgb,
+    hsl: cluster.hsl,
+    lab: cluster.lab,
+    chroma: cluster.chroma,
+    population: cluster.population,
+    proportion: cluster.proportion,
+    score: cluster.score,
+    role: 'secondary',
+    source,
+  }
+}
+
+export function selectSecondary(
+  primary: Cluster,
+  candidates: readonly Cluster[],
+  options: ResolvedOptions,
+): ExtractedColor | null {
+  const ranked = rankBySecondaryScore(primary, candidates, options)
+
+  if (ranked.length === 0) {
+    if (options.secondary.fallback === 'harmony') {
+      return buildHarmonyFallback(primary, options)
+    }
+    return null
+  }
+
+  const top = ranked[0]!
+  const passes = contrastBoost(primary, top.cluster, options) >= 1
+
+  if (passes) {
+    return clusterAsSecondaryColor(top.cluster, 'cluster')
+  }
+
+  const mode: SecondaryFallbackMode = options.secondary.fallback!
+  switch (mode) {
+    case 'harmony':
+      return buildHarmonyFallback(primary, options)
+    case 'nearest':
+      return clusterAsSecondaryColor(top.cluster, 'fallback')
+    case 'null':
+      return null
   }
 }
 
