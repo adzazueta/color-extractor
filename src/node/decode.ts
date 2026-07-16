@@ -69,31 +69,44 @@ function computeResizeTarget(
 
 function isSvgBytes(bytes: Buffer | Uint8Array): boolean {
   const buffer = Buffer.isBuffer(bytes) ? bytes : Buffer.from(bytes)
-  let i = 0
+  let offset = 0
+  let decoderLabel = 'utf-8'
 
-  // Skip BOM
-  if (i < buffer.length && buffer[i] === 0xEF && buffer[i + 1] === 0xBB && buffer[i + 2] === 0xBF) {
-    i += 3
+  // Detect encoding from BOM
+  if (offset + 2 < buffer.length && buffer[offset] === 0xEF && buffer[offset + 1] === 0xBB && buffer[offset + 2] === 0xBF) {
+    offset += 3
+  } else if (offset + 1 < buffer.length && buffer[offset] === 0xFF && buffer[offset + 1] === 0xFE) {
+    offset += 2
+    decoderLabel = 'utf-16le'
+  } else if (offset + 1 < buffer.length && buffer[offset] === 0xFE && buffer[offset + 1] === 0xFF) {
+    offset += 2
+    decoderLabel = 'utf-16be'
   }
-  if (i < buffer.length && buffer[i] === 0xFF && buffer[i + 1] === 0xFE) i += 2
-  if (i < buffer.length && buffer[i] === 0xFE && buffer[i + 1] === 0xFF) i += 2
 
-  // Skip whitespace, comments, DOCTYPE, etc. until we find '<'
-  while (i < buffer.length) {
-    if (buffer[i] === 0x3C) {
-      // '<' found - check if it's SVG
-      if (i + 1 >= buffer.length) return false
+  let text: string
+  try {
+    text = new TextDecoder(decoderLabel).decode(buffer.subarray(offset))
+  } catch {
+    return false
+  }
 
-      const nextChars = new TextDecoder('utf-8').decode(buffer.subarray(i, i + 256))
-      const prefixTrimmed = nextChars.trimStart()
-      if (prefixTrimmed.startsWith('<svg') || prefixTrimmed.startsWith('<SVG') || prefixTrimmed.startsWith('<?xml') || prefixTrimmed.startsWith('<?XML')) {
-        return true
-      }
-      // Not SVG — keep scanning past this tag in case <svg> appears later
-      i++
-      continue
+  let pos = 0
+  while (pos < text.length) {
+    const lt = text.indexOf('<', pos)
+    if (lt === -1) return false
+
+    const slice = text.slice(lt, lt + 256)
+    const trimmed = slice.trimStart()
+
+    if (
+      trimmed.startsWith('<svg') ||
+      trimmed.startsWith('<SVG') ||
+      trimmed.startsWith('<?xml') ||
+      trimmed.startsWith('<?XML')
+    ) {
+      return true
     }
-    i++
+    pos = lt + 1
   }
 
   return false
@@ -124,14 +137,14 @@ export async function decodeBufferToPixels(
 
   const Ctor = await loadSharp()
   const animatedMode = options.animated ?? 'first-frame'
-  let inputOptions: { page?: number } | undefined
+  let inputOptions: { page?: number; pages?: number } | undefined
 
   switch (animatedMode) {
     case 'first-frame':
       inputOptions = { page: 0 }
       break
     case 'all-frames':
-      inputOptions = { page: 0 }
+      inputOptions = { pages: -1 }
       break
     case 'disabled':
       inputOptions = undefined

@@ -11,6 +11,7 @@ import { validateRemoteProtocol } from './security.js'
 import { followRedirects } from './redirects.js'
 import { validateContentType } from './content-type.js'
 import { defaultResolveAndFetch } from './http-client.js'
+import { safeCancelBody } from './fetch.js'
 
 export const VERSION = '0.1.0'
 export type { NodeExtractColorsInput } from './types.js'
@@ -113,14 +114,26 @@ async function fetchRemoteWithPipeline(
   href: string,
   resolved: ResolvedOptions,
 ): Promise<Buffer | Uint8Array> {
+  const timeoutMs = resolved.remote.timeoutMs ?? 10_000
+
   // 1. Follow redirects with security validation to get the final URL and response
   const { finalUrl, finalResponse } = await followRedirects(href, {
     maxRedirects: resolved.remote.maxRedirects,
-    timeoutMs: resolved.remote.timeoutMs,
+    timeoutMs,
     allowPrivateNetworks: resolved.remote.allowPrivateNetworks,
     allowedProtocols: resolved.remote.allowedProtocols,
     resolveAndFetch: (url, signal, hostOptions) => defaultResolveAndFetch(url, signal, hostOptions),
   })
+
+  // 1b. Reject non-2xx responses
+  if (!finalResponse.ok) {
+    await safeCancelBody(finalResponse)
+    throw new ColorExtractorError(
+      'COLOR_EXTRACTOR_FETCH_FAILED',
+      `Remote URL (${finalUrl}) returned HTTP ${finalResponse.status} ${finalResponse.statusText}.`,
+      { cause: { url: finalUrl, status: finalResponse.status, statusText: finalResponse.statusText } },
+    )
+  }
 
   // 2. Validate content type
   const contentType = finalResponse.headers.get('content-type')
@@ -129,8 +142,16 @@ async function fetchRemoteWithPipeline(
     svg: resolved.decode.svg ?? 'disabled-in-node',
   })
 
-  // 3. Read response body with maxBytes enforcement (similar to fetchRemoteBuffer)
+  // 3. Read response body with maxBytes enforcement and timeout
   const maxBytes = resolved.remote.maxBytes ?? 10_000_000
+  if (!Number.isFinite(maxBytes) || maxBytes <= 0) {
+    throw new ColorExtractorError(
+      'COLOR_EXTRACTOR_UNSUPPORTED_INPUT',
+      `remote.maxBytes must be a positive finite number, got ${maxBytes}`,
+      { cause: maxBytes },
+    )
+  }
+
   const reader = finalResponse.body?.getReader()
   if (!reader) {
     throw new ColorExtractorError(
@@ -140,33 +161,51 @@ async function fetchRemoteWithPipeline(
     )
   }
 
-  const chunks: Uint8Array[] = []
-  let received = 0
+  const bodyController = new AbortController()
+  const bodyTimeout = setTimeout(() => {
+    bodyController.abort()
+    reader.cancel().catch(() => {})
+  }, timeoutMs)
 
-  while (true) {
-    const { done, value } = await reader.read()
-    if (done) break
-    if (!value) continue
+  try {
+    const chunks: Uint8Array[] = []
+    let received = 0
 
-    received += value.byteLength
-    if (received > maxBytes) {
-      reader.cancel()
-      throw new ColorExtractorError(
-        'COLOR_EXTRACTOR_INPUT_TOO_LARGE',
-        `Remote response from ${finalUrl} exceeded the ${maxBytes}-byte limit while streaming.`,
-        { cause: { url: finalUrl, maxBytes, received } },
-      )
+    while (true) {
+      if (bodyController.signal.aborted) {
+        throw new ColorExtractorError(
+          'COLOR_EXTRACTOR_TIMEOUT',
+          `Body read from ${finalUrl} exceeded the ${timeoutMs}ms timeout.`,
+          { cause: { url: finalUrl, timeoutMs } },
+        )
+      }
+
+      const { done, value } = await reader.read()
+      if (done) break
+      if (!value) continue
+
+      received += value.byteLength
+      if (received > maxBytes) {
+        reader.cancel()
+        throw new ColorExtractorError(
+          'COLOR_EXTRACTOR_INPUT_TOO_LARGE',
+          `Remote response from ${finalUrl} exceeded the ${maxBytes}-byte limit while streaming.`,
+          { cause: { url: finalUrl, maxBytes, received } },
+        )
+      }
+
+      chunks.push(value)
     }
 
-    chunks.push(value)
+    return new Uint8Array(
+      chunks.reduce((acc, chunk) => {
+        const tmp = new Uint8Array(acc.length + chunk.length)
+        tmp.set(acc)
+        tmp.set(chunk, acc.length)
+        return tmp
+      }, new Uint8Array(0)),
+    )
+  } finally {
+    clearTimeout(bodyTimeout)
   }
-
-  return new Uint8Array(
-    chunks.reduce((acc, chunk) => {
-      const tmp = new Uint8Array(acc.length + chunk.length)
-      tmp.set(acc)
-      tmp.set(chunk, acc.length)
-      return tmp
-    }, new Uint8Array(0)),
-  )
 }

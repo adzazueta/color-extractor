@@ -102,16 +102,16 @@ describe('Node extractColors (Phase 7)', () => {
     })
   })
 
-  describe('AC: remote URL pipeline validates content-type', () => {
-    it('throws COLOR_EXTRACTOR_UNSUPPORTED_FORMAT for http URL with text/html content-type', async () => {
+  describe('AC: remote URL pipeline rejects invalid URLs', () => {
+    it('throws COLOR_EXTRACTOR_FETCH_FAILED for http URL', async () => {
       await expect(extractColors('http://example.com/image.png')).rejects.toMatchObject({
-        code: 'COLOR_EXTRACTOR_UNSUPPORTED_FORMAT',
+        code: 'COLOR_EXTRACTOR_FETCH_FAILED',
       })
     })
 
-    it('throws COLOR_EXTRACTOR_UNSUPPORTED_FORMAT for https URL with text/html content-type', async () => {
+    it('throws COLOR_EXTRACTOR_FETCH_FAILED for https URL', async () => {
       await expect(extractColors('https://example.com/image.png')).rejects.toMatchObject({
-        code: 'COLOR_EXTRACTOR_UNSUPPORTED_FORMAT',
+        code: 'COLOR_EXTRACTOR_FETCH_FAILED',
       })
     })
   })
