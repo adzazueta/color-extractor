@@ -7,6 +7,8 @@ export { detectNodeInputKind } from './detect.js'
 export type { NodeInputKind } from './detect.js'
 export { loadSharp } from './sharp.js'
 export type { SharpModule } from './sharp.js'
+export { decodeBufferToPixels } from './decode.js'
+export type { DecodedPixels } from './decode.js'
 
 export const VERSION = '0.1.0'
 export type { NodeExtractColorsInput } from './types.js'
