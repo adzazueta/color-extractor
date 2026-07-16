@@ -58,6 +58,15 @@ function headersToObject(headers: HeadersInit | undefined): Record<string, strin
   return out
 }
 
+export async function safeCancelBody(response: Response): Promise<void> {
+  if (!response.body) return
+  try {
+    await response.body.cancel()
+  } catch {
+    // best effort
+  }
+}
+
 export async function fetchRemoteBuffer(
   url: string,
   options: Partial<Pick<RemoteOptions, 'timeoutMs' | 'maxBytes'>> = {},
@@ -112,12 +121,14 @@ export async function fetchRemoteBuffer(
     const status = response.status
     const statusText = response.statusText || ''
     if (status === 301 || status === 302 || status === 303 || status === 307 || status === 308) {
+      await safeCancelBody(response)
       throw new ColorExtractorError(
         'COLOR_EXTRACTOR_UNSAFE_URL',
         `Remote URL returned redirect (${status} ${statusText}); redirects must be followed explicitly.`,
         { cause: { url, status, statusText } },
       )
     }
+    await safeCancelBody(response)
     throw new ColorExtractorError(
       'COLOR_EXTRACTOR_FETCH_FAILED',
       `Remote fetch to ${url} failed with ${status} ${statusText}.`,
@@ -137,11 +148,7 @@ export async function fetchRemoteBuffer(
   const contentLength = Number.parseInt(headersToObject(response.headers)['content-length'] ?? '', 10)
   if (Number.isFinite(contentLength) && contentLength > maxBytes) {
     clearTimeout(timeoutHandle)
-    try {
-      controller.abort()
-    } catch {
-      // already aborted
-    }
+    await safeCancelBody(response)
     throw new ColorExtractorError(
       'COLOR_EXTRACTOR_INPUT_TOO_LARGE',
       `Remote response from ${url} advertises ${contentLength} bytes which exceeds the ${maxBytes}-byte limit.`,

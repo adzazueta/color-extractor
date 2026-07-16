@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { ColorExtractorError } from '../../src/core/errors.js'
 import { followRedirects, parseLocationHeader } from '../../src/node/redirects.js'
 import type { Fetcher } from '../../src/node/fetch.js'
+import type { ResolveHostname } from '../../src/node/security-private.js'
 
 type RedirectEntry = { status: number; location: string }
 type BodyEntry = { status: number; body: Uint8Array; contentType?: string }
@@ -22,16 +23,15 @@ function redirectFetch(map: Map): Fetcher {
   }
 }
 
-function expectUnsafe(fn: () => unknown): void {
-  try {
-    fn()
-    expect.fail('expected throw')
-  } catch (e) {
-    expect((e as ColorExtractorError).code).toBe('COLOR_EXTRACTOR_UNSAFE_URL')
-  }
+function publicResolver(): ResolveHostname {
+  return async (hostname: string) => [{ hostname, address: '93.184.216.34', family: 4 }]
 }
 
-async function expectUnsafeAsync(promise: Promise<unknown>): Promise<void> {
+function privateResolver(): ResolveHostname {
+  return async (hostname: string) => [{ hostname, address: '127.0.0.1', family: 4 }]
+}
+
+async function expectUnsafe(promise: Promise<unknown>): Promise<void> {
   try {
     await promise
     expect.fail('expected throw')
@@ -39,10 +39,6 @@ async function expectUnsafeAsync(promise: Promise<unknown>): Promise<void> {
     expect((e as ColorExtractorError).code).toBe('COLOR_EXTRACTOR_UNSAFE_URL')
   }
 }
-
-// Avoids an "async function not awaited" lint when the test author only
-// cares about the rejection.
-void expectUnsafeAsync
 
 describe('parseLocationHeader (ADZ-57)', () => {
   it('returns absolute URLs as-is', () => {
@@ -69,7 +65,7 @@ describe('followRedirects (ADZ-57)', () => {
         'https://a.com/': { status: 302, location: 'https://b.com/img.png' },
         'https://b.com/img.png': { status: 200, body: new Uint8Array([1, 2, 3]) },
       })
-      const result = await followRedirects('https://a.com/', {}, fetcher)
+      const result = await followRedirects('https://a.com/', { fetcher, resolveHostname: publicResolver() })
       expect(result.finalUrl).toBe('https://b.com/img.png')
       expect(result.redirectChain).toEqual(['https://a.com/'])
     })
@@ -83,15 +79,7 @@ describe('followRedirects (ADZ-57)', () => {
         'https://c.com/': { status: 302, location: 'https://d.com/' },
         'https://d.com/': { status: 200, body: new Uint8Array([1]) },
       }
-      const fetcher = redirectFetch(map)
-      let threw = false
-      try {
-        await followRedirects('https://a.com/', { maxRedirects: 2 }, fetcher)
-      } catch (e) {
-        threw = true
-        expect((e as ColorExtractorError).code).toBe('COLOR_EXTRACTOR_UNSAFE_URL')
-      }
-      expect(threw).toBe(true)
+      await expectUnsafe(followRedirects('https://a.com/', { fetcher: redirectFetch(map), resolveHostname: publicResolver(), maxRedirects: 2 }))
     })
   })
 
@@ -100,58 +88,48 @@ describe('followRedirects (ADZ-57)', () => {
       const fetcher = redirectFetch({
         'https://a.com/': { status: 302, location: 'file:///etc/passwd' },
       })
-      let threw = false
-      try {
-        await followRedirects('https://a.com/', {}, fetcher)
-      } catch (e) {
-        threw = true
-        expect((e as ColorExtractorError).code).toBe('COLOR_EXTRACTOR_UNSAFE_URL')
-      }
-      expect(threw).toBe(true)
+      await expectUnsafe(followRedirects('https://a.com/', { fetcher, resolveHostname: publicResolver() }))
     })
 
     it('throws when a redirect points to ftp://', async () => {
       const fetcher = redirectFetch({
         'https://a.com/': { status: 302, location: 'ftp://b.com/x' },
       })
-      let threw = false
-      try {
-        await followRedirects('https://a.com/', {}, fetcher)
-      } catch (e) {
-        threw = true
-        expect((e as ColorExtractorError).code).toBe('COLOR_EXTRACTOR_UNSAFE_URL')
-      }
-      expect(threw).toBe(true)
+      await expectUnsafe(followRedirects('https://a.com/', { fetcher, resolveHostname: publicResolver() }))
     })
   })
 
-  describe('AC: redirects to private networks fail by default', () => {
-    it('throws when a redirect points to 127.0.0.1', async () => {
+  describe('AC: redirects to private networks fail by default (review #2)', () => {
+    it('throws when a redirect points to 127.0.0.1 (literal IP)', async () => {
       const fetcher = redirectFetch({
         'https://a.com/': { status: 302, location: 'http://127.0.0.1/img.png' },
       })
-      let threw = false
-      try {
-        await followRedirects('https://a.com/', {}, fetcher)
-      } catch (e) {
-        threw = true
-        expect((e as ColorExtractorError).code).toBe('COLOR_EXTRACTOR_UNSAFE_URL')
-      }
-      expect(threw).toBe(true)
+      await expectUnsafe(followRedirects('https://a.com/', { fetcher, resolveHostname: publicResolver() }))
+    })
+
+    it('throws when a redirect hostname resolves to 127.0.0.1 via DNS (review #2)', async () => {
+      const fetcher = redirectFetch({
+        'https://a.com/': { status: 302, location: 'http://attacker.example.com/img.png' },
+        'http://attacker.example.com/img.png': { status: 200, body: new Uint8Array([1]) },
+      })
+      await expectUnsafe(followRedirects('https://a.com/', { fetcher, resolveHostname: privateResolver() }))
+    })
+
+    it('throws when a redirect hostname resolves to 169.254.169.254 via DNS (review #2)', async () => {
+      const metaResolver: ResolveHostname = async (hostname) => [
+        { hostname, address: '169.254.169.254', family: 4 },
+      ]
+      const fetcher = redirectFetch({
+        'https://a.com/': { status: 302, location: 'http://meta.evil.com/' },
+      })
+      await expectUnsafe(followRedirects('https://a.com/', { fetcher, resolveHostname: metaResolver }))
     })
 
     it('throws when a redirect points to localhost', async () => {
       const fetcher = redirectFetch({
         'https://a.com/': { status: 302, location: 'http://localhost/img.png' },
       })
-      let threw = false
-      try {
-        await followRedirects('https://a.com/', {}, fetcher)
-      } catch (e) {
-        threw = true
-        expect((e as ColorExtractorError).code).toBe('COLOR_EXTRACTOR_UNSAFE_URL')
-      }
-      expect(threw).toBe(true)
+      await expectUnsafe(followRedirects('https://a.com/', { fetcher, resolveHostname: publicResolver() }))
     })
   })
 
@@ -161,11 +139,11 @@ describe('followRedirects (ADZ-57)', () => {
         'https://a.com/': { status: 302, location: 'http://localhost/img.png' },
         'http://localhost/img.png': { status: 200, body: new Uint8Array([1]) },
       })
-      const result = await followRedirects(
-        'https://a.com/',
-        { allowPrivateNetworks: true },
+      const result = await followRedirects('https://a.com/', {
         fetcher,
-      )
+        resolveHostname: publicResolver(),
+        allowPrivateNetworks: true,
+      })
       expect(result.finalUrl).toBe('http://localhost/img.png')
     })
   })
@@ -173,14 +151,7 @@ describe('followRedirects (ADZ-57)', () => {
   describe('AC: redirect without a valid Location header fails', () => {
     it('throws when a 302 has no Location header', async () => {
       const fetcher: Fetcher = async () => new Response(null, { status: 302, headers: {} })
-      let threw = false
-      try {
-        await followRedirects('https://a.com/', {}, fetcher)
-      } catch (e) {
-        threw = true
-        expect((e as ColorExtractorError).code).toBe('COLOR_EXTRACTOR_UNSAFE_URL')
-      }
-      expect(threw).toBe(true)
+      await expectUnsafe(followRedirects('https://a.com/', { fetcher, resolveHostname: publicResolver() }))
     })
   })
 
@@ -189,14 +160,11 @@ describe('followRedirects (ADZ-57)', () => {
       const fetcher = redirectFetch({
         'https://a.com/': { status: 302, location: 'https://b.com/' },
       })
-      let threw = false
-      try {
-        await followRedirects('https://a.com/', { maxRedirects: 0 }, fetcher)
-      } catch (e) {
-        threw = true
-        expect((e as ColorExtractorError).code).toBe('COLOR_EXTRACTOR_UNSAFE_URL')
-      }
-      expect(threw).toBe(true)
+      await expectUnsafe(followRedirects('https://a.com/', {
+        fetcher,
+        resolveHostname: publicResolver(),
+        maxRedirects: 0,
+      }))
     })
   })
 
@@ -205,7 +173,10 @@ describe('followRedirects (ADZ-57)', () => {
       const fetcher = redirectFetch({
         'https://a.com/img.png': { status: 200, body: new Uint8Array([0xff]) },
       })
-      const result = await followRedirects('https://a.com/img.png', {}, fetcher)
+      const result = await followRedirects('https://a.com/img.png', {
+        fetcher,
+        resolveHostname: publicResolver(),
+      })
       expect(result.finalUrl).toBe('https://a.com/img.png')
       expect(result.redirectChain).toEqual([])
     })
@@ -215,7 +186,11 @@ describe('followRedirects (ADZ-57)', () => {
     it('throws COLOR_EXTRACTOR_UNSUPPORTED_INPUT for negative maxRedirects', async () => {
       let threw = false
       try {
-        await followRedirects('https://a.com/', { maxRedirects: -1 }, redirectFetch({}))
+        await followRedirects('https://a.com/', {
+          fetcher: redirectFetch({}),
+          resolveHostname: publicResolver(),
+          maxRedirects: -1,
+        })
       } catch (e) {
         threw = true
         expect((e as ColorExtractorError).code).toBe('COLOR_EXTRACTOR_UNSUPPORTED_INPUT')
@@ -226,12 +201,116 @@ describe('followRedirects (ADZ-57)', () => {
 
   describe('AC: protocol check runs on the start URL too', () => {
     it('throws when the start URL has a disallowed protocol', async () => {
+      await expectUnsafe(followRedirects('file:///x.png', {
+        fetcher: redirectFetch({}) as Fetcher,
+        resolveHostname: publicResolver(),
+      }))
+    })
+  })
+
+  describe('AC: review #3 — fetcher receives an AbortSignal with timeout', () => {
+    it('aborts the fetcher when a redirect never responds past timeoutMs', async () => {
+      let observedSignal: AbortSignal | null = null
+      const fetcher: Fetcher = (_url, init) =>
+        new Promise<Response>((_resolve, reject) => {
+          observedSignal = init?.signal ?? null
+          init?.signal?.addEventListener('abort', () => {
+            reject(new DOMException('aborted', 'AbortError'))
+          })
+        })
       let threw = false
       try {
-        await followRedirects('file:///x.png', {}, redirectFetch({}) as Fetcher)
+        await followRedirects('https://a.com/', {
+          fetcher,
+          resolveHostname: publicResolver(),
+          timeoutMs: 20,
+          maxRedirects: 0,
+        })
+      } catch (e) {
+        threw = true
+        expect((e as ColorExtractorError).code).toBe('COLOR_EXTRACTOR_TIMEOUT')
+      }
+      expect(threw).toBe(true)
+      expect(observedSignal).not.toBeNull()
+    })
+  })
+
+  describe('AC: review #4 — body is cancelled on redirect overshoot and bad status', () => {
+    it('cancels the redirect response body when maxRedirects is exceeded', async () => {
+      let bodyCancelled = false
+      const stream = new ReadableStream<Uint8Array>({
+        start(controller) {
+          controller.enqueue(new Uint8Array(10))
+        },
+        cancel() {
+          bodyCancelled = true
+        },
+      })
+      const map: Map = {
+        'https://a.com/': {
+          status: 302,
+          location: 'https://b.com/',
+        },
+        'https://b.com/': { status: 200, body: new Uint8Array(1) },
+      }
+      void map
+      const fetcher: Fetcher = async (url) => {
+        const href = typeof url === 'string' ? url : url.toString()
+        if (href === 'https://a.com/') {
+          return new Response(stream, { status: 302, headers: { location: 'https://b.com/' } })
+        }
+        return new Response(Buffer.from(new Uint8Array(1)), { status: 200 })
+      }
+      let threw = false
+      try {
+        await followRedirects('https://a.com/', {
+          fetcher,
+          resolveHostname: publicResolver(),
+          maxRedirects: 0,
+        })
       } catch (e) {
         threw = true
         expect((e as ColorExtractorError).code).toBe('COLOR_EXTRACTOR_UNSAFE_URL')
+      }
+      expect(threw).toBe(true)
+      expect(bodyCancelled).toBe(true)
+    })
+
+    it('cancels the response body when a redirect is missing the Location header', async () => {
+      let bodyCancelled = false
+      const stream = new ReadableStream<Uint8Array>({
+        start(controller) {
+          controller.enqueue(new Uint8Array(10))
+        },
+        cancel() {
+          bodyCancelled = true
+        },
+      })
+      const fetcher: Fetcher = async () =>
+        new Response(stream, { status: 302, headers: {} })
+      let threw = false
+      try {
+        await followRedirects('https://a.com/', {
+          fetcher,
+          resolveHostname: publicResolver(),
+        })
+      } catch (e) {
+        threw = true
+        expect((e as ColorExtractorError).code).toBe('COLOR_EXTRACTOR_UNSAFE_URL')
+      }
+      expect(threw).toBe(true)
+      expect(bodyCancelled).toBe(true)
+    })
+  })
+
+  describe('AC: requires a fetcher', () => {
+    it('throws COLOR_EXTRACTOR_DECODE_FAILED when fetcher is missing', async () => {
+      let threw = false
+      try {
+        await followRedirects('https://a.com/', { resolveHostname: publicResolver() })
+      } catch (e) {
+        threw = true
+        expect((e as ColorExtractorError).code).toBe('COLOR_EXTRACTOR_DECODE_FAILED')
       }
       expect(threw).toBe(true)
     })

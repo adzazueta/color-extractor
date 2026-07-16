@@ -170,6 +170,62 @@ describe('fetchRemoteBuffer (ADZ-58)', () => {
     })
   })
 
+  describe('AC: review #4 — response body is cancelled on non-OK, redirect, and oversize', () => {
+    function makeStreamingFetcher(status: number, headers: Record<string, string> = {}): { fetcher: Fetcher; isCancelled: () => boolean } {
+      let cancelled = false
+      const stream = new ReadableStream<Uint8Array>({
+        start(controller) {
+          controller.enqueue(new Uint8Array(10))
+        },
+        cancel() {
+          cancelled = true
+        },
+      })
+      const fetcher: Fetcher = async () =>
+        new Response(stream, { status, headers })
+      return { fetcher, isCancelled: () => cancelled }
+    }
+
+    it('cancels body on non-OK 404', async () => {
+      const { fetcher, isCancelled } = makeStreamingFetcher(404)
+      let threw = false
+      try {
+        await fetchRemoteBuffer('https://x.com/y', {}, fetcher)
+      } catch (e) {
+        threw = true
+        expect((e as ColorExtractorError).code).toBe('COLOR_EXTRACTOR_FETCH_FAILED')
+      }
+      expect(threw).toBe(true)
+      expect(isCancelled()).toBe(true)
+    })
+
+    it('cancels body on 302 redirect', async () => {
+      const { fetcher, isCancelled } = makeStreamingFetcher(302, { location: 'https://elsewhere' })
+      let threw = false
+      try {
+        await fetchRemoteBuffer('https://x.com/y', {}, fetcher)
+      } catch (e) {
+        threw = true
+        expect((e as ColorExtractorError).code).toBe('COLOR_EXTRACTOR_UNSAFE_URL')
+      }
+      expect(threw).toBe(true)
+      expect(isCancelled()).toBe(true)
+    })
+
+    it('cancels body when Content-Length exceeds maxBytes', async () => {
+      const { fetcher, isCancelled } = makeStreamingFetcher(200, { 'content-length': '9999' })
+      let threw = false
+      try {
+        await fetchRemoteBuffer('https://x.com/y', { maxBytes: 100 }, fetcher)
+      } catch (e) {
+        threw = true
+        expect((e as ColorExtractorError).code).toBe('COLOR_EXTRACTOR_INPUT_TOO_LARGE')
+      }
+      expect(threw).toBe(true)
+      expect(isCancelled()).toBe(true)
+    })
+  })
+
   describe('AC: invalid options are rejected', () => {
     it('throws COLOR_EXTRACTOR_UNSUPPORTED_INPUT for timeoutMs <= 0', async () => {
       let threw = false

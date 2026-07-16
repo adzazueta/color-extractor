@@ -56,6 +56,10 @@ describe('isPrivateIPv4 (ADZ-73)', () => {
     expect(isPrivateIPv4('100.64.0.1')).toBe(true)
   })
 
+  it('flags 0.0.0.0 as private (review #1)', () => {
+    expect(isPrivateIPv4('0.0.0.0')).toBe(true)
+  })
+
   it('does not flag 8.8.8.8 as private', () => {
     expect(isPrivateIPv4('8.8.8.8')).toBe(false)
   })
@@ -76,6 +80,39 @@ describe('isPrivateIPv6 (ADZ-73)', () => {
 
   it('flags fe80::1 as private (link-local)', () => {
     expect(isPrivateIPv6('fe80::1')).toBe(true)
+  })
+
+  it('flags :: as private (unspecified, review #1)', () => {
+    expect(isPrivateIPv6('::')).toBe(true)
+  })
+
+  it('flags 0:0:0:0:0:0:0:0 as private (unspecified expanded)', () => {
+    expect(isPrivateIPv6('0:0:0:0:0:0:0:0')).toBe(true)
+  })
+
+  it('flags ::ffff:127.0.0.1 as private (IPv4-mapped loopback, review #1)', () => {
+    expect(isPrivateIPv6('::ffff:127.0.0.1')).toBe(true)
+  })
+
+  it('flags ::ffff:169.254.169.254 as private (IPv4-mapped metadata, review #1)', () => {
+    expect(isPrivateIPv6('::ffff:169.254.169.254')).toBe(true)
+  })
+
+  it('flags ::ffff:10.0.0.1 as private (IPv4-mapped RFC1918)', () => {
+    expect(isPrivateIPv6('::ffff:10.0.0.1')).toBe(true)
+  })
+
+  it('flags ::ffff:7f7f:1 as private (IPv4-mapped hex format)', () => {
+    expect(isPrivateIPv6('::ffff:7f7f:1')).toBe(true)
+  })
+
+  it('flags [::ffff:127.0.0.1] (bracket form)', () => {
+    expect(isPrivateIPv6('[::ffff:127.0.0.1]')).toBe(true)
+  })
+
+  it('flags ::ffff:8.8.8.8 as private (does not whitelist public IPv4-mapped)', () => {
+    // 8.8.8.8 is not private, so this should NOT be flagged.
+    expect(isPrivateIPv6('::ffff:8.8.8.8')).toBe(false)
   })
 
   it('does not flag 2001:4860:4860::8888 as private', () => {
@@ -123,6 +160,28 @@ describe('assertPublicHostnameSync (ADZ-73)', () => {
 
     it('blocks ::1 (IPv6 loopback)', () => {
       const parsed = parseRemoteUrl('http://[::1]/')
+      expectUnsafeCode(() => assertPublicHostnameSync(parsed, { allowPrivateNetworks: false }))
+    })
+  })
+
+  describe('AC: review #1 — IPv4-mapped IPv6 and unspecified addresses are blocked', () => {
+    it('blocks ::ffff:127.0.0.1', () => {
+      const parsed = parseRemoteUrl('http://[::ffff:127.0.0.1]/')
+      expectUnsafeCode(() => assertPublicHostnameSync(parsed, { allowPrivateNetworks: false }))
+    })
+
+    it('blocks ::ffff:169.254.169.254 (cloud metadata via IPv4-mapped)', () => {
+      const parsed = parseRemoteUrl('http://[::ffff:169.254.169.254]/')
+      expectUnsafeCode(() => assertPublicHostnameSync(parsed, { allowPrivateNetworks: false }))
+    })
+
+    it('blocks :: (unspecified)', () => {
+      const parsed = parseRemoteUrl('http://[::]/')
+      expectUnsafeCode(() => assertPublicHostnameSync(parsed, { allowPrivateNetworks: false }))
+    })
+
+    it('blocks 0.0.0.0', () => {
+      const parsed = parseRemoteUrl('http://0.0.0.0/')
       expectUnsafeCode(() => assertPublicHostnameSync(parsed, { allowPrivateNetworks: false }))
     })
   })
