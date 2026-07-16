@@ -105,8 +105,21 @@ export async function extractColors(
     normalizeColorProfile: resolved.decode.normalizeColorProfile,
   })
 
-  return runExtractionPipeline(
+  let result = runExtractionPipeline(
     { data: pixels.data, width: pixels.width, height: pixels.height },
     options,
   )
+
+  // Override metadata for Node adapter
+  if (result.metadata) {
+    return {
+      ...result,
+      metadata: {
+        ...result.metadata,
+        runtime: 'node',
+        decoder: 'sharp',
+      },
+    }
+  }
+  return result
 }
