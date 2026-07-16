@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { kmeans, buildClusters, type Cluster } from '../../src/core/kmeans.js'
 import { rgbToHsl } from '../../src/core/color/hsl.js'
+import { DEFAULT_OPTIONS } from '../../src/core/defaults.js'
 import type { LabSample } from '../../src/core/sample.js'
 
 function sample(L: number, a: number, b: number, r: number = 128, index: number = 0): LabSample {
@@ -133,13 +134,27 @@ describe('buildClusters', () => {
     })
   })
 
-  describe('score is a placeholder (zero for now)', () => {
-    it('all clusters have score = 0 (until scoring is added)', () => {
+  describe('score uses primary scoring preset', () => {
+    it('populates score as chroma * log(population + 1) by default (strict)', () => {
       const samples = [...clusterA(0, 5), ...clusterB(100, 5)]
       const kmeansResult = kmeans(samples, { clusters: 2, iterations: 10 })
       const clusters = buildClusters(samples, kmeansResult)
       for (const c of clusters) {
-        expect(c.score).toBe(0)
+        const expected = c.chroma * Math.log(c.population + 1)
+        expect(c.score).toBeCloseTo(expected, 10)
+      }
+    })
+
+    it('uses balanced preset when options provide one', () => {
+      const samples = [...clusterA(0, 5), ...clusterB(100, 5)]
+      const kmeansResult = kmeans(samples, { clusters: 2, iterations: 10 })
+      const clusters = buildClusters(samples, kmeansResult, {
+        ...DEFAULT_OPTIONS,
+        primary: { preset: 'balanced' },
+      })
+      for (const c of clusters) {
+        const expected = Math.pow(c.chroma, 1.25) * Math.log(c.population + 1)
+        expect(c.score).toBeCloseTo(expected, 10)
       }
     })
   })

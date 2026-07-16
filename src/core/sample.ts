@@ -1,5 +1,5 @@
 import type { Lab, RGB } from './types.js'
-import type { Pixel } from './pixels.js'
+import type { NormalizedPixels, Pixel } from './pixels.js'
 import { srgbByteToLinear } from './color/srgb.js'
 import { linearRgbToXyz } from './color/xyz.js'
 import { xyzToLab } from './color/lab.js'
@@ -25,4 +25,35 @@ export function convertRgbSamplesToLab(pixels: Pixel[]): LabSample[] {
     })
   }
   return result
+}
+
+export function sampleSquareGrid(
+  pixels: NormalizedPixels,
+  sampleSize: number,
+): Pixel[] {
+  if (!Number.isInteger(sampleSize) || sampleSize <= 0) {
+    throw new RangeError(`sampleSize must be a positive integer, got ${sampleSize}`)
+  }
+  const { width, height } = pixels
+  const total = width * height
+  if (total === 0) return []
+
+  const step = Math.max(1, Math.floor(Math.sqrt(total / sampleSize)))
+  const samples: Pixel[] = []
+  let index = 0
+  for (let y = 0; y < height; y += step) {
+    for (let x = 0; x < width; x += step) {
+      const px = pixels.data
+      const o = (y * width + x) * pixels.channels
+      samples.push({
+        index: index++,
+        r: px[o]!,
+        g: px[o + 1]!,
+        b: px[o + 2]!,
+        a: pixels.channels === 4 ? px[o + 3]! : 255,
+      })
+      if (samples.length >= sampleSize) return samples
+    }
+  }
+  return samples
 }

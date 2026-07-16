@@ -50,6 +50,11 @@ export { chromaFromLab, circularHueDistance, hueFromLab, normalizeHue } from './
 export { rgbToHsl, hslToRgb } from './color/hsl.js'
 export { rgbToHex } from './color/hex.js'
 export type { PixelData, PixelInput } from './validation.js'
+export { normalizePixels, type NormalizedPixels, type Pixel } from './pixels.js'
+export { filterPixels, passesFilter, validateFilterCriteria, type FilterCriteria } from './filter.js'
+export { convertRgbSamplesToLab, sampleSquareGrid, type LabSample } from './sample.js'
+export { kmeans, buildClusters, type KMeansOptions, type KMeansResult, type Cluster } from './kmeans.js'
+export { applyOutputFlags, type FullExtractionResult } from './output.js'
 export {
   applyGrayPenalty,
   applyLightnessGap,

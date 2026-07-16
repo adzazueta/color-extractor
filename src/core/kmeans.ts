@@ -1,8 +1,10 @@
 import type { HSL, Lab, RGB } from './types.js'
 import type { LabSample } from './sample.js'
+import type { ResolvedOptions } from './defaults.js'
 import { labSquaredDistance } from './color/lab.js'
 import { rgbToHsl } from './color/hsl.js'
 import { chromaFromLab } from './color/chroma-hue.js'
+import { scorePrimary } from './role.js'
 
 export interface KMeansOptions {
   readonly clusters: number
@@ -236,9 +238,11 @@ export function kmeans(samples: LabSample[], options: KMeansOptions): KMeansResu
 export function buildClusters(
   samples: LabSample[],
   kmeansResult: KMeansResult,
+  options?: ResolvedOptions,
 ): Cluster[] {
   const { centroids, populations, assignments } = kmeansResult
   const total = samples.length
+  const preset = options?.primary.preset ?? 'strict'
 
   const clusters: Cluster[] = []
   for (let i = 0; i < centroids.length; i++) {
@@ -258,7 +262,7 @@ export function buildClusters(
       hsl = rgbToHsl(rep.rgb.r, rep.rgb.g, rep.rgb.b)
     }
 
-    clusters.push({
+    const cluster: Cluster = {
       index: i,
       lab,
       rgb,
@@ -267,7 +271,9 @@ export function buildClusters(
       proportion,
       chroma,
       score: 0,
-    })
+    }
+    const score = scorePrimary(cluster, preset)
+    clusters.push({ ...cluster, score })
   }
 
   return clusters

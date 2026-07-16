@@ -1,7 +1,7 @@
 import type { Cluster } from './kmeans.js'
 import type { PrimaryPreset, SecondaryFallbackMode } from './options.js'
 import type { ResolvedOptions } from './defaults.js'
-import { circularHueDistance, hueFromLab } from './color/chroma-hue.js'
+import { circularHueDistance, hueFromLab, normalizeHue } from './color/chroma-hue.js'
 import { labDistance, xyzToLab } from './color/lab.js'
 import { hslToRgb } from './color/hsl.js'
 import { rgbToHex } from './color/hex.js'
@@ -9,7 +9,6 @@ import { srgbByteToLinear } from './color/srgb.js'
 import { linearRgbToXyz } from './color/xyz.js'
 import type { ExtractedColor } from './types.js'
 
-const FALLBACK_HEX = '#808080'
 const HARMONY_SATURATION_FLOOR = 0.4
 const HARMONY_LIGHTNESS_FLOOR = 0.3
 const HARMONY_LIGHTNESS_CEILING = 0.7
@@ -130,7 +129,7 @@ export function buildHarmonyFallback(
   return {
     hex,
     rgb,
-    hsl: { h: rotatedHue % 360, s, l },
+    hsl: { h: normalizeHue(rotatedHue), s, l },
     lab,
     chroma,
     role: 'secondary',
@@ -145,12 +144,15 @@ function rankBySecondaryScore(
 ): { cluster: Cluster; score: number }[] {
   return candidates
     .map((c) => ({ cluster: c, score: scoreSecondary(primary, c, options) }))
-    .sort((a, b) => b.score - a.score)
+    .sort((a, b) => {
+      if (b.score !== a.score) return b.score - a.score
+      return a.cluster.index - b.cluster.index
+    })
 }
 
 function clusterAsSecondaryColor(cluster: Cluster, source: ExtractedColor['source']): ExtractedColor {
   return {
-    hex: FALLBACK_HEX,
+    hex: rgbToHex(cluster.rgb),
     rgb: cluster.rgb,
     hsl: cluster.hsl,
     lab: cluster.lab,
@@ -165,7 +167,7 @@ function clusterAsSecondaryColor(cluster: Cluster, source: ExtractedColor['sourc
 
 function clusterAsPaletteColor(cluster: Cluster): ExtractedColor {
   return {
-    hex: FALLBACK_HEX,
+    hex: rgbToHex(cluster.rgb),
     rgb: cluster.rgb,
     hsl: cluster.hsl,
     lab: cluster.lab,
@@ -207,31 +209,22 @@ export function selectSecondary(
   candidates: readonly Cluster[],
   options: ResolvedOptions,
 ): ExtractedColor | null {
-  const ranked = rankBySecondaryScore(primary, candidates, options)
+  const { passing, rejected } = filterByContrastThreshold(primary, candidates, options)
+  const passingRanked = rankBySecondaryScore(primary, passing, options)
+  const rejectedRanked = rankBySecondaryScore(primary, rejected, options)
 
-  if (ranked.length === 0) {
+  if (passingRanked.length === 0) {
     if (options.secondary.fallback === 'harmony') {
       return buildHarmonyFallback(primary, options)
+    }
+    if (options.secondary.fallback === 'nearest') {
+      if (rejectedRanked.length === 0) return null
+      return clusterAsSecondaryColor(rejectedRanked[0]!.cluster, 'fallback')
     }
     return null
   }
 
-  const top = ranked[0]!
-  const passes = contrastBoost(primary, top.cluster, options) >= 1
-
-  if (passes) {
-    return clusterAsSecondaryColor(top.cluster, 'cluster')
-  }
-
-  const mode: SecondaryFallbackMode = options.secondary.fallback!
-  switch (mode) {
-    case 'harmony':
-      return buildHarmonyFallback(primary, options)
-    case 'nearest':
-      return clusterAsSecondaryColor(top.cluster, 'fallback')
-    case 'null':
-      return null
-  }
+  return clusterAsSecondaryColor(passingRanked[0]!.cluster, 'cluster')
 }
 
 export interface ContrastFilterResult {
@@ -300,13 +293,14 @@ export function applyLightnessGap(
 
 export function buildPrimaryColor(cluster: Cluster): import('./types.js').ExtractedColor {
   return {
-    hex: FALLBACK_HEX,
+    hex: rgbToHex(cluster.rgb),
     rgb: cluster.rgb,
     hsl: cluster.hsl,
     lab: cluster.lab,
     chroma: cluster.chroma,
     population: cluster.population,
     proportion: cluster.proportion,
+    score: cluster.score,
     role: 'primary',
     source: 'cluster',
   }
