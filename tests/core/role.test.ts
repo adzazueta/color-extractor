@@ -8,6 +8,7 @@ import {
   hueWeight,
   contrastBoost,
   scoreSecondary,
+  buildHarmonyFallback,
 } from '../../src/core/role.js'
 import type { Cluster } from '../../src/core/kmeans.js'
 import { DEFAULT_OPTIONS, type ResolvedOptions } from '../../src/core/defaults.js'
@@ -399,6 +400,110 @@ describe('scoreSecondary (ADZ-42)', () => {
       const grayScore = scoreSecondary(primary, gray, DEFAULT_OPTIONS)
       const vividScore = scoreSecondary(primary, vivid, DEFAULT_OPTIONS)
       expect(vividScore).toBeGreaterThan(grayScore)
+    })
+  })
+})
+
+function hslCluster(h: number, s: number, l: number, population: number = 100): Cluster {
+  const hueRad = (h * Math.PI) / 180
+  const a = 50 * Math.cos(hueRad)
+  const b = 50 * Math.sin(hueRad)
+  return {
+    index: 0,
+    lab: { L: 50, a, b },
+    rgb: { r: 0, g: 0, b: 0 },
+    hsl: { h, s, l },
+    population,
+    proportion: 0.1,
+    chroma: 50,
+    score: 0,
+  }
+}
+
+describe('buildHarmonyFallback (ADZ-43)', () => {
+  function options(overrides: { harmonyFallbackDeg?: number } = {}): ResolvedOptions {
+    return {
+      ...DEFAULT_OPTIONS,
+      secondary: {
+        fallback: 'harmony',
+        contrastMinDE: 20,
+        harmonyFallbackDeg: overrides.harmonyFallbackDeg ?? 150,
+      },
+    }
+  }
+
+  describe('AC: secondary is generated from primary hue rotation', () => {
+    it('rotates the primary hue by the configured harmonyFallbackDeg', () => {
+      const primary = hslCluster(0, 0.5, 0.5)
+      const fb = buildHarmonyFallback(primary, options({ harmonyFallbackDeg: 150 }))
+      expect(fb.hsl).toBeDefined()
+      expect(fb.hsl!.h).toBeCloseTo(150, 5)
+    })
+
+    it('uses 180 by default for complementary rotation', () => {
+      const primary = hslCluster(0, 0.5, 0.5)
+      const fb = buildHarmonyFallback(primary, options({ harmonyFallbackDeg: 180 }))
+      expect(fb.hsl!.h).toBeCloseTo(180, 5)
+    })
+
+    it('normalizes hue wraparound into [0, 360)', () => {
+      const primary = hslCluster(300, 0.5, 0.5)
+      const fb = buildHarmonyFallback(primary, options({ harmonyFallbackDeg: 150 }))
+      expect(fb.hsl!.h).toBeCloseTo(90, 5)
+      expect(fb.hsl!.h).toBeGreaterThanOrEqual(0)
+      expect(fb.hsl!.h).toBeLessThan(360)
+    })
+  })
+
+  describe('AC: applies saturation and lightness floors', () => {
+    it('raises saturation when primary saturation is below the floor', () => {
+      const primary = hslCluster(0, 0.1, 0.5)
+      const fb = buildHarmonyFallback(primary, options())
+      expect(fb.hsl!.s).toBeGreaterThanOrEqual(0.4)
+    })
+
+    it('keeps saturation when primary saturation already meets the floor', () => {
+      const primary = hslCluster(0, 0.8, 0.5)
+      const fb = buildHarmonyFallback(primary, options())
+      expect(fb.hsl!.s).toBeCloseTo(0.8, 5)
+    })
+
+    it('clamps lightness into [0.3, 0.7]', () => {
+      const tooDark = hslCluster(0, 0.5, 0.1)
+      const fbDark = buildHarmonyFallback(tooDark, options())
+      expect(fbDark.hsl!.l).toBeGreaterThanOrEqual(0.3)
+
+      const tooLight = hslCluster(0, 0.5, 0.95)
+      const fbLight = buildHarmonyFallback(tooLight, options())
+      expect(fbLight.hsl!.l).toBeLessThanOrEqual(0.7)
+    })
+  })
+
+  describe('AC: marks color source as fallback', () => {
+    it('sets role=secondary and source=fallback', () => {
+      const primary = hslCluster(0, 0.5, 0.5)
+      const fb = buildHarmonyFallback(primary, options())
+      expect(fb.role).toBe('secondary')
+      expect(fb.source).toBe('fallback')
+    })
+
+    it('does not carry cluster-derived population or proportion', () => {
+      const primary = hslCluster(0, 0.5, 0.5, 250)
+      const fb = buildHarmonyFallback(primary, options())
+      expect(fb.population).toBeUndefined()
+      expect(fb.proportion).toBeUndefined()
+    })
+  })
+
+  describe('AC: returns a consistent ExtractedColor shape', () => {
+    it('produces matching hex, rgb, hsl and lab', () => {
+      const primary = hslCluster(30, 0.6, 0.5)
+      const fb = buildHarmonyFallback(primary, options())
+      expect(fb.hex).toMatch(/^#[0-9a-f]{6}$/)
+      expect(fb.rgb).toBeDefined()
+      expect(fb.hsl).toBeDefined()
+      expect(fb.lab).toBeDefined()
+      expect(fb.chroma).toBeGreaterThan(0)
     })
   })
 })

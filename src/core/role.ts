@@ -2,9 +2,17 @@ import type { Cluster } from './kmeans.js'
 import type { PrimaryPreset } from './options.js'
 import type { ResolvedOptions } from './defaults.js'
 import { circularHueDistance, hueFromLab } from './color/chroma-hue.js'
-import { labDistance } from './color/lab.js'
+import { labDistance, xyzToLab } from './color/lab.js'
+import { hslToRgb } from './color/hsl.js'
+import { rgbToHex } from './color/hex.js'
+import { srgbByteToLinear } from './color/srgb.js'
+import { linearRgbToXyz } from './color/xyz.js'
+import type { ExtractedColor } from './types.js'
 
 const FALLBACK_HEX = '#808080'
+const HARMONY_SATURATION_FLOOR = 0.4
+const HARMONY_LIGHTNESS_FLOOR = 0.3
+const HARMONY_LIGHTNESS_CEILING = 0.7
 
 export function scorePrimary(
   cluster: Cluster,
@@ -90,6 +98,38 @@ export function scoreSecondary(
   const base = candidate.chroma * candidate.chroma * Math.log(candidate.population + 1)
   const weighted = base * hueWeight(primary, candidate) * contrastBoost(primary, candidate, options)
   return applyGrayPenalty(weighted, candidate, options)
+}
+
+export function buildHarmonyFallback(
+  primary: Cluster,
+  options: ResolvedOptions,
+): ExtractedColor {
+  const baseHue = primary.hsl.h
+  const rotatedHue = baseHue + options.secondary.harmonyFallbackDeg!
+  const s = Math.max(primary.hsl.s, HARMONY_SATURATION_FLOOR)
+  const l = Math.min(
+    Math.max(primary.hsl.l, HARMONY_LIGHTNESS_FLOOR),
+    HARMONY_LIGHTNESS_CEILING,
+  )
+
+  const rgb = hslToRgb(rotatedHue, s, l)
+  const hex = rgbToHex(rgb)
+  const lr = srgbByteToLinear(rgb.r)
+  const lg = srgbByteToLinear(rgb.g)
+  const lb = srgbByteToLinear(rgb.b)
+  const xyz = linearRgbToXyz(lr, lg, lb)
+  const lab = xyzToLab(xyz.x, xyz.y, xyz.z)
+  const chroma = Math.sqrt(lab.a * lab.a + lab.b * lab.b)
+
+  return {
+    hex,
+    rgb,
+    hsl: { h: rotatedHue % 360, s, l },
+    lab,
+    chroma,
+    role: 'secondary',
+    source: 'fallback',
+  }
 }
 
 export function buildPrimaryColor(cluster: Cluster): import('./types.js').ExtractedColor {
