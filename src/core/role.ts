@@ -243,6 +243,20 @@ export function filterByContrastThreshold(
   return { passing, rejected }
 }
 
+/**
+ * Enforce a minimum lightness gap between primary and secondary.
+ *
+ * Behavior:
+ * - No-op when `lightness.enforceGap` is false or the secondary has no HSL.
+ * - No-op when the current gap already meets `lightness.minGap`.
+ * - Otherwise shifts the secondary's L away from the primary's L by
+ *   `minGap` points, then clamps L to [0, 1].
+ * - When the requested shift would exceed [0, 1], the secondary is moved
+ *   to the boundary and the resulting gap is the maximum achievable given
+ *   the clamp (which may be smaller than `minGap`).
+ * - Marks the returned color with `source: 'adjusted'` whenever a shift
+ *   was attempted, even if the shift was clamped.
+ */
 export function applyLightnessGap(
   primary: Cluster,
   secondary: ExtractedColor,

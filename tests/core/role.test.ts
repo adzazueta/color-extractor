@@ -950,4 +950,25 @@ describe('applyLightnessGap (ADZ-40)', () => {
       expect(result).toBe(secondary)
     })
   })
+
+  describe('AC: when minGap cannot be satisfied due to [0, 1] clamp', () => {
+    it('clamps L to 0 and exposes the maximum achievable gap (50, not 80)', () => {
+      const primary = primaryWithL(0.5)
+      const secondary = secondaryFromHsl(0, 0.5, 0.5)
+      const result = applyLightnessGap(primary, secondary, options({ enforceGap: true, minGap: 80 }))
+      expect(result.hsl!.l).toBe(0)
+      const achievedGap = Math.abs(primary.hsl.l - result.hsl!.l) * 100
+      expect(achievedGap).toBeCloseTo(50, 5)
+      expect(result.source).toBe('adjusted')
+    })
+
+    it('clamps L to 1 from the other side and exposes the maximum achievable gap', () => {
+      const primary = primaryWithL(0.4)
+      const secondary = secondaryFromHsl(0, 0.5, 0.4)
+      const result = applyLightnessGap(primary, secondary, options({ enforceGap: true, minGap: 70 }))
+      expect(result.hsl!.l).toBe(1)
+      const achievedGap = Math.abs(primary.hsl.l - result.hsl!.l) * 100
+      expect(achievedGap).toBeCloseTo(60, 5)
+    })
+  })
 })
