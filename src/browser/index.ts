@@ -3,6 +3,7 @@ import type { ExtractColorsOptions } from '../core/options.js'
 import type { ExtractColorsResult } from '../core/result.js'
 import { resolveOptions } from '../core/defaults.js'
 import type { BrowserExtractColorsInput } from './types.js'
+import { assertSupportedBrowserInput } from './detect.js'
 
 export const VERSION = '0.1.0'
 export type { BrowserExtractColorsInput } from './types.js'
@@ -46,13 +47,7 @@ export async function extractColors(
   input: BrowserExtractColorsInput,
   options?: ExtractColorsOptions,
 ): Promise<ExtractColorsResult> {
-  if (input === null || input === undefined) {
-    throw new ColorExtractorError(
-      'COLOR_EXTRACTOR_UNSUPPORTED_INPUT',
-      'Browser input is required.',
-      { cause: input },
-    )
-  }
+  assertSupportedBrowserInput(input)
 
   resolveOptions(options)
 
