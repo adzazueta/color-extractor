@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest'
-import { decodeFileOrBlob } from '../../src/browser/decode.js'
+import { decodeFileOrBlob, sampleImageBitmap, sampleImageElement } from '../../src/browser/decode.js'
 import { ColorExtractorError } from '../../src/core/errors.js'
 
 class MockImageData {
@@ -60,6 +60,102 @@ function createMockOffscreenCanvas() {
     }
   } as unknown as typeof OffscreenCanvas
 }
+
+describe('sampleImageBitmap (ADZ-59)', () => {
+  beforeAll(() => {
+    drawCalls = []
+    vi.stubGlobal('OffscreenCanvas', createMockOffscreenCanvas())
+    vi.stubGlobal('ImageData', MockImageData)
+  })
+
+  afterAll(() => {
+    vi.unstubAllGlobals()
+  })
+
+  it('decodes a valid ImageBitmap', () => {
+    const bitmap = { width: 2000, height: 1000, close: vi.fn() } as unknown as ImageBitmap
+    const result = sampleImageBitmap(bitmap, 100)
+
+    expect(result.width).toBe(100)
+    expect(result.height).toBe(50)
+    expect(result.channels).toBe(4)
+    expect(result.data).toBeInstanceOf(Uint8Array)
+  })
+
+  it('closes the bitmap after sampling', () => {
+    const close = vi.fn()
+    const bitmap = { width: 100, height: 100, close } as unknown as ImageBitmap
+    sampleImageBitmap(bitmap, 150)
+    expect(close).toHaveBeenCalledOnce()
+  })
+
+  it('throws for zero-width bitmap', () => {
+    const bitmap = { width: 0, height: 100, close: vi.fn() } as unknown as ImageBitmap
+    expect(() => sampleImageBitmap(bitmap, 150)).toThrow(ColorExtractorError)
+  })
+
+  it('throws for zero-height bitmap', () => {
+    const bitmap = { width: 100, height: 0, close: vi.fn() } as unknown as ImageBitmap
+    expect(() => sampleImageBitmap(bitmap, 150)).toThrow(ColorExtractorError)
+  })
+})
+
+describe('sampleImageElement (ADZ-59)', () => {
+  beforeAll(() => {
+    drawCalls = []
+    vi.stubGlobal('OffscreenCanvas', createMockOffscreenCanvas())
+    vi.stubGlobal('ImageData', MockImageData)
+  })
+
+  afterAll(() => {
+    vi.unstubAllGlobals()
+  })
+
+  it('decodes a loaded image element', () => {
+    const img = {
+      complete: true,
+      naturalWidth: 3000,
+      naturalHeight: 2000,
+    } as unknown as HTMLImageElement
+
+    const result = sampleImageElement(img, 150)
+
+    expect(result.width).toBe(150)
+    expect(result.height).toBe(100)
+    expect(result.channels).toBe(4)
+    expect(result.data).toBeInstanceOf(Uint8Array)
+  })
+
+  it('throws for incomplete image element', () => {
+    const img = {
+      complete: false,
+      naturalWidth: 100,
+      naturalHeight: 100,
+    } as unknown as HTMLImageElement
+
+    expect(() => sampleImageElement(img, 150)).toThrow(ColorExtractorError)
+  })
+
+  it('throws for image with zero naturalWidth', () => {
+    const img = {
+      complete: true,
+      naturalWidth: 0,
+      naturalHeight: 100,
+    } as unknown as HTMLImageElement
+
+    expect(() => sampleImageElement(img, 150)).toThrow(ColorExtractorError)
+  })
+
+  it('throws for image with zero naturalHeight', () => {
+    const img = {
+      complete: true,
+      naturalWidth: 100,
+      naturalHeight: 0,
+    } as unknown as HTMLImageElement
+
+    expect(() => sampleImageElement(img, 150)).toThrow(ColorExtractorError)
+  })
+})
 
 describe('decodeFileOrBlob (ADZ-54)', () => {
   let bitmapClose: ReturnType<typeof vi.fn>

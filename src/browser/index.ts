@@ -5,7 +5,7 @@ import { resolveOptions } from '../core/defaults.js'
 import { extractColorsFromPixels } from '../core/extract.js'
 import type { BrowserExtractColorsInput } from './types.js'
 import { detectBrowserInputKind } from './detect.js'
-import { decodeFileOrBlob } from './decode.js'
+import { decodeFileOrBlob, sampleImageBitmap, sampleImageElement } from './decode.js'
 
 export const VERSION = '0.1.0'
 export type { BrowserExtractColorsInput } from './types.js'
@@ -58,6 +58,22 @@ export async function extractColors(
 
   if (kind === 'file' || kind === 'blob') {
     const decoded = await decodeFileOrBlob(input as File | Blob, resolved.sampleSize)
+    return extractColorsFromPixels(
+      { data: decoded.data, width: decoded.width, height: decoded.height },
+      options,
+    )
+  }
+
+  if (kind === 'image') {
+    const decoded = sampleImageElement(input as HTMLImageElement, resolved.sampleSize)
+    return extractColorsFromPixels(
+      { data: decoded.data, width: decoded.width, height: decoded.height },
+      options,
+    )
+  }
+
+  if (kind === 'bitmap') {
+    const decoded = sampleImageBitmap(input as ImageBitmap, resolved.sampleSize)
     return extractColorsFromPixels(
       { data: decoded.data, width: decoded.width, height: decoded.height },
       options,

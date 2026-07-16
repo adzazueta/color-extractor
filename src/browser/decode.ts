@@ -34,17 +34,7 @@ async function decodeViaImageElement(
   })
 
   const result = sampleImageToCanvas(img, img.naturalWidth, img.naturalHeight, sampleSize)
-
-  return {
-    width: result.width,
-    height: result.height,
-    channels: 4 as const,
-    data: new Uint8Array(
-      result.pixels.buffer,
-      result.pixels.byteOffset,
-      result.pixels.byteLength,
-    ),
-  }
+  return decodeCanvasResult(result)
 }
 
 async function decodeViaCreateImageBitmap(
@@ -54,22 +44,8 @@ async function decodeViaCreateImageBitmap(
   let bitmap: ImageBitmap | null = null
   try {
     bitmap = await createImageBitmap(input)
-    const result = sampleImageToCanvas(
-      bitmap,
-      bitmap.width,
-      bitmap.height,
-      sampleSize,
-    )
-    return {
-      width: result.width,
-      height: result.height,
-      channels: 4 as const,
-      data: new Uint8Array(
-        result.pixels.buffer,
-        result.pixels.byteOffset,
-        result.pixels.byteLength,
-      ),
-    }
+    const result = sampleImageToCanvas(bitmap, bitmap.width, bitmap.height, sampleSize)
+    return decodeCanvasResult(result)
   } finally {
     if (bitmap !== null) {
       bitmap.close()
@@ -87,6 +63,50 @@ async function decodeViaObjectUrl(
   } finally {
     URL.revokeObjectURL(url)
   }
+}
+
+function decodeCanvasResult(
+  result: { pixels: Uint8ClampedArray; width: number; height: number },
+): DecodedPixels {
+  return {
+    width: result.width,
+    height: result.height,
+    channels: 4 as const,
+    data: new Uint8Array(
+      result.pixels.buffer,
+      result.pixels.byteOffset,
+      result.pixels.byteLength,
+    ),
+  }
+}
+
+export function sampleImageElement(
+  img: HTMLImageElement,
+  sampleSize: number,
+): DecodedPixels {
+  if (!img.complete || img.naturalWidth === 0 || img.naturalHeight === 0) {
+    throw new ColorExtractorError(
+      'COLOR_EXTRACTOR_DECODE_FAILED',
+      'HTMLImageElement is not fully loaded or has zero dimensions.',
+    )
+  }
+  const result = sampleImageToCanvas(img, img.naturalWidth, img.naturalHeight, sampleSize)
+  return decodeCanvasResult(result)
+}
+
+export function sampleImageBitmap(
+  bitmap: ImageBitmap,
+  sampleSize: number,
+): DecodedPixels {
+  if (bitmap.width === 0 || bitmap.height === 0) {
+    throw new ColorExtractorError(
+      'COLOR_EXTRACTOR_DECODE_FAILED',
+      'ImageBitmap has zero dimensions and cannot be decoded.',
+    )
+  }
+  const result = sampleImageToCanvas(bitmap, bitmap.width, bitmap.height, sampleSize)
+  bitmap.close()
+  return decodeCanvasResult(result)
 }
 
 export async function decodeFileOrBlob(
