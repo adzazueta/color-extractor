@@ -66,10 +66,21 @@ function computeResizeTarget(
   return { width: w, height: h }
 }
 
+function isSvgBytes(bytes: Buffer | Uint8Array): boolean {
+  if (bytes.length < 4) return false
+  let offset = 0
+  if (bytes[0] === 0xEF && bytes[1] === 0xBB && bytes[2] === 0xBF) {
+    offset = 3
+  }
+  if (offset + 4 > bytes.length) return false
+  const prefix = Buffer.from(bytes.buffer, bytes.byteOffset + offset, 4).toString('ascii')
+  return prefix === '<?xm' || prefix === '<svg' || prefix === '<SVG' || prefix === '<?XML'
+}
+
 export async function decodeBufferToPixels(
   bytes: Buffer | Uint8Array,
   sampleSize: number,
-  options: Pick<DecodeOptions, 'respectOrientation' | 'maxPixels'>,
+  options: Pick<DecodeOptions, 'respectOrientation' | 'maxPixels' | 'svg'>,
 ): Promise<DecodedPixels> {
   if (!Number.isInteger(sampleSize) || sampleSize <= 0) {
     throw new ColorExtractorError(
@@ -78,6 +89,17 @@ export async function decodeBufferToPixels(
       { cause: sampleSize },
     )
   }
+
+  const svgMode = options.svg ?? 'disabled-in-node'
+  const svgDisabled = svgMode === 'disabled-in-node' || svgMode === 'disabled'
+  if (svgDisabled && isSvgBytes(bytes)) {
+    throw new ColorExtractorError(
+      'COLOR_EXTRACTOR_UNSUPPORTED_FORMAT',
+      'SVG images are not supported in Node by default. Set decode.svg to "enabled-in-node" to allow SVG.',
+      { cause: { svg: true, svgMode } },
+    )
+  }
+
   const Ctor = await loadSharp()
   let pipeline: unknown
   try {

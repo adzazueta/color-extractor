@@ -100,6 +100,7 @@ export async function extractColors(
   const pixels = await decodeBufferToPixels(bytes, resolved.sampleSize, {
     respectOrientation: resolved.decode.respectOrientation,
     maxPixels: resolved.decode.maxPixels,
+    svg: resolved.decode.svg,
   })
 
   return runExtractionPipeline(

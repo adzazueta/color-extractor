@@ -223,3 +223,48 @@ describe('maxPixels enforcement (ADZ-64)', () => {
     expect(result.height).toBe(10)
   })
 })
+
+describe('SVG rejection in Node (ADZ-68)', () => {
+  it('rejects SVG bytes when svg mode is disabled-in-node', async () => {
+    const svg = Buffer.from('<svg xmlns="http://www.w3.org/2000/svg"><rect/></svg>')
+    await expect(
+      decodeBufferToPixels(svg, 150, { respectOrientation: true, svg: 'disabled-in-node' }),
+    ).rejects.toMatchObject({ code: 'COLOR_EXTRACTOR_UNSUPPORTED_FORMAT' })
+  })
+
+  it('rejects XML-wrapped SVG bytes', async () => {
+    const svg = Buffer.from('<?xml version="1.0"?><svg xmlns="http://www.w3.org/2000/svg"></svg>')
+    await expect(
+      decodeBufferToPixels(svg, 150, { respectOrientation: true, svg: 'disabled-in-node' }),
+    ).rejects.toMatchObject({ code: 'COLOR_EXTRACTOR_UNSUPPORTED_FORMAT' })
+  })
+
+  it('rejects SVG when svg mode is disabled', async () => {
+    const svg = Buffer.from('<svg xmlns="http://www.w3.org/2000/svg"></svg>')
+    await expect(
+      decodeBufferToPixels(svg, 150, { respectOrientation: true, svg: 'disabled' }),
+    ).rejects.toMatchObject({ code: 'COLOR_EXTRACTOR_UNSUPPORTED_FORMAT' })
+  })
+
+  it('allows SVG bytes when svg mode is enabled-in-node', async () => {
+    const svg = Buffer.from('<svg xmlns="http://www.w3.org/2000/svg"><rect/></svg>')
+    try {
+      await decodeBufferToPixels(svg, 150, { respectOrientation: true, svg: 'enabled-in-node' })
+    } catch (err) {
+      expect((err as ColorExtractorError).code).not.toBe('COLOR_EXTRACTOR_UNSUPPORTED_FORMAT')
+    }
+  })
+
+  it('rejects SVG bytes by default when svg option is omitted', async () => {
+    const svg = Buffer.from('<svg xmlns="http://www.w3.org/2000/svg"></svg>')
+    await expect(
+      decodeBufferToPixels(svg, 150, { respectOrientation: true }),
+    ).rejects.toMatchObject({ code: 'COLOR_EXTRACTOR_UNSUPPORTED_FORMAT' })
+  })
+
+  it('does not reject non-SVG bytes', async () => {
+    const png = await makePng(10, 10, { r: 200, g: 30, b: 30 })
+    const result = await decodeBufferToPixels(png, 150, { respectOrientation: true, svg: 'disabled-in-node' })
+    expect(result.width).toBe(10)
+  })
+})
