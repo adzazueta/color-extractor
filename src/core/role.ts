@@ -84,8 +84,8 @@ export function contrastBoost(
 ): number {
   const de = labDistance(primary.lab, candidate.lab)
   const minDe = options.secondary.contrastMinDE!
-  if (de >= minDe) return 1
-  return Math.max(0, de / minDe)
+  if (minDe <= 0) return 1
+  return de / minDe
 }
 
 export function scoreSecondary(
@@ -301,13 +301,14 @@ export function applyLightnessGap(
   const adjustedChroma = Math.sqrt(adjustedLab.a * adjustedLab.a + adjustedLab.b * adjustedLab.b)
 
   return {
+    ...secondary,
     hex: adjustedHex,
     rgb: adjustedRgb,
     hsl: adjustedHsl,
     lab: adjustedLab,
     chroma: adjustedChroma,
-    role: 'secondary',
-    source: 'adjusted',
+    role: 'secondary' as const,
+    source: 'adjusted' as const,
   }
 }
 

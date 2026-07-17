@@ -14,3 +14,14 @@ export function srgbToLinear(normalized: number): number {
 export function srgbByteToLinear(byte: number): number {
   return srgbToLinear(byte / 255)
 }
+
+export function linearToSrgbByte(linear: number): number {
+  const clamped = Math.max(0, Math.min(1, linear))
+  let s = clamped
+  if (s <= 0.0031308) {
+    s = s * SRGB_LINEAR_DIVISOR
+  } else {
+    s = SRGB_POWER_SCALE * s ** (1 / SRGB_POWER_EXPONENT) - SRGB_POWER_OFFSET
+  }
+  return Math.round(s * 255)
+}

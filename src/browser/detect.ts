@@ -35,7 +35,7 @@ function isBitmap(value: unknown): value is ImageBitmap {
 }
 
 function isHttpUrl(value: string): boolean {
-  return value.startsWith('http://') || value.startsWith('https://') || value.startsWith('data:')
+  return value.startsWith('http://') || value.startsWith('https://')
 }
 
 export function detectBrowserInputKind(input: unknown): BrowserInputKind {
@@ -68,7 +68,7 @@ export function detectBrowserInputKind(input: unknown): BrowserInputKind {
   }
 
   if (typeof input === 'string') {
-    if (input.length > 0) {
+    if (isHttpUrl(input)) {
       return 'url'
     }
     return 'unsupported'

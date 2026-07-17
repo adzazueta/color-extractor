@@ -154,8 +154,6 @@ export function sampleImageBitmap(
       )
     }
     throw cause
-  } finally {
-    bitmap.close()
   }
 }
 
@@ -211,6 +209,12 @@ export function sampleImageDataInput(
 }
 
 function isAbortError(cause: unknown): boolean {
+  if (
+    cause instanceof ColorExtractorError &&
+    cause.code === 'COLOR_EXTRACTOR_TIMEOUT'
+  ) {
+    return true
+  }
   return (
     cause instanceof DOMException &&
     (cause.name === 'AbortError' || cause.name === 'TimeoutError')
@@ -254,6 +258,9 @@ export async function decodeRemoteUrl(
     try {
       response = await fetch(url, { signal: controller.signal })
     } catch (cause) {
+      if (cause instanceof ColorExtractorError) {
+        throw cause
+      }
       if (isAbortError(cause)) {
         throw new ColorExtractorError(
           'COLOR_EXTRACTOR_TIMEOUT',
@@ -296,6 +303,9 @@ export async function decodeRemoteUrl(
           try {
             result = await reader.read()
           } catch (cause) {
+            if (cause instanceof ColorExtractorError) {
+              throw cause
+            }
             if (isAbortError(cause)) {
               throw new ColorExtractorError(
                 'COLOR_EXTRACTOR_TIMEOUT',
@@ -303,7 +313,11 @@ export async function decodeRemoteUrl(
                 { cause },
               )
             }
-            throw cause
+            throw new ColorExtractorError(
+              'COLOR_EXTRACTOR_FETCH_FAILED',
+              `Failed to read response body from ${url}.`,
+              { cause },
+            )
           }
           if (result.done) break
           if (result.value) {

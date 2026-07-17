@@ -169,31 +169,30 @@ export function createResolveAndFetch(
       const req = mod.request(httpOptions as HttpReqOptions, (res) => {
         let cancelled = false
         const body = new ReadableStream({
-          start(controller) {
-            res.on('data', (chunk: Buffer) => {
+          async pull(controller) {
+            if (cancelled) return
+            const chunk: Buffer = res.read()
+            if (chunk === null) {
+              await new Promise<void>((notify) => {
+                const onReadable = (): void => { cleanup(); notify() }
+                const onEnd = (): void => { cleanup(); notify() }
+                const onError = (err: Error): void => { cleanup(); controller.error(err); notify() }
+                const cleanup = (): void => {
+                  res.off('readable', onReadable)
+                  res.off('end', onEnd)
+                  res.off('error', onError)
+                }
+                res.on('readable', onReadable)
+                res.on('end', onEnd)
+                res.on('error', onError)
+              })
               if (cancelled) return
-              try {
-                controller.enqueue(new Uint8Array(chunk))
-              } catch {
-                // controller already errored/closed
-              }
-            })
-            res.on('end', () => {
-              if (cancelled) return
-              try {
-                controller.close()
-              } catch {
-                // already closed
-              }
-            })
-            res.on('error', (err: Error) => {
-              if (cancelled) return
-              try {
-                controller.error(err)
-              } catch {
-                // already errored
-              }
-            })
+              const next: Buffer = res.read()
+              if (next === null) { controller.close(); return }
+              controller.enqueue(new Uint8Array(next))
+            } else {
+              controller.enqueue(new Uint8Array(chunk))
+            }
           },
           cancel() {
             cancelled = true

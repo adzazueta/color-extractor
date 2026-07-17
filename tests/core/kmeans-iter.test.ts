@@ -125,12 +125,21 @@ describe('kmeans', () => {
       }
     })
 
-    it('with iterations=0, returns initial centroids unchanged (no recompute)', () => {
+    it('with iterations=0, centroids are the means of the initial assignment', () => {
       const samples = [...clusterA(0, 5), ...clusterB(100, 5)]
-      const initial = initializeCentroids(samples, 2)
       const result = kmeans(samples, { clusters: 2, iterations: 0 })
+      expect(result.centroids.length).toBe(2)
+      const means = [0, 1].map((ci) => {
+        const members = samples.filter((_, i) => result.assignments[i] === ci)
+        const L = members.reduce((a, s) => a + s.lab.L, 0) / members.length
+        const a = members.reduce((a, s) => a + s.lab.a, 0) / members.length
+        const b = members.reduce((a, s) => a + s.lab.b, 0) / members.length
+        return { L, a, b }
+      })
       for (let i = 0; i < 2; i++) {
-        expect(result.centroids[i]).toEqual(initial[i]!.lab)
+        expect(result.centroids[i]!.L).toBeCloseTo(means[i]!.L, 8)
+        expect(result.centroids[i]!.a).toBeCloseTo(means[i]!.a, 8)
+        expect(result.centroids[i]!.b).toBeCloseTo(means[i]!.b, 8)
       }
     })
 

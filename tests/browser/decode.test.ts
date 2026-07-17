@@ -87,11 +87,11 @@ describe('sampleImageBitmap (ADZ-59)', () => {
     expect(result.data).toBeInstanceOf(Uint8Array)
   })
 
-  it('closes the bitmap after sampling', () => {
+  it('does not close the caller-owned bitmap after sampling', () => {
     const close = vi.fn()
     const bitmap = { width: 100, height: 100, close } as unknown as ImageBitmap
     sampleImageBitmap(bitmap, 150, MAX_PIXELS)
-    expect(close).toHaveBeenCalledOnce()
+    expect(close).not.toHaveBeenCalled()
   })
 
   it('throws for zero-width bitmap', () => {

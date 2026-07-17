@@ -342,10 +342,10 @@ describe('contrastBoost (ADZ-42)', () => {
       expect(contrastBoost(primary, far, options(20))).toBe(1)
     })
 
-    it('returns 1 when Delta E exceeds the minimum', () => {
+    it('returns > 1 when Delta E exceeds the minimum', () => {
       const primary = labCluster(50, 0, 0, 100)
       const veryFar = labCluster(95, 0, 0, 100)
-      expect(contrastBoost(primary, veryFar, options(20))).toBe(1)
+      expect(contrastBoost(primary, veryFar, options(20))).toBe(2.25)
     })
   })
 
@@ -368,7 +368,7 @@ describe('contrastBoost (ADZ-42)', () => {
     it('a candidate that passes at contrastMinDE=10 fails at contrastMinDE=40', () => {
       const primary = labCluster(50, 0, 0, 100)
       const candidate = labCluster(65, 0, 0, 100)
-      expect(contrastBoost(primary, candidate, options(10))).toBe(1)
+      expect(contrastBoost(primary, candidate, options(10))).toBeCloseTo(1.5, 10)
       expect(contrastBoost(primary, candidate, options(40))).toBeCloseTo(15 / 40, 10)
     })
   })
@@ -539,7 +539,7 @@ describe('selectSecondary (ADZ-45)', () => {
   }
 
   describe('AC: harmony mode returns generated fallback when no candidate passes', () => {
-    it('returns a harmony fallback with source=fallback when candidates fail contrast', () => {
+    it('returns harmony fallback when the only candidate is below contrast threshold', () => {
       const primary = labCluster(50, 50, 0, 100)
       const tooClose = labCluster(55, 50, 0, 100, 0.1)
       const result = selectSecondary(primary, [tooClose], options({ fallback: 'harmony' }))
@@ -562,7 +562,7 @@ describe('selectSecondary (ADZ-45)', () => {
   })
 
   describe('AC: null mode returns null when no candidate passes', () => {
-    it('returns null when the only candidate fails contrast', () => {
+    it('returns null when the only candidate is below threshold with null fallback', () => {
       const primary = labCluster(50, 50, 0, 100)
       const tooClose = labCluster(55, 50, 0, 100, 0.1)
       const result = selectSecondary(primary, [tooClose], options({ fallback: 'null' }))
@@ -579,7 +579,7 @@ describe('selectSecondary (ADZ-45)', () => {
   })
 
   describe('AC: nearest mode returns the best candidate even below threshold', () => {
-    it('returns the best-scoring cluster with source=fallback when no candidate passes', () => {
+    it('returns the best-scoring cluster with source=fallback when all candidates are below threshold', () => {
       const primary = labCluster(50, 50, 0, 100)
       const a = labCluster(55, 50, 0, 100, 0.1)
       const b = labCluster(60, 50, 0, 200, 0.2)
@@ -600,14 +600,14 @@ describe('selectSecondary (ADZ-45)', () => {
   })
 
   describe('AC: metadata marks when fallback behavior is used', () => {
-    it('harmony fallback is marked with source=fallback', () => {
+    it('low-contrast candidate with harmony fallback is marked with source=fallback', () => {
       const primary = labCluster(50, 50, 0, 100)
       const tooClose = labCluster(55, 50, 0, 100, 0.1)
       const result = selectSecondary(primary, [tooClose], options({ fallback: 'harmony' }))
       expect(result!.color.source).toBe('fallback')
     })
 
-    it('nearest fallback is marked with source=fallback', () => {
+    it('low-contrast candidate with nearest fallback is marked with source=fallback', () => {
       const primary = labCluster(50, 50, 0, 100)
       const tooClose = labCluster(55, 50, 0, 100, 0.1)
       const result = selectSecondary(primary, [tooClose], options({ fallback: 'nearest' }))
@@ -623,7 +623,7 @@ describe('selectSecondary (ADZ-45)', () => {
   })
 
   describe('AC: respects custom contrastMinDE', () => {
-    it('raises the contrast threshold to filter out marginal candidates', () => {
+    it('high contrastMinDE with a low-contrast candidate and null fallback returns null', () => {
       const primary = labCluster(50, 50, 0, 100)
       const candidate = labCluster(60, 0, 50, 100, 0.1)
       const result = selectSecondary(primary, [candidate], options({ contrastMinDE: 200, fallback: 'null' }))
@@ -799,7 +799,7 @@ describe('filterByContrastThreshold (ADZ-49)', () => {
   })
 
   describe('AC: integration with selectSecondary in normal mode', () => {
-    it('a low-contrast candidate is not selected in normal mode', () => {
+    it('a low-contrast candidate triggers harmony fallback in normal mode', () => {
       const primary = labCluster(50, 50, 0, 100)
       const tooClose = labCluster(55, 50, 0, 100, 0.1)
       const result = selectSecondary(primary, [tooClose], options())
@@ -807,7 +807,7 @@ describe('filterByContrastThreshold (ADZ-49)', () => {
       expect(result!.color.source).toBe('fallback')
     })
 
-    it('preserves rejected candidates so nearest mode can still pick them', () => {
+    it('rejected candidates are scored and selected as fallback when no candidates pass, with nearest', () => {
       const primary = labCluster(50, 50, 0, 100)
       const a = labCluster(55, 50, 0, 100, 0.1)
       const b = labCluster(60, 50, 0, 200, 0.2)

@@ -137,17 +137,20 @@ export async function decodeBufferToPixels(
 
   const Ctor = await loadSharp()
   const animatedMode = options.animated ?? 'first-frame'
-  let inputOptions: { page?: number; pages?: number } | undefined
+  const maxPixels = options.maxPixels ?? 25_000_000
+  const inputOptions: Record<string, unknown> = {}
+  if (typeof maxPixels === 'number' && maxPixels > 0 && Number.isFinite(maxPixels)) {
+    inputOptions.limitInputPixels = maxPixels
+  }
 
   switch (animatedMode) {
     case 'first-frame':
-      inputOptions = { page: 0 }
+      inputOptions.page = 0
       break
     case 'all-frames':
-      inputOptions = { pages: -1 }
+      inputOptions.pages = -1
       break
     case 'disabled':
-      inputOptions = undefined
       break
     default:
       throw new ColorExtractorError(
@@ -161,6 +164,13 @@ export async function decodeBufferToPixels(
   try {
     pipeline = new Ctor(bytes, inputOptions)
   } catch (err) {
+    if (err instanceof Error && err.message === 'Input image exceeds pixel limit') {
+      throw new ColorExtractorError(
+        'COLOR_EXTRACTOR_IMAGE_TOO_LARGE',
+        err.message,
+        { cause: err },
+      )
+    }
     throw new ColorExtractorError(
       'COLOR_EXTRACTOR_DECODE_FAILED',
       'Failed to construct the sharp pipeline for the provided image bytes.',
@@ -184,6 +194,13 @@ export async function decodeBufferToPixels(
   try {
     neutralMeta = await neutral.metadata()
   } catch (err) {
+    if (err instanceof Error && err.message === 'Input image exceeds pixel limit') {
+      throw new ColorExtractorError(
+        'COLOR_EXTRACTOR_IMAGE_TOO_LARGE',
+        err.message,
+        { cause: err },
+      )
+    }
     throw new ColorExtractorError(
       'COLOR_EXTRACTOR_DECODE_FAILED',
       'Failed to probe image dimensions for early resize.',
@@ -205,14 +222,6 @@ export async function decodeBufferToPixels(
   const physicalWidth = doRotate ? storageHeight : storageWidth
   const physicalHeight = doRotate ? storageWidth : storageHeight
 
-  const maxPixels = options.maxPixels ?? 25_000_000
-  if (!Number.isFinite(maxPixels) || maxPixels <= 0) {
-    throw new ColorExtractorError(
-      'COLOR_EXTRACTOR_UNSUPPORTED_INPUT',
-      `maxPixels must be a positive finite number, got ${maxPixels}`,
-      { cause: maxPixels },
-    )
-  }
   const totalPixels = physicalWidth * physicalHeight
   if (totalPixels > maxPixels) {
     throw new ColorExtractorError(

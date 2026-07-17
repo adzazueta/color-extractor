@@ -139,21 +139,7 @@ function meanCentroids(
 }
 
 describe('kmeans — iterations count (exactly N recomputations)', () => {
-  it('iterations: 0 returns initial centroids unchanged', () => {
-    const samples = [
-      sample(0, 0),
-      sample(1, 1),
-      sample(2, 2),
-      sample(4, 3),
-    ]
-    const initial = initializeCentroids(samples, 2)
-    const result = kmeans(samples, { clusters: 2, iterations: 0 })
-    for (let i = 0; i < 2; i++) {
-      expect(result.centroids[i]!.L).toBeCloseTo(initial[i]!.lab.L, 6)
-    }
-  })
-
-  it('iterations: 1 → centroids are means of initial assignments (1 recompute)', () => {
+  it('iterations: 0 recomputes centroids once after the initial assignment', () => {
     const samples = [
       sample(0, 0),
       sample(1, 1),
@@ -162,15 +148,39 @@ describe('kmeans — iterations count (exactly N recomputations)', () => {
     ]
     const initial = initializeCentroids(samples, 2)
     const initialLabs = initial.map((s) => s.lab)
-    const initialAssignments = assignBySquaredDistance(samples, initialLabs)
-    const expectedAfter1 = meanCentroids(samples, initialAssignments, 2)
-    const result = kmeans(samples, { clusters: 2, iterations: 1 })
+    const initialAssignment = assignBySquaredDistance(samples, initialLabs)
+    const expected = meanCentroids(samples, initialAssignment, 2)
+    const result = kmeans(samples, { clusters: 2, iterations: 0 })
     for (let i = 0; i < 2; i++) {
-      expect(result.centroids[i]!.L).toBeCloseTo(expectedAfter1[i]!.L, 6)
+      expect(result.centroids[i]!.L).toBeCloseTo(expected[i]!.L, 6)
     }
   })
 
-  it('iterations: 2 → centroids are means of second-level assignments (2 recomputes)', () => {
+  it('iterations: 1 → centroids after final reassignment (2 recomputes)', () => {
+    const samples = [
+      sample(0, 0),
+      sample(1, 1),
+      sample(2, 2),
+      sample(4, 3),
+    ]
+    const initial = initializeCentroids(samples, 2)
+    let centroids = initial.map((s) => s.lab)
+    let assignments = assignBySquaredDistance(samples, centroids)
+
+    // loop iteration 0
+    centroids = meanCentroids(samples, assignments, 2)
+    assignments = assignBySquaredDistance(samples, centroids)
+
+    // recompute after loop with the final assignments
+    const expected = meanCentroids(samples, assignments, 2)
+
+    const result = kmeans(samples, { clusters: 2, iterations: 1 })
+    for (let i = 0; i < 2; i++) {
+      expect(result.centroids[i]!.L).toBeCloseTo(expected[i]!.L, 6)
+    }
+  })
+
+  it('iterations: 2 → centroids after final reassignment (3 recomputes)', () => {
     const samples = [
       sample(0, 0),
       sample(1, 1),
@@ -182,10 +192,15 @@ describe('kmeans — iterations count (exactly N recomputations)', () => {
     let assignments = assignBySquaredDistance(samples, centroids)
     centroids = meanCentroids(samples, assignments, 2)
     assignments = assignBySquaredDistance(samples, centroids)
-    const expectedAfter2 = meanCentroids(samples, assignments, 2)
+    centroids = meanCentroids(samples, assignments, 2)
+    assignments = assignBySquaredDistance(samples, centroids)
+
+    // recompute after loop with the final assignments
+    const expected = meanCentroids(samples, assignments, 2)
+
     const result = kmeans(samples, { clusters: 2, iterations: 2 })
     for (let i = 0; i < 2; i++) {
-      expect(result.centroids[i]!.L).toBeCloseTo(expectedAfter2[i]!.L, 6)
+      expect(result.centroids[i]!.L).toBeCloseTo(expected[i]!.L, 6)
     }
   })
 

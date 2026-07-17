@@ -135,12 +135,17 @@ async function fetchRemoteWithPipeline(
     )
   }
 
-  // 2. Validate content type
+  // 2. Validate content type — cancel body before throwing
   const contentType = finalResponse.headers.get('content-type')
-  validateContentType(contentType, {
-    validateContentType: resolved.remote.validateContentType ?? true,
-    svg: resolved.decode.svg ?? 'disabled-in-node',
-  })
+  try {
+    validateContentType(contentType, {
+      validateContentType: resolved.remote.validateContentType ?? true,
+      svg: resolved.decode.svg ?? 'disabled-in-node',
+    })
+  } catch (err) {
+    await safeCancelBody(finalResponse)
+    throw err
+  }
 
   // 3. Read response body with maxBytes enforcement and timeout
   const maxBytes = resolved.remote.maxBytes ?? 10_000_000
@@ -197,14 +202,14 @@ async function fetchRemoteWithPipeline(
       chunks.push(value)
     }
 
-    return new Uint8Array(
-      chunks.reduce((acc, chunk) => {
-        const tmp = new Uint8Array(acc.length + chunk.length)
-        tmp.set(acc)
-        tmp.set(chunk, acc.length)
-        return tmp
-      }, new Uint8Array(0)),
-    )
+    const total = chunks.reduce((sum, c) => sum + c.length, 0)
+    const merged = new Uint8Array(total)
+    let offset = 0
+    for (const chunk of chunks) {
+      merged.set(chunk, offset)
+      offset += chunk.length
+    }
+    return merged
   } finally {
     clearTimeout(bodyTimeout)
   }

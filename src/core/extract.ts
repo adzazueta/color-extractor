@@ -6,6 +6,7 @@ import { passesFilter } from './filter.js'
 import { convertRgbSamplesToLab, sampleSquareGrid } from './sample.js'
 import { buildClusters, kmeans } from './kmeans.js'
 import { labSquaredDistance } from './color/lab.js'
+import type { ExtractedColor } from './types.js'
 import {
   applyLightnessGap,
   buildPalette,
@@ -125,19 +126,13 @@ export function runExtractionPipeline(
   const primary = buildPrimaryColor(primaryCluster)
   const others = clusters.filter((c) => c.index !== primaryCluster.index)
   const secondaryResult = selectSecondary(primaryCluster, others, resolved)
-  let secondaryColor = secondaryResult
-    ? applyLightnessGap(primaryCluster, secondaryResult.color, resolved)
-    : null
-  if (
-    secondaryResult &&
-    secondaryResult.sourceClusterIndex !== null &&
-    secondaryResult.color.source === 'cluster'
-  ) {
-    const secondaryCluster = clusters.find((c) => c.index === secondaryResult.sourceClusterIndex)
-    if (secondaryCluster) {
-      const ssScore = scoreSecondary(primaryCluster, secondaryCluster, resolved)
-      secondaryColor = { ...secondaryColor!, score: ssScore }
-    }
+  let secondaryColor: ExtractedColor | null = null
+  if (secondaryResult) {
+    const clusterScore =
+      secondaryResult.sourceClusterIndex !== null
+        ? scoreSecondary(primaryCluster, clusters.find((c) => c.index === secondaryResult.sourceClusterIndex)!, resolved)
+        : secondaryResult.color.score
+    secondaryColor = { ...applyLightnessGap(primaryCluster, secondaryResult.color, resolved), score: clusterScore }
   }
 
   const excludeIndices: number[] = [primaryCluster.index]
@@ -148,14 +143,14 @@ export function runExtractionPipeline(
 
   const accentsCount = resolved.accents ?? 0
   const accentPool = clusters
-    .filter((c) => c.index !== primaryCluster.index)
+    .filter((c) => c.index !== primaryCluster.index && (secondaryResult?.sourceClusterIndex ?? -1) !== c.index)
     .slice(0, accentsCount)
   const accents = accentPool.map((c) => ({
     ...buildPrimaryColor(c),
     role: 'accent' as const,
   }))
 
-  const fallbackUsed = secondaryColor?.source === 'fallback' || secondaryColor?.source === 'adjusted'
+  const fallbackUsed = secondaryColor?.source === 'fallback'
 
   const fullResult: FullExtractionResult = {
     primary,

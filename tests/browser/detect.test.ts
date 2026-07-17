@@ -33,8 +33,8 @@ describe('detectBrowserInputKind (ADZ-53)', () => {
       expect(detectBrowserInputKind('https://example.com/image.png')).toBe('url')
     })
 
-    it('returns "url" for a data URL', () => {
-      expect(detectBrowserInputKind('data:image/png;base64,iVBORw0KGgo=')).toBe('url')
+    it('returns "unsupported" for a data URL', () => {
+      expect(detectBrowserInputKind('data:image/png;base64,iVBORw0KGgo=')).toBe('unsupported')
     })
   })
 

@@ -1,6 +1,9 @@
 import { describe, it, expect } from 'vitest'
 import { kmeans, buildClusters, type Cluster } from '../../src/core/kmeans.js'
 import { rgbToHsl } from '../../src/core/color/hsl.js'
+import { labToXyz } from '../../src/core/color/lab.js'
+import { xyzToLinearRgb } from '../../src/core/color/xyz.js'
+import { linearToSrgbByte } from '../../src/core/color/srgb.js'
 import { DEFAULT_OPTIONS } from '../../src/core/defaults.js'
 import type { LabSample } from '../../src/core/sample.js'
 
@@ -85,19 +88,20 @@ describe('buildClusters', () => {
   })
 
   describe('AC: representative colors can be formatted for output', () => {
-    it('returns a representative RGB from a sample in the cluster', () => {
+    it('derives representative RGB from centroid Lab via lab→xyz→linear→srgb', () => {
       const samples = [...clusterA(0, 5), ...clusterB(100, 5)]
       const kmeansResult = kmeans(samples, { clusters: 2, iterations: 10 })
       const clusters = buildClusters(samples, kmeansResult)
       for (let i = 0; i < clusters.length; i++) {
-        const rep = clusters[i]!.rgb
-        const inCluster = kmeansResult.assignments.some((a, j) =>
-          a === i
-          && samples[j]!.rgb.r === rep.r
-          && samples[j]!.rgb.g === rep.g
-          && samples[j]!.rgb.b === rep.b,
-        )
-        expect(inCluster).toBe(true)
+        const c = clusters[i]!
+        const { x, y, z } = labToXyz(c.lab.L, c.lab.a, c.lab.b)
+        const linear = xyzToLinearRgb(x, y, z)
+        const expected = {
+          r: linearToSrgbByte(linear.r),
+          g: linearToSrgbByte(linear.g),
+          b: linearToSrgbByte(linear.b),
+        }
+        expect(c.rgb).toEqual(expected)
       }
     })
 

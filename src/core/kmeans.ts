@@ -1,7 +1,9 @@
 import type { HSL, Lab, RGB } from './types.js'
 import type { LabSample } from './sample.js'
 import type { ResolvedOptions } from './defaults.js'
-import { labSquaredDistance } from './color/lab.js'
+import { labSquaredDistance, labToXyz } from './color/lab.js'
+import { xyzToLinearRgb } from './color/xyz.js'
+import { linearToSrgbByte } from './color/srgb.js'
 import { rgbToHsl } from './color/hsl.js'
 import { chromaFromLab } from './color/chroma-hue.js'
 import { scorePrimary } from './role.js'
@@ -181,25 +183,6 @@ function recomputeCentroids(
   return newCentroids
 }
 
-function indexOfClosestToCentroids(
-  samples: LabSample[],
-  clusterIdx: number,
-  assignments: readonly number[],
-  target: Lab,
-): number {
-  let bestIdx = -1
-  let bestDist = Number.POSITIVE_INFINITY
-  for (let i = 0; i < samples.length; i++) {
-    if (assignments[i] !== clusterIdx) continue
-    const d = labSquaredDistance(samples[i]!.lab, target)
-    if (d < bestDist) {
-      bestDist = d
-      bestIdx = i
-    }
-  }
-  return bestIdx
-}
-
 export function kmeans(samples: LabSample[], options: KMeansOptions): KMeansResult {
   if (!Number.isInteger(options.clusters) || options.clusters <= 0) {
     throw new RangeError(
@@ -227,6 +210,8 @@ export function kmeans(samples: LabSample[], options: KMeansOptions): KMeansResu
     assignments = assignToClusters(samples, centroids)
   }
 
+  centroids = recomputeCentroids(samples, assignments, options.clusters, centroids)
+
   const populations = new Array<number>(options.clusters).fill(0)
   for (const a of assignments) {
     populations[a]!++
@@ -253,14 +238,13 @@ export function buildClusters(
     const proportion = total === 0 ? 0 : population / total
     const chroma = chromaFromLab(lab.a, lab.b)
 
-    const repIdx = indexOfClosestToCentroids(samples, i, assignments, lab)
-    let rgb: RGB = { r: 0, g: 0, b: 0 }
-    let hsl: HSL = { h: 0, s: 0, l: 0 }
-    if (repIdx >= 0) {
-      const rep = samples[repIdx]!
-      rgb = { ...rep.rgb }
-      hsl = rgbToHsl(rep.rgb.r, rep.rgb.g, rep.rgb.b)
-    }
+    const { x, y, z } = labToXyz(lab.L, lab.a, lab.b)
+    const linearRgb = xyzToLinearRgb(x, y, z)
+    const r = linearToSrgbByte(linearRgb.r)
+    const g = linearToSrgbByte(linearRgb.g)
+    const b = linearToSrgbByte(linearRgb.b)
+    const rgb = { r, g, b }
+    const hsl = rgbToHsl(r, g, b)
 
     const cluster: Cluster = {
       index: i,

@@ -58,7 +58,7 @@ describe('secondary scoring and fallback with fixtures (ADZ-88)', () => {
       expect(result).toBeNull()
     })
 
-    it('nearest fallback picks a rejected candidate when none passes contrast', () => {
+    it('nearest fallback picks a rejected candidate with source=fallback', () => {
       const { clusters } = clustersFromFixture('bicolorRedBlue', 2)
       const primaryIdx = findPrimaryIndex(clusters, 'strict')
       const primary = clusters[primaryIdx]!
@@ -70,7 +70,7 @@ describe('secondary scoring and fallback with fixtures (ADZ-88)', () => {
       expect(result!.color.source).toBe('fallback')
     })
 
-    it('harmony fallback returns a generated color when no candidate passes contrast', () => {
+    it('harmony fallback returns generated color with source=fallback', () => {
       const { clusters } = clustersFromFixture('bicolorRedBlue', 2)
       const primaryIdx = findPrimaryIndex(clusters, 'strict')
       const primary = clusters[primaryIdx]!

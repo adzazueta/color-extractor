@@ -189,10 +189,9 @@ describe('extractColorsFromPixels (e2e pipeline)', () => {
         makeBicolorPixels(40, 40, { r: 200, g: 30, b: 30 }, { r: 180, g: 30, b: 30 }),
         { output: { includeMetadata: true } },
       )
-      if (result.secondary) {
-        expect(result.secondary.source).toBe('fallback')
-        expect(result.metadata!.fallbackUsed).toBe(true)
-      }
+      expect(result.secondary).not.toBeNull()
+      expect(result.secondary!.source).toBe('fallback')
+      expect(result.metadata!.fallbackUsed).toBe(true)
     })
 
     it('a sufficiently distinct secondary is selected as cluster', async () => {
@@ -222,15 +221,15 @@ describe('extractColorsFromPixels (e2e pipeline)', () => {
       expect(hexes).not.toContain(secondaryHex)
     })
 
-    it('palette can contain the secondary hex when secondary is a synthetic fallback', async () => {
+    it('palette excludes fallback-derived secondary hex even with similar colors', async () => {
       const result = await extractColorsFromPixels(
         makeBicolorPixels(40, 40, { r: 200, g: 30, b: 30 }, { r: 195, g: 30, b: 30 }),
         { output: { includePalette: true } },
       )
-      if (result.secondary?.source === 'fallback') {
-        const paletteHexes = (result.palette ?? []).map((c) => c.hex)
-        expect(paletteHexes).not.toContain(result.secondary.hex)
-      }
+      expect(result.secondary).not.toBeNull()
+      expect(result.secondary!.source).toBe('fallback')
+      const paletteHexes = (result.palette ?? []).map((c) => c.hex)
+      expect(paletteHexes).not.toContain(result.secondary!.hex)
     })
   })
 

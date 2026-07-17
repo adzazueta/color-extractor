@@ -1,6 +1,8 @@
 const LAB_F_THRESHOLD = (6 / 29) ** 3
 const LAB_F_LINEAR_SLOPE = (29 / 6) ** 2 / 3
 const LAB_F_LINEAR_OFFSET = 4 / 29
+const LAB_EPSILON = 216 / 24389
+const LAB_KAPPA = 24389 / 27
 
 const LAB_WHITE_X = 0.95047
 const LAB_WHITE_Y = 1.0
@@ -11,6 +13,13 @@ function f(t: number): number {
     return Math.cbrt(t)
   }
   return LAB_F_LINEAR_SLOPE * t + LAB_F_LINEAR_OFFSET
+}
+
+function fInv(t: number): number {
+  if (t > LAB_F_LINEAR_OFFSET) {
+    return t * t * t
+  }
+  return (t - LAB_F_LINEAR_OFFSET) / LAB_F_LINEAR_SLOPE
 }
 
 export function xyzToLab(
@@ -25,6 +34,21 @@ export function xyzToLab(
     L: 116 * fy - 16,
     a: 500 * (fx - fy),
     b: 200 * (fy - fz),
+  }
+}
+
+export function labToXyz(
+  L: number,
+  a: number,
+  b: number,
+): { x: number; y: number; z: number } {
+  const fy = (L + 16) / 116
+  const fx = a / 500 + fy
+  const fz = fy - b / 200
+  return {
+    x: fInv(fx) * LAB_WHITE_X,
+    y: fInv(fy) * LAB_WHITE_Y,
+    z: fInv(fz) * LAB_WHITE_Z,
   }
 }
 
