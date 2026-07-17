@@ -59,12 +59,14 @@
   "sideEffects": false,
   "scripts": {
     "build": "tsdown",
+    "changeset": "changeset",
+    "release": "changeset publish",
     "test": "vitest run",
     "test:verbose": "vitest run --reporter=verbose",
     "test:watch": "vitest",
     "test:smoke": "node scripts/smoke.mjs",
     "typecheck": "tsc --noEmit",
-    "prepublishOnly": "pnpm typecheck && pnpm test && pnpm build && pnpm test:smoke"
+    "prepublishOnly": "pnpm build && pnpm test && pnpm typecheck && pnpm test:smoke"
   },
   "peerDependencies": {
     "sharp": "^0.33.0"
