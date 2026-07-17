@@ -19,8 +19,8 @@ const scripts = pkg.scripts ?? {}
 
 describe('package scripts', () => {
   it('declares all required scripts', () => {
-    expect(Object.keys(scripts).sort()).toEqual(
-      ['build', 'prepublishOnly', 'test', 'test:verbose', 'test:watch', 'typecheck'].sort(),
+expect(Object.keys(scripts).sort()).toEqual(
+      ['build', 'prepublishOnly', 'test', 'test:smoke', 'test:verbose', 'test:watch', 'typecheck'],
     )
   })
 
