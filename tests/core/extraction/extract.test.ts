@@ -155,7 +155,7 @@ describe('extractColorsFromPixels (e2e pipeline)', () => {
       expect(result.metadata).toBeDefined()
       expect(result.metadata!.algorithm).toBe('lab-kmeans-chroma-weighted')
       expect(result.metadata!.packageVersion).toBe('0.1.0')
-      expect(result.metadata!.cacheVersion).toBe('3.6')
+      expect(result.metadata!.cacheVersion).toBe('1.0')
       expect(result.metadata!.sampleSize).toBe(150)
       expect(result.metadata!.sampledPixels).toBeGreaterThan(0)
       expect(result.metadata!.validPixels).toBeGreaterThan(0)

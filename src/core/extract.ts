@@ -101,7 +101,7 @@ export function runExtractionPipeline(
         metadata: {
           algorithm: 'lab-kmeans-chroma-weighted',
           packageVersion: PACKAGE_VERSION,
-          cacheVersion: '3.6',
+          cacheVersion: '1.0',
           sampleSize: resolved.sampleSize,
           sampledPixels: samples.length,
           validPixels: validSamples.length,
@@ -160,7 +160,7 @@ export function runExtractionPipeline(
     metadata: {
       algorithm: 'lab-kmeans-chroma-weighted',
       packageVersion: PACKAGE_VERSION,
-      cacheVersion: '3.6',
+      cacheVersion: '1.0',
       sampleSize: resolved.sampleSize,
       sampledPixels: samples.length,
       validPixels: validSamples.length,

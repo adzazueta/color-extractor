@@ -21,7 +21,7 @@ function makeColor(overrides: Partial<ExtractedColor> = {}): ExtractedColor {
 
 const METADATA: ExtractionMetadata = {
   algorithm: 'lab-kmeans-chroma-weighted',
-  cacheVersion: '3.6',
+  cacheVersion: '1.0',
   sampleSize: 150,
   sampledPixels: 22500,
   validPixels: 18000,
