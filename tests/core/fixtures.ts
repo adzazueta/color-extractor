@@ -56,13 +56,17 @@ const YELLOW: RgbColor = { r: 244, g: 244, b: 10 }
 const DARK_GRAY: RgbColor = { r: 50, g: 50, b: 50 }
 const LIGHT_GRAY: RgbColor = { r: 200, g: 200, b: 200 }
 
+function solid(rgb: RgbColor): PixelInput {
+  return solidColor(rgb.r, rgb.g, rgb.b)
+}
+
 export const FIXTURES = {
-  red: solidColor(255, 0, 0),
-  green: solidColor(0, 255, 0),
-  blue: solidColor(0, 0, 255),
-  white: solidColor(255, 255, 255),
-  black: solidColor(0, 0, 0),
-  gray: solidColor(128, 128, 128),
+  red: solid(RED),
+  green: solid(GREEN),
+  blue: solid(BLUE),
+  white: solid(WHITE),
+  black: solid(BLACK),
+  gray: solid(GRAY128),
   transparent: solidColor(128, 128, 128, 0),
   semiTransparent: solidColor(128, 128, 128, 64),
 
