@@ -13,6 +13,6 @@ export default defineConfig({
   platform: 'neutral',
   publint: true,
   deps: {
-    neverBundle: ['sharp'],
+    neverBundle: ['sharp', /^node:/],
   },
 })
