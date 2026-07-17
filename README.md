@@ -31,7 +31,7 @@ npm install sharp
 
 - **Runtime:** Node.js `^20.19.0 || >=22.12.0` for the Node entrypoint.
 - **Package manager:** Supports any ESM-compatible workflow (pnpm, npm, yarn).
-- **TypeScript:** Types are included. No `@types/*` needed.
+- **TypeScript:** Types are included. No `@types/*` needed for browser usage; Node users need `@types/node` for `Buffer` type support.
 
 ---
 
@@ -117,7 +117,7 @@ const result = await extractColors(canvas)
 
 #### CORS
 
-Remote URLs fetched by the browser are subject to [CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS). The server must include a permissive `Access-Control-Allow-Origin` header. The package does **not** include a proxy. When a `COLOR_EXTRACTOR_CORS_ERROR` is thrown, configure your server or use a proxy endpoint.
+Remote URLs fetched by the browser are subject to [CORS](https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS). The server must include a permissive `Access-Control-Allow-Origin` header. The package does **not** include a proxy. CORS-blocked URL fetches throw `COLOR_EXTRACTOR_FETCH_FAILED`. When reading from an `HTMLImageElement`, `ImageBitmap`, or `<canvas>` that has been tainted by cross-origin content, a `COLOR_EXTRACTOR_CORS_ERROR` is thrown instead.
 
 #### Browser decoding limits
 
@@ -132,9 +132,8 @@ The Node entrypoint accepts:
 - **`Buffer`** / **`Uint8Array`** / **`ArrayBuffer`** — raw encoded image bytes
 - **`string` (URL)** — a `http://` or `https://` URL (fetched and decoded)
 - **`string` (path)** — a local file path
-- **`URL`** — a `file://`, `http://`, or `https://` URL object (file paths are read locally; remote URLs are fetched)
 
-**Requires `sharp`** for image decoding. If `sharp` is not installed, the Node entry throws `COLOR_EXTRACTOR_DECODE_FAILED` at the first decode attempt.
+**Requires `sharp`** for image decoding. If `sharp` is not installed, the Node entry throws `COLOR_EXTRACTOR_SHARP_MISSING` at the first decode attempt.
 
 ```ts
 import { extractColors } from '@adzazueta/color-extractor/node'
@@ -149,10 +148,6 @@ const result = await extractColors(buffer)
 
 // From a remote URL
 const result = await extractColors('https://example.com/photo.jpg')
-
-// From a file:// URL
-const fileUrl = new URL('file:///home/user/photo.jpg')
-const result = await extractColors(fileUrl)
 ```
 
 ---
@@ -204,7 +199,7 @@ The result then includes:
 {
   primary: ExtractedColor,       // Always present
   secondary: ExtractedColor|null, // Always present (or null)
-  accents: ExtractedColor[],     // With includeAccents or accents > 0
+  accents: ExtractedColor[],     // With includeAccents
   palette: ExtractedColor[],     // With includePalette
   metadata: {                    // With includeMetadata
     algorithm: 'lab-kmeans-chroma-weighted',
@@ -287,7 +282,7 @@ Controls secondary color selection.
 | Option | Type | Default | Description |
 |---|---|---|---|
 | `secondary.fallback` | `'harmony'` `'nearest'` `'null'` | `'harmony'` | What to do when no cluster meets contrast: `harmony` = rotated hue from primary; `nearest` = closest below-threshold cluster; `null` = return null. |
-| `secondary.contrastMinDE` | `number` | `20` | Minimum CIEDE2000 distance from primary to qualify as secondary candidate. Used as both a filter threshold and a scoring weight. |
+| `secondary.contrastMinDE` | `number` | `20` | Minimum CIE76 distance (Euclidean ΔE in CIELAB) from primary to qualify as secondary candidate. Used as both a filter threshold and a scoring weight. |
 | `secondary.harmonyFallbackDeg` | `number` (0–360) | `150` | Hue rotation in degrees for the harmony fallback. |
 
 ### `scoring`
@@ -315,30 +310,30 @@ Controls secondary color selection.
 | `output.includeHsl` | `boolean` | `true` | Include HSL values. |
 | `output.includeScores` | `boolean` | `false` | Include score, population, and proportion. |
 
-### `remote` (Node only)
+### `remote`
 
-Controls outbound HTTP requests. These options are ignored in browser environments where `fetch` is used directly.
-
-| Option | Type | Default | Description |
-|---|---|---|---|
-| `remote.timeoutMs` | `number` | `10_000` | Request timeout in milliseconds. |
-| `remote.maxBytes` | `number` | `10_000_000` | Maximum response body size in bytes. |
-| `remote.maxRedirects` | `number` | `3` | Maximum HTTP redirect hops. |
-| `remote.allowPrivateNetworks` | `boolean` | `false` | Allow requests to private/reserved IP ranges (**SSRF risk**). |
-| `remote.allowedProtocols` | `string[]` | `['http:', 'https:']` | Allowed URL protocols for remote requests. |
-| `remote.validateContentType` | `boolean` | `true` | Reject non-image `Content-Type` responses. |
-
-### `decode` (Node only)
-
-Controls image decoding behavior. `animated` and `svg` apply to Node's sharp decoder only.
+Controls outbound HTTP requests. Used in both Node and browser URL fetch paths.
 
 | Option | Type | Default | Description |
 |---|---|---|---|
-| `decode.maxPixels` | `number` | `25_000_000` | Maximum decoded pixel count (width × height). |
-| `decode.animated` | `'first-frame'` `'all-frames'` `'disabled'` | `'first-frame'` | Animated image handling in Node. |
-| `decode.svg` | `'disabled-in-node'` `'enabled-in-node'` `'disabled'` `'enabled'` | `'disabled-in-node'` | SVG rendering policy in Node. |
-| `decode.respectOrientation` | `boolean` | `true` | Apply EXIF orientation metadata. |
-| `decode.normalizeColorProfile` | `boolean` | `true` | Convert to sRGB color space. |
+| `remote.timeoutMs` | `number` | `10_000` | Request timeout in milliseconds (browser + Node). |
+| `remote.maxBytes` | `number` | `10_000_000` | Maximum response body size in bytes (browser + Node). |
+| `remote.maxRedirects` | `number` | `3` | Maximum HTTP redirect hops (Node only). |
+| `remote.allowPrivateNetworks` | `boolean` | `false` | Allow requests to private/reserved IP ranges, **SSRF risk** (Node only). |
+| `remote.allowedProtocols` | `string[]` | `['http:', 'https:']` | Allowed URL protocols for remote requests (Node only). |
+| `remote.validateContentType` | `boolean` | `true` | Reject non-image `Content-Type` responses (Node only). |
+
+### `decode`
+
+Controls image decoding behavior. Applies in both browser and Node for `maxPixels`; `animated`, `svg`, `respectOrientation`, and `normalizeColorProfile` apply to Node's sharp decoder only.
+
+| Option | Type | Default | Description |
+|---|---|---|---|
+| `decode.maxPixels` | `number` | `25_000_000` | Maximum decoded pixel count — width × height (browser + Node). |
+| `decode.animated` | `'first-frame'` `'all-frames'` `'disabled'` | `'first-frame'` | Animated image handling (Node only). |
+| `decode.svg` | `'disabled-in-node'` `'enabled-in-node'` `'disabled'` `'enabled'` | `'disabled-in-node'` | SVG rendering policy (Node only). |
+| `decode.respectOrientation` | `boolean` | `true` | Apply EXIF orientation metadata (Node only). |
+| `decode.normalizeColorProfile` | `boolean` | `true` | Convert to sRGB color space (Node only). |
 
 ---
 
@@ -348,7 +343,7 @@ Controls image decoding behavior. `animated` and `svg` apply to Node's sharp dec
 
 The browser decodes images using the platform's built-in decoders (`createImageBitmap`, `Image`, `<canvas>`). Supported formats depend on the browser:
 
-- **Always:** PNG, JPEG, GIF, WebP, BMP
+- **Widely supported:** PNG, JPEG, GIF, WebP, BMP (availability depends on browser and decoder)
 - **Modern browsers:** AVIF
 - **SVG:** Supported via `Blob`/`File` when the browser can rasterize it
 
@@ -436,6 +431,8 @@ try {
 | `COLOR_EXTRACTOR_NO_VALID_PIXELS` | All pixels were filtered out. |
 | `COLOR_EXTRACTOR_TIMEOUT` | Request exceeded `timeoutMs`. |
 | `COLOR_EXTRACTOR_UNSAFE_URL` | URL blocked by security policy (SSRF, protocol). |
+| `COLOR_EXTRACTOR_SHARP_MISSING` | Optional peer dependency `sharp` is not installed (Node only). |
+| `COLOR_EXTRACTOR_UNSUPPORTED_FORMAT` | The image format is not supported by the decoder. |
 | `COLOR_EXTRACTOR_UNSUPPORTED_INPUT` | Invalid option value or unsupported input type. |
 
 ---

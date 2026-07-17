@@ -1,6 +1,6 @@
-import { access, readFile } from 'node:fs/promises'
+import { access, readFile, readdir } from 'node:fs/promises'
 import { fileURLToPath } from 'node:url'
-import { resolve, dirname } from 'node:path'
+import { resolve, dirname, extname, relative, sep } from 'node:path'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const ROOT = resolve(__dirname, '..')
@@ -16,6 +16,20 @@ function assert(condition, label) {
     failed++
     process.stdout.write(`  ✗ ${label}\n`)
   }
+}
+
+async function findJsFiles(dir) {
+  const entries = await readdir(dir, { withFileTypes: true })
+  const files = []
+  for (const entry of entries) {
+    const full = resolve(dir, entry.name)
+    if (entry.isDirectory()) {
+      files.push(...await findJsFiles(full))
+    } else if (extname(entry.name) === '.js') {
+      files.push(full)
+    }
+  }
+  return files
 }
 
 async function main() {
@@ -65,9 +79,13 @@ async function main() {
   assert(typeof rootEntry.DEFAULT_OPTIONS === 'object', 'root entry exports DEFAULT_OPTIONS')
   assert(typeof rootEntry.resolveOptions === 'function', 'root entry exports resolveOptions')
 
-  // 6. Browser output does not include sharp
-  const browserCode = await readFile(resolve(ROOT, 'dist/browser/index.js'), 'utf-8')
-  assert(!browserCode.includes('sharp'), 'browser bundle does not reference sharp')
+  // 6. No non-Node output references sharp (including shared chunks)
+  const allFiles = await findJsFiles(resolve(ROOT, 'dist'))
+  const nonNodeFiles = allFiles.filter(f => !f.includes(`${sep}node${sep}`))
+  for (const file of nonNodeFiles) {
+    const code = await readFile(file, 'utf-8')
+    assert(!code.includes('sharp'), `no sharp reference in ${relative(resolve(ROOT), file)}`)
+  }
 
   // 7. Node output includes sharp
   const nodeCode = await readFile(resolve(ROOT, 'dist/node/index.js'), 'utf-8')
