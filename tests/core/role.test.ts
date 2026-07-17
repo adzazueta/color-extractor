@@ -1,977 +1,1193 @@
-import { describe, it, expect } from 'vitest'
+import { describe, expect, it } from 'vitest';
 import {
-  scorePrimary,
-  findPrimaryIndex,
-  buildPrimaryColor,
-  applyGrayPenalty,
-  isLowChromaCandidate,
-  hueWeight,
-  contrastBoost,
-  scoreSecondary,
-  buildHarmonyFallback,
-  selectSecondary,
-  buildPalette,
-  filterByContrastThreshold,
-  applyLightnessGap,
-} from '../../src/core/role.js'
-import type { Cluster } from '../../src/core/kmeans.js'
-import { DEFAULT_OPTIONS, type ResolvedOptions } from '../../src/core/defaults.js'
+    DEFAULT_OPTIONS,
+    type ResolvedOptions,
+} from '../../src/core/defaults.js';
+import type { Cluster } from '../../src/core/kmeans.js';
+import {
+    applyGrayPenalty,
+    applyLightnessGap,
+    buildHarmonyFallback,
+    buildPalette,
+    buildPrimaryColor,
+    contrastBoost,
+    filterByContrastThreshold,
+    findPrimaryIndex,
+    hueWeight,
+    isLowChromaCandidate,
+    scorePrimary,
+    scoreSecondary,
+    selectSecondary,
+} from '../../src/core/role.js';
 
 function cluster(
-  chroma: number,
-  population: number,
-  proportion: number,
+    chroma: number,
+    population: number,
+    proportion: number,
 ): Cluster {
-  return {
-    index: 0,
-    lab: { L: 50, a: chroma, b: 0 },
-    rgb: { r: 128, g: 128, b: 128 },
-    hsl: { h: 0, s: 0, l: 50 },
-    population,
-    proportion,
-    chroma,
-    score: 0,
-  }
+    return {
+        index: 0,
+        lab: { L: 50, a: chroma, b: 0 },
+        rgb: { r: 128, g: 128, b: 128 },
+        hsl: { h: 0, s: 0, l: 50 },
+        population,
+        proportion,
+        chroma,
+        score: 0,
+    };
 }
 
 function labCluster(
-  L: number,
-  a: number,
-  b: number,
-  population: number,
-  proportion: number = 0.1,
+    L: number,
+    a: number,
+    b: number,
+    population: number,
+    proportion: number = 0.1,
 ): Cluster {
-  return {
-    index: 0,
-    lab: { L, a, b },
-    rgb: { r: 128, g: 128, b: 128 },
-    hsl: { h: 0, s: 0, l: 50 },
-    population,
-    proportion,
-    chroma: Math.sqrt(a * a + b * b),
-    score: 0,
-  }
+    return {
+        index: 0,
+        lab: { L, a, b },
+        rgb: { r: 128, g: 128, b: 128 },
+        hsl: { h: 0, s: 0, l: 50 },
+        population,
+        proportion,
+        chroma: Math.sqrt(a * a + b * b),
+        score: 0,
+    };
 }
 
 describe('scorePrimary (ADZ-44)', () => {
-  describe('AC: strict primary prefers vivid perceptual dominance', () => {
-    it('a smaller high-chroma cluster beats a larger muted cluster', () => {
-      const muted = cluster(5, 1000, 0.8)
-      const vivid = cluster(40, 10, 0.1)
-      expect(scorePrimary(vivid)).toBeGreaterThan(scorePrimary(muted))
-    })
+    describe('AC: strict primary prefers vivid perceptual dominance', () => {
+        it('a smaller high-chroma cluster beats a larger muted cluster', () => {
+            const muted = cluster(5, 1000, 0.8);
+            const vivid = cluster(40, 10, 0.1);
+            expect(scorePrimary(vivid)).toBeGreaterThan(scorePrimary(muted));
+        });
 
-    it('uses chroma * log(population + 1)', () => {
-      const c = cluster(20, 99, 0.5)
-      const expected = 20 * Math.log(100)
-      expect(scorePrimary(c)).toBeCloseTo(expected, 10)
-    })
+        it('uses chroma * log(population + 1)', () => {
+            const c = cluster(20, 99, 0.5);
+            const expected = 20 * Math.log(100);
+            expect(scorePrimary(c)).toBeCloseTo(expected, 10);
+        });
 
-    it('returns 0 for a cluster with population 0 and chroma 0', () => {
-      expect(scorePrimary(cluster(0, 0, 0))).toBe(0)
-    })
-  })
-})
+        it('returns 0 for a cluster with population 0 and chroma 0', () => {
+            expect(scorePrimary(cluster(0, 0, 0))).toBe(0);
+        });
+    });
+});
 
 describe('findPrimaryIndex (ADZ-44)', () => {
-  describe('AC: selects the highest-scoring cluster as primary', () => {
-    it('returns the index of the highest strict score', () => {
-      const a = cluster(5, 1000, 0.8)
-      const b = cluster(40, 10, 0.1)
-      const c = cluster(15, 200, 0.1)
-      expect(findPrimaryIndex([a, b, c])).toBe(1)
-    })
+    describe('AC: selects the highest-scoring cluster as primary', () => {
+        it('returns the index of the highest strict score', () => {
+            const a = cluster(5, 1000, 0.8);
+            const b = cluster(40, 10, 0.1);
+            const c = cluster(15, 200, 0.1);
+            expect(findPrimaryIndex([a, b, c])).toBe(1);
+        });
 
-    it('returns 0 when only one cluster is provided', () => {
-      expect(findPrimaryIndex([cluster(10, 100, 1)])).toBe(0)
-    })
+        it('returns 0 when only one cluster is provided', () => {
+            expect(findPrimaryIndex([cluster(10, 100, 1)])).toBe(0);
+        });
 
-    it('returns -1 when no clusters are provided', () => {
-      expect(findPrimaryIndex([])).toBe(-1)
-    })
+        it('returns -1 when no clusters are provided', () => {
+            expect(findPrimaryIndex([])).toBe(-1);
+        });
 
-    it('breaks ties to the earlier index (stable)', () => {
-      const a = cluster(10, 99, 0.5)
-      const b = cluster(10, 99, 0.5)
-      expect(findPrimaryIndex([a, b])).toBe(0)
-    })
-  })
-})
+        it('breaks ties to the earlier index (stable)', () => {
+            const a = cluster(10, 99, 0.5);
+            const b = cluster(10, 99, 0.5);
+            expect(findPrimaryIndex([a, b])).toBe(0);
+        });
+    });
+});
 
 describe('buildPrimaryColor (ADZ-44)', () => {
-  describe('AC: store score when output flags request it', () => {
-    it('marks the color as primary with role=primary and source=cluster', () => {
-      const c = cluster(30, 50, 0.25)
-      const color = buildPrimaryColor(c)
-      expect(color.role).toBe('primary')
-      expect(color.source).toBe('cluster')
-      expect(color.chroma).toBe(30)
-      expect(color.population).toBe(50)
-      expect(color.proportion).toBe(0.25)
-    })
+    describe('AC: store score when output flags request it', () => {
+        it('marks the color as primary with role=primary and source=cluster', () => {
+            const c = cluster(30, 50, 0.25);
+            const color = buildPrimaryColor(c);
+            expect(color.role).toBe('primary');
+            expect(color.source).toBe('cluster');
+            expect(color.chroma).toBe(30);
+            expect(color.population).toBe(50);
+            expect(color.proportion).toBe(0.25);
+        });
 
-    it('forwards lab, rgb, and hsl from the cluster', () => {
-      const c: Cluster = {
-        index: 0,
-        lab: { L: 40, a: 20, b: -10 },
-        rgb: { r: 200, g: 100, b: 50 },
-        hsl: { h: 30, s: 80, l: 50 },
-        population: 10,
-        proportion: 0.5,
-        chroma: 25,
-        score: 0,
-      }
-      const color = buildPrimaryColor(c)
-      expect(color.lab).toEqual({ L: 40, a: 20, b: -10 })
-      expect(color.rgb).toEqual({ r: 200, g: 100, b: 50 })
-      expect(color.hsl).toEqual({ h: 30, s: 80, l: 50 })
-    })
-  })
-})
+        it('forwards lab, rgb, and hsl from the cluster', () => {
+            const c: Cluster = {
+                index: 0,
+                lab: { L: 40, a: 20, b: -10 },
+                rgb: { r: 200, g: 100, b: 50 },
+                hsl: { h: 30, s: 80, l: 50 },
+                population: 10,
+                proportion: 0.5,
+                chroma: 25,
+                score: 0,
+            };
+            const color = buildPrimaryColor(c);
+            expect(color.lab).toEqual({ L: 40, a: 20, b: -10 });
+            expect(color.rgb).toEqual({ r: 200, g: 100, b: 50 });
+            expect(color.hsl).toEqual({ h: 30, s: 80, l: 50 });
+        });
+    });
+});
 
 describe('scorePrimary presets (ADZ-39)', () => {
-  describe('AC: each preset produces deterministic scores', () => {
-    it('balanced uses chroma^1.25 * log(pop+1)', () => {
-      const c = cluster(20, 99, 0.5)
-      const expected = Math.pow(20, 1.25) * Math.log(100)
-      expect(scorePrimary(c, 'balanced')).toBeCloseTo(expected, 10)
-    })
+    describe('AC: each preset produces deterministic scores', () => {
+        it('balanced uses chroma^1.25 * log(pop+1)', () => {
+            const c = cluster(20, 99, 0.5);
+            const expected = 20 ** 1.25 * Math.log(100);
+            expect(scorePrimary(c, 'balanced')).toBeCloseTo(expected, 10);
+        });
 
-    it('vibrant uses chroma^1.75 * log(pop+1)', () => {
-      const c = cluster(20, 99, 0.5)
-      const expected = Math.pow(20, 1.75) * Math.log(100)
-      expect(scorePrimary(c, 'vibrant')).toBeCloseTo(expected, 10)
-    })
+        it('vibrant uses chroma^1.75 * log(pop+1)', () => {
+            const c = cluster(20, 99, 0.5);
+            const expected = 20 ** 1.75 * Math.log(100);
+            expect(scorePrimary(c, 'vibrant')).toBeCloseTo(expected, 10);
+        });
 
-    it('dominant returns raw population (chroma is ignored)', () => {
-      const lowChromaHighPop = cluster(2, 500, 0.5)
-      const highChromaLowPop = cluster(80, 50, 0.5)
-      expect(scorePrimary(lowChromaHighPop, 'dominant')).toBe(500)
-      expect(scorePrimary(highChromaLowPop, 'dominant')).toBe(50)
-    })
-  })
+        it('dominant returns raw population (chroma is ignored)', () => {
+            const lowChromaHighPop = cluster(2, 500, 0.5);
+            const highChromaLowPop = cluster(80, 50, 0.5);
+            expect(scorePrimary(lowChromaHighPop, 'dominant')).toBe(500);
+            expect(scorePrimary(highChromaLowPop, 'dominant')).toBe(50);
+        });
+    });
 
-  describe('AC: dominant selects by population', () => {
-    it('findPrimaryIndex with dominant picks the highest-population cluster regardless of chroma', () => {
-      const a = cluster(5, 10, 0.05)
-      const b = cluster(50, 8, 0.04)
-      const c = cluster(80, 1, 0.01)
-      expect(findPrimaryIndex([a, b, c], 'dominant')).toBe(0)
-    })
-  })
+    describe('AC: dominant selects by population', () => {
+        it('findPrimaryIndex with dominant picks the highest-population cluster regardless of chroma', () => {
+            const a = cluster(5, 10, 0.05);
+            const b = cluster(50, 8, 0.04);
+            const c = cluster(80, 1, 0.01);
+            expect(findPrimaryIndex([a, b, c], 'dominant')).toBe(0);
+        });
+    });
 
-  describe('AC: vibrant favors high-chroma clusters more strongly than strict', () => {
-    it('on identical populations, vibrant gives a larger boost to high chroma than strict', () => {
-      const a = cluster(10, 100, 0.5)
-      const b = cluster(40, 100, 0.5)
-      const strictGap = scorePrimary(b, 'strict') - scorePrimary(a, 'strict')
-      const vibrantGap = scorePrimary(b, 'vibrant') - scorePrimary(a, 'vibrant')
-      expect(vibrantGap).toBeGreaterThan(strictGap)
-    })
+    describe('AC: vibrant favors high-chroma clusters more strongly than strict', () => {
+        it('on identical populations, vibrant gives a larger boost to high chroma than strict', () => {
+            const a = cluster(10, 100, 0.5);
+            const b = cluster(40, 100, 0.5);
+            const strictGap =
+                scorePrimary(b, 'strict') - scorePrimary(a, 'strict');
+            const vibrantGap =
+                scorePrimary(b, 'vibrant') - scorePrimary(a, 'vibrant');
+            expect(vibrantGap).toBeGreaterThan(strictGap);
+        });
 
-    it('balanced gives a stronger chroma preference than strict but milder than vibrant', () => {
-      const a = cluster(10, 100, 0.5)
-      const b = cluster(40, 100, 0.5)
-      const strictGap = scorePrimary(b, 'strict') - scorePrimary(a, 'strict')
-      const balancedGap = scorePrimary(b, 'balanced') - scorePrimary(a, 'balanced')
-      const vibrantGap = scorePrimary(b, 'vibrant') - scorePrimary(a, 'vibrant')
-      expect(balancedGap).toBeGreaterThan(strictGap)
-      expect(vibrantGap).toBeGreaterThan(balancedGap)
-    })
-  })
+        it('balanced gives a stronger chroma preference than strict but milder than vibrant', () => {
+            const a = cluster(10, 100, 0.5);
+            const b = cluster(40, 100, 0.5);
+            const strictGap =
+                scorePrimary(b, 'strict') - scorePrimary(a, 'strict');
+            const balancedGap =
+                scorePrimary(b, 'balanced') - scorePrimary(a, 'balanced');
+            const vibrantGap =
+                scorePrimary(b, 'vibrant') - scorePrimary(a, 'vibrant');
+            expect(balancedGap).toBeGreaterThan(strictGap);
+            expect(vibrantGap).toBeGreaterThan(balancedGap);
+        });
+    });
 
-  describe('AC: preset selection is configurable', () => {
-    it('findPrimaryIndex with vibrant can prefer smaller high-chroma over larger muted', () => {
-      const muted = cluster(5, 1000, 0.8)
-      const vivid = cluster(40, 10, 0.1)
-      expect(findPrimaryIndex([muted, vivid], 'vibrant')).toBe(1)
-    })
+    describe('AC: preset selection is configurable', () => {
+        it('findPrimaryIndex with vibrant can prefer smaller high-chroma over larger muted', () => {
+            const muted = cluster(5, 1000, 0.8);
+            const vivid = cluster(40, 10, 0.1);
+            expect(findPrimaryIndex([muted, vivid], 'vibrant')).toBe(1);
+        });
 
-    it('findPrimaryIndex with dominant prefers the largest cluster regardless of chroma', () => {
-      const vivid = cluster(80, 10, 0.05)
-      const muted = cluster(5, 1000, 0.95)
-      expect(findPrimaryIndex([vivid, muted], 'dominant')).toBe(1)
-    })
-  })
-})
+        it('findPrimaryIndex with dominant prefers the largest cluster regardless of chroma', () => {
+            const vivid = cluster(80, 10, 0.05);
+            const muted = cluster(5, 1000, 0.95);
+            expect(findPrimaryIndex([vivid, muted], 'dominant')).toBe(1);
+        });
+    });
+});
 
 describe('applyGrayPenalty (ADZ-48)', () => {
-  function options(overrides: { chromaFloor?: number; grayPenalty?: number } = {}): ResolvedOptions {
-    return {
-      ...DEFAULT_OPTIONS,
-      scoring: {
-        chromaFloor: overrides.chromaFloor ?? 12,
-        grayPenalty: overrides.grayPenalty ?? 0.1,
-      },
+    function options(
+        overrides: { chromaFloor?: number; grayPenalty?: number } = {},
+    ): ResolvedOptions {
+        return {
+            ...DEFAULT_OPTIONS,
+            scoring: {
+                chromaFloor: overrides.chromaFloor ?? 12,
+                grayPenalty: overrides.grayPenalty ?? 0.1,
+            },
+        };
     }
-  }
 
-  describe('AC: defaults use chromaFloor 12 and grayPenalty 0.1', () => {
-    it('penalizes a cluster whose chroma is below the default floor of 12', () => {
-      const gray = cluster(5, 200, 0.5)
-      expect(isLowChromaCandidate(gray, DEFAULT_OPTIONS)).toBe(true)
-      expect(applyGrayPenalty(100, gray, DEFAULT_OPTIONS)).toBeCloseTo(10, 10)
-    })
+    describe('AC: defaults use chromaFloor 12 and grayPenalty 0.1', () => {
+        it('penalizes a cluster whose chroma is below the default floor of 12', () => {
+            const gray = cluster(5, 200, 0.5);
+            expect(isLowChromaCandidate(gray, DEFAULT_OPTIONS)).toBe(true);
+            expect(applyGrayPenalty(100, gray, DEFAULT_OPTIONS)).toBeCloseTo(
+                10,
+                10,
+            );
+        });
 
-    it('does not penalize a cluster whose chroma is at or above the default floor', () => {
-      const vivid = cluster(12, 200, 0.5)
-      const vividAbove = cluster(40, 200, 0.5)
-      expect(isLowChromaCandidate(vivid, DEFAULT_OPTIONS)).toBe(false)
-      expect(isLowChromaCandidate(vividAbove, DEFAULT_OPTIONS)).toBe(false)
-      expect(applyGrayPenalty(100, vivid, DEFAULT_OPTIONS)).toBe(100)
-      expect(applyGrayPenalty(100, vividAbove, DEFAULT_OPTIONS)).toBe(100)
-    })
-  })
+        it('does not penalize a cluster whose chroma is at or above the default floor', () => {
+            const vivid = cluster(12, 200, 0.5);
+            const vividAbove = cluster(40, 200, 0.5);
+            expect(isLowChromaCandidate(vivid, DEFAULT_OPTIONS)).toBe(false);
+            expect(isLowChromaCandidate(vividAbove, DEFAULT_OPTIONS)).toBe(
+                false,
+            );
+            expect(applyGrayPenalty(100, vivid, DEFAULT_OPTIONS)).toBe(100);
+            expect(applyGrayPenalty(100, vividAbove, DEFAULT_OPTIONS)).toBe(
+                100,
+            );
+        });
+    });
 
-  describe('AC: low-chroma candidates are not impossible to select, only penalized', () => {
-    it('a high-pop gray can still beat a low-pop vivid when the gap is large enough', () => {
-      const gray = cluster(5, 10_000, 0.9)
-      const vivid = cluster(40, 50, 0.05)
-      const opts = options()
-      const grayScore = applyGrayPenalty(gray.population, gray, opts)
-      const vividScore = applyGrayPenalty(vivid.population, vivid, opts)
-      expect(grayScore).toBeGreaterThan(vividScore)
-    })
-  })
+    describe('AC: low-chroma candidates are not impossible to select, only penalized', () => {
+        it('a high-pop gray can still beat a low-pop vivid when the gap is large enough', () => {
+            const gray = cluster(5, 10_000, 0.9);
+            const vivid = cluster(40, 50, 0.05);
+            const opts = options();
+            const grayScore = applyGrayPenalty(gray.population, gray, opts);
+            const vividScore = applyGrayPenalty(vivid.population, vivid, opts);
+            expect(grayScore).toBeGreaterThan(vividScore);
+        });
+    });
 
-  describe('AC: keep behavior configurable', () => {
-    it('respects a custom chromaFloor', () => {
-      const c = cluster(8, 100, 0.5)
-      expect(isLowChromaCandidate(c, options({ chromaFloor: 5 }))).toBe(false)
-      expect(isLowChromaCandidate(c, options({ chromaFloor: 10 }))).toBe(true)
-    })
+    describe('AC: keep behavior configurable', () => {
+        it('respects a custom chromaFloor', () => {
+            const c = cluster(8, 100, 0.5);
+            expect(isLowChromaCandidate(c, options({ chromaFloor: 5 }))).toBe(
+                false,
+            );
+            expect(isLowChromaCandidate(c, options({ chromaFloor: 10 }))).toBe(
+                true,
+            );
+        });
 
-    it('respects a custom grayPenalty', () => {
-      const c = cluster(5, 100, 0.5)
-      expect(applyGrayPenalty(100, c, options({ grayPenalty: 0.5 }))).toBeCloseTo(50, 10)
-      expect(applyGrayPenalty(100, c, options({ grayPenalty: 0.0 }))).toBe(0)
-    })
+        it('respects a custom grayPenalty', () => {
+            const c = cluster(5, 100, 0.5);
+            expect(
+                applyGrayPenalty(100, c, options({ grayPenalty: 0.5 })),
+            ).toBeCloseTo(50, 10);
+            expect(
+                applyGrayPenalty(100, c, options({ grayPenalty: 0.0 })),
+            ).toBe(0);
+        });
 
-    it('a grayPenalty of 1 effectively disables the penalty (still a no-op multiplier)', () => {
-      const c = cluster(5, 100, 0.5)
-      expect(applyGrayPenalty(100, c, options({ grayPenalty: 1 }))).toBe(100)
-    })
-  })
+        it('a grayPenalty of 1 effectively disables the penalty (still a no-op multiplier)', () => {
+            const c = cluster(5, 100, 0.5);
+            expect(applyGrayPenalty(100, c, options({ grayPenalty: 1 }))).toBe(
+                100,
+            );
+        });
+    });
 
-  describe('AC: penalty is reflected in score output when enabled', () => {
-    it('reduces the score proportionally to grayPenalty', () => {
-      const c = cluster(5, 100, 0.5)
-      const base = 100
-      const result = applyGrayPenalty(base, c, DEFAULT_OPTIONS)
-      expect(result).toBeCloseTo(base * 0.1, 10)
-    })
-  })
-})
+    describe('AC: penalty is reflected in score output when enabled', () => {
+        it('reduces the score proportionally to grayPenalty', () => {
+            const c = cluster(5, 100, 0.5);
+            const base = 100;
+            const result = applyGrayPenalty(base, c, DEFAULT_OPTIONS);
+            expect(result).toBeCloseTo(base * 0.1, 10);
+        });
+    });
+});
 
 describe('hueWeight (ADZ-42)', () => {
-  describe('AC: implements 0.5 + hueDistance/180 as documented', () => {
-    it('returns 0.5 for exactly same-hue candidates', () => {
-      const primary = labCluster(50, 50, 0, 100)
-      const sameHue = labCluster(50, 50, 0, 100)
-      expect(hueWeight(primary, sameHue)).toBeCloseTo(0.5, 10)
-    })
+    describe('AC: implements 0.5 + hueDistance/180 as documented', () => {
+        it('returns 0.5 for exactly same-hue candidates', () => {
+            const primary = labCluster(50, 50, 0, 100);
+            const sameHue = labCluster(50, 50, 0, 100);
+            expect(hueWeight(primary, sameHue)).toBeCloseTo(0.5, 10);
+        });
 
-    it('returns 1.5 for exactly complementary candidates (180° apart)', () => {
-      const primary = labCluster(50, 50, 0, 100)
-      const complementary = labCluster(50, -50, 0, 100)
-      expect(hueWeight(primary, complementary)).toBeCloseTo(1.5, 10)
-    })
+        it('returns 1.5 for exactly complementary candidates (180° apart)', () => {
+            const primary = labCluster(50, 50, 0, 100);
+            const complementary = labCluster(50, -50, 0, 100);
+            expect(hueWeight(primary, complementary)).toBeCloseTo(1.5, 10);
+        });
 
-    it('returns 0.5 + 90/180 = 1.0 for orthogonal candidates (90° apart)', () => {
-      const primary = labCluster(50, 50, 0, 100)
-      const angle = (90 * Math.PI) / 180
-      const a = 50 * Math.cos(angle)
-      const b = 50 * Math.sin(angle)
-      const ortho = labCluster(50, a, b, 100)
-      expect(hueWeight(primary, ortho)).toBeCloseTo(1.0, 10)
-    })
+        it('returns 0.5 + 90/180 = 1.0 for orthogonal candidates (90° apart)', () => {
+            const primary = labCluster(50, 50, 0, 100);
+            const angle = (90 * Math.PI) / 180;
+            const a = 50 * Math.cos(angle);
+            const b = 50 * Math.sin(angle);
+            const ortho = labCluster(50, a, b, 100);
+            expect(hueWeight(primary, ortho)).toBeCloseTo(1.0, 10);
+        });
 
-    it('returns 0.5 + 150/180 for split-complementary (150° apart)', () => {
-      const primary = labCluster(50, 50, 0, 100)
-      const angle = (150 * Math.PI) / 180
-      const a = 50 * Math.cos(angle)
-      const b = 50 * Math.sin(angle)
-      const split = labCluster(50, a, b, 100)
-      expect(hueWeight(primary, split)).toBeCloseTo(0.5 + 150 / 180, 10)
-    })
+        it('returns 0.5 + 150/180 for split-complementary (150° apart)', () => {
+            const primary = labCluster(50, 50, 0, 100);
+            const angle = (150 * Math.PI) / 180;
+            const a = 50 * Math.cos(angle);
+            const b = 50 * Math.sin(angle);
+            const split = labCluster(50, a, b, 100);
+            expect(hueWeight(primary, split)).toBeCloseTo(0.5 + 150 / 180, 10);
+        });
 
-    it('is monotonically non-decreasing in hue distance from primary', () => {
-      const primary = labCluster(50, 50, 0, 100)
-      const angles = [0, 30, 60, 90, 120, 150, 180]
-      let prev = -Infinity
-      for (const deg of angles) {
-        const angle = (deg * Math.PI) / 180
-        const a = 50 * Math.cos(angle)
-        const b = 50 * Math.sin(angle)
-        const w = hueWeight(primary, labCluster(50, a, b, 100))
-        expect(w).toBeGreaterThanOrEqual(prev)
-        prev = w
-      }
-    })
+        it('is monotonically non-decreasing in hue distance from primary', () => {
+            const primary = labCluster(50, 50, 0, 100);
+            const angles = [0, 30, 60, 90, 120, 150, 180];
+            let prev = -Infinity;
+            for (const deg of angles) {
+                const angle = (deg * Math.PI) / 180;
+                const a = 50 * Math.cos(angle);
+                const b = 50 * Math.sin(angle);
+                const w = hueWeight(primary, labCluster(50, a, b, 100));
+                expect(w).toBeGreaterThanOrEqual(prev);
+                prev = w;
+            }
+        });
 
-    it('is bounded in [0.5, 1.5] for any hue distance', () => {
-      const primary = labCluster(50, 50, 0, 100)
-      for (let deg = 0; deg < 360; deg += 15) {
-        const angle = (deg * Math.PI) / 180
-        const a = 50 * Math.cos(angle)
-        const b = 50 * Math.sin(angle)
-        const w = hueWeight(primary, labCluster(50, a, b, 100))
-        expect(w).toBeGreaterThanOrEqual(0.5 - 1e-9)
-        expect(w).toBeLessThanOrEqual(1.5 + 1e-9)
-      }
-    })
-  })
-})
+        it('is bounded in [0.5, 1.5] for any hue distance', () => {
+            const primary = labCluster(50, 50, 0, 100);
+            for (let deg = 0; deg < 360; deg += 15) {
+                const angle = (deg * Math.PI) / 180;
+                const a = 50 * Math.cos(angle);
+                const b = 50 * Math.sin(angle);
+                const w = hueWeight(primary, labCluster(50, a, b, 100));
+                expect(w).toBeGreaterThanOrEqual(0.5 - 1e-9);
+                expect(w).toBeLessThanOrEqual(1.5 + 1e-9);
+            }
+        });
+    });
+});
 
 describe('contrastBoost (ADZ-42)', () => {
-  function options(contrastMinDE: number = 20): ResolvedOptions {
-    return {
-      ...DEFAULT_OPTIONS,
-      secondary: {
-        fallback: 'harmony',
-        contrastMinDE,
-        harmonyFallbackDeg: 150,
-      },
+    function options(contrastMinDE: number = 20): ResolvedOptions {
+        return {
+            ...DEFAULT_OPTIONS,
+            secondary: {
+                fallback: 'harmony',
+                contrastMinDE,
+                harmonyFallbackDeg: 150,
+            },
+        };
     }
-  }
 
-  describe('AC: candidates with sufficient contrast get full boost (1.0)', () => {
-    it('returns 1 when Delta E equals the minimum', () => {
-      const primary = labCluster(50, 0, 0, 100)
-      const far = labCluster(70, 0, 0, 100)
-      expect(contrastBoost(primary, far, options(20))).toBe(1)
-    })
+    describe('AC: candidates with sufficient contrast get full boost (1.0)', () => {
+        it('returns 1 when Delta E equals the minimum', () => {
+            const primary = labCluster(50, 0, 0, 100);
+            const far = labCluster(70, 0, 0, 100);
+            expect(contrastBoost(primary, far, options(20))).toBe(1);
+        });
 
-    it('returns > 1 when Delta E exceeds the minimum', () => {
-      const primary = labCluster(50, 0, 0, 100)
-      const veryFar = labCluster(95, 0, 0, 100)
-      expect(contrastBoost(primary, veryFar, options(20))).toBe(2.25)
-    })
-  })
+        it('returns > 1 when Delta E exceeds the minimum', () => {
+            const primary = labCluster(50, 0, 0, 100);
+            const veryFar = labCluster(95, 0, 0, 100);
+            expect(contrastBoost(primary, veryFar, options(20))).toBe(2.25);
+        });
+    });
 
-  describe('AC: low-contrast candidates receive a reduced boost', () => {
-    it('returns proportional boost below the minimum Delta E', () => {
-      const primary = labCluster(50, 0, 0, 100)
-      const close = labCluster(60, 0, 0, 100)
-      const de = 10
-      const expected = de / 20
-      expect(contrastBoost(primary, close, options(20))).toBeCloseTo(expected, 10)
-    })
+    describe('AC: low-contrast candidates receive a reduced boost', () => {
+        it('returns proportional boost below the minimum Delta E', () => {
+            const primary = labCluster(50, 0, 0, 100);
+            const close = labCluster(60, 0, 0, 100);
+            const de = 10;
+            const expected = de / 20;
+            expect(contrastBoost(primary, close, options(20))).toBeCloseTo(
+                expected,
+                10,
+            );
+        });
 
-    it('returns 0 for identical candidates', () => {
-      const primary = labCluster(50, 0, 0, 100)
-      expect(contrastBoost(primary, primary, options(20))).toBe(0)
-    })
-  })
+        it('returns 0 for identical candidates', () => {
+            const primary = labCluster(50, 0, 0, 100);
+            expect(contrastBoost(primary, primary, options(20))).toBe(0);
+        });
+    });
 
-  describe('AC: respects custom contrastMinDE from options', () => {
-    it('a candidate that passes at contrastMinDE=10 fails at contrastMinDE=40', () => {
-      const primary = labCluster(50, 0, 0, 100)
-      const candidate = labCluster(65, 0, 0, 100)
-      expect(contrastBoost(primary, candidate, options(10))).toBeCloseTo(1.5, 10)
-      expect(contrastBoost(primary, candidate, options(40))).toBeCloseTo(15 / 40, 10)
-    })
-  })
-})
+    describe('AC: respects custom contrastMinDE from options', () => {
+        it('a candidate that passes at contrastMinDE=10 fails at contrastMinDE=40', () => {
+            const primary = labCluster(50, 0, 0, 100);
+            const candidate = labCluster(65, 0, 0, 100);
+            expect(contrastBoost(primary, candidate, options(10))).toBeCloseTo(
+                1.5,
+                10,
+            );
+            expect(contrastBoost(primary, candidate, options(40))).toBeCloseTo(
+                15 / 40,
+                10,
+            );
+        });
+    });
+});
 
 describe('scoreSecondary (ADZ-42)', () => {
-  describe('AC: uses chroma^2 * log(population + 1) as the base score', () => {
-    it('matches chroma^2 * log(pop+1) for a neutral hue weight and full contrast', () => {
-      const primary = labCluster(50, 50, 0, 100)
-      const candidate = labCluster(95, 0, 50, 100, 0.1)
-      const options: ResolvedOptions = {
-        ...DEFAULT_OPTIONS,
-        secondary: { fallback: 'harmony', contrastMinDE: 0, harmonyFallbackDeg: 150 },
-      }
-      const expected = 50 * 50 * Math.log(101)
-      expect(scoreSecondary(primary, candidate, options)).toBeCloseTo(expected, 10)
-    })
-  })
+    describe('AC: uses chroma^2 * log(population + 1) as the base score', () => {
+        it('matches chroma^2 * log(pop+1) for a neutral hue weight and full contrast', () => {
+            const primary = labCluster(50, 50, 0, 100);
+            const candidate = labCluster(95, 0, 50, 100, 0.1);
+            const options: ResolvedOptions = {
+                ...DEFAULT_OPTIONS,
+                secondary: {
+                    fallback: 'harmony',
+                    contrastMinDE: 0,
+                    harmonyFallbackDeg: 150,
+                },
+            };
+            const expected = 50 * 50 * Math.log(101);
+            expect(scoreSecondary(primary, candidate, options)).toBeCloseTo(
+                expected,
+                10,
+            );
+        });
+    });
 
-  describe('AC: same-hue candidates receive lower hue weight than complementary candidates', () => {
-    it('complementary wins over same-hue at equal chroma and population', () => {
-      const primary = labCluster(50, 50, 0, 100)
-      const sameHue = labCluster(50, 50, 0, 100, 0.1)
-      const complementary = labCluster(50, -50, 0, 100, 0.1)
-      const same = scoreSecondary(primary, sameHue, DEFAULT_OPTIONS)
-      const comp = scoreSecondary(primary, complementary, DEFAULT_OPTIONS)
-      expect(comp).toBeGreaterThan(same)
-    })
-  })
+    describe('AC: same-hue candidates receive lower hue weight than complementary candidates', () => {
+        it('complementary wins over same-hue at equal chroma and population', () => {
+            const primary = labCluster(50, 50, 0, 100);
+            const sameHue = labCluster(50, 50, 0, 100, 0.1);
+            const complementary = labCluster(50, -50, 0, 100, 0.1);
+            const same = scoreSecondary(primary, sameHue, DEFAULT_OPTIONS);
+            const comp = scoreSecondary(
+                primary,
+                complementary,
+                DEFAULT_OPTIONS,
+            );
+            expect(comp).toBeGreaterThan(same);
+        });
+    });
 
-  describe('AC: low-population candidates can still win when chroma and contrast are strong', () => {
-    it('a small vivid complementary candidate beats a large muted same-hue candidate', () => {
-      const primary = labCluster(50, 50, 0, 100)
-      const smallVivid = labCluster(50, -80, 0, 5, 0.01)
-      const largeMuted = labCluster(50, 5, 0, 5000, 0.9)
-      const smallScore = scoreSecondary(primary, smallVivid, DEFAULT_OPTIONS)
-      const largeScore = scoreSecondary(primary, largeMuted, DEFAULT_OPTIONS)
-      expect(smallScore).toBeGreaterThan(largeScore)
-    })
-  })
+    describe('AC: low-population candidates can still win when chroma and contrast are strong', () => {
+        it('a small vivid complementary candidate beats a large muted same-hue candidate', () => {
+            const primary = labCluster(50, 50, 0, 100);
+            const smallVivid = labCluster(50, -80, 0, 5, 0.01);
+            const largeMuted = labCluster(50, 5, 0, 5000, 0.9);
+            const smallScore = scoreSecondary(
+                primary,
+                smallVivid,
+                DEFAULT_OPTIONS,
+            );
+            const largeScore = scoreSecondary(
+                primary,
+                largeMuted,
+                DEFAULT_OPTIONS,
+            );
+            expect(smallScore).toBeGreaterThan(largeScore);
+        });
+    });
 
-  describe('AC: gray penalty still applies to low-chroma secondary candidates', () => {
-    it('a same-hue low-chroma candidate is heavily penalized', () => {
-      const primary = labCluster(50, 50, 0, 100)
-      const gray = labCluster(50, 5, 0, 200, 0.1)
-      const vivid = labCluster(50, -50, 0, 200, 0.1)
-      const grayScore = scoreSecondary(primary, gray, DEFAULT_OPTIONS)
-      const vividScore = scoreSecondary(primary, vivid, DEFAULT_OPTIONS)
-      expect(vividScore).toBeGreaterThan(grayScore)
-    })
-  })
-})
+    describe('AC: gray penalty still applies to low-chroma secondary candidates', () => {
+        it('a same-hue low-chroma candidate is heavily penalized', () => {
+            const primary = labCluster(50, 50, 0, 100);
+            const gray = labCluster(50, 5, 0, 200, 0.1);
+            const vivid = labCluster(50, -50, 0, 200, 0.1);
+            const grayScore = scoreSecondary(primary, gray, DEFAULT_OPTIONS);
+            const vividScore = scoreSecondary(primary, vivid, DEFAULT_OPTIONS);
+            expect(vividScore).toBeGreaterThan(grayScore);
+        });
+    });
+});
 
-function hslCluster(h: number, s: number, l: number, population: number = 100): Cluster {
-  const hueRad = (h * Math.PI) / 180
-  const a = 50 * Math.cos(hueRad)
-  const b = 50 * Math.sin(hueRad)
-  return {
-    index: 0,
-    lab: { L: 50, a, b },
-    rgb: { r: 0, g: 0, b: 0 },
-    hsl: { h, s, l },
-    population,
-    proportion: 0.1,
-    chroma: 50,
-    score: 0,
-  }
+function hslCluster(
+    h: number,
+    s: number,
+    l: number,
+    population: number = 100,
+): Cluster {
+    const hueRad = (h * Math.PI) / 180;
+    const a = 50 * Math.cos(hueRad);
+    const b = 50 * Math.sin(hueRad);
+    return {
+        index: 0,
+        lab: { L: 50, a, b },
+        rgb: { r: 0, g: 0, b: 0 },
+        hsl: { h, s, l },
+        population,
+        proportion: 0.1,
+        chroma: 50,
+        score: 0,
+    };
 }
 
 describe('buildHarmonyFallback (ADZ-43)', () => {
-  function options(overrides: { harmonyFallbackDeg?: number } = {}): ResolvedOptions {
-    return {
-      ...DEFAULT_OPTIONS,
-      secondary: {
-        fallback: 'harmony',
-        contrastMinDE: 20,
-        harmonyFallbackDeg: overrides.harmonyFallbackDeg ?? 150,
-      },
+    function options(
+        overrides: { harmonyFallbackDeg?: number } = {},
+    ): ResolvedOptions {
+        return {
+            ...DEFAULT_OPTIONS,
+            secondary: {
+                fallback: 'harmony',
+                contrastMinDE: 20,
+                harmonyFallbackDeg: overrides.harmonyFallbackDeg ?? 150,
+            },
+        };
     }
-  }
 
-  describe('AC: secondary is generated from primary hue rotation', () => {
-    it('rotates the primary hue by the configured harmonyFallbackDeg', () => {
-      const primary = hslCluster(0, 0.5, 0.5)
-      const fb = buildHarmonyFallback(primary, options({ harmonyFallbackDeg: 150 }))
-      expect(fb.hsl).toBeDefined()
-      expect(fb.hsl!.h).toBeCloseTo(150, 5)
-    })
+    describe('AC: secondary is generated from primary hue rotation', () => {
+        it('rotates the primary hue by the configured harmonyFallbackDeg', () => {
+            const primary = hslCluster(0, 0.5, 0.5);
+            const fb = buildHarmonyFallback(
+                primary,
+                options({ harmonyFallbackDeg: 150 }),
+            );
+            expect(fb.hsl).toBeDefined();
+            expect(fb.hsl!.h).toBeCloseTo(150, 5);
+        });
 
-    it('uses 180 by default for complementary rotation', () => {
-      const primary = hslCluster(0, 0.5, 0.5)
-      const fb = buildHarmonyFallback(primary, options({ harmonyFallbackDeg: 180 }))
-      expect(fb.hsl!.h).toBeCloseTo(180, 5)
-    })
+        it('uses 180 by default for complementary rotation', () => {
+            const primary = hslCluster(0, 0.5, 0.5);
+            const fb = buildHarmonyFallback(
+                primary,
+                options({ harmonyFallbackDeg: 180 }),
+            );
+            expect(fb.hsl!.h).toBeCloseTo(180, 5);
+        });
 
-    it('normalizes hue wraparound into [0, 360)', () => {
-      const primary = hslCluster(300, 0.5, 0.5)
-      const fb = buildHarmonyFallback(primary, options({ harmonyFallbackDeg: 150 }))
-      expect(fb.hsl!.h).toBeCloseTo(90, 5)
-      expect(fb.hsl!.h).toBeGreaterThanOrEqual(0)
-      expect(fb.hsl!.h).toBeLessThan(360)
-    })
-  })
+        it('normalizes hue wraparound into [0, 360)', () => {
+            const primary = hslCluster(300, 0.5, 0.5);
+            const fb = buildHarmonyFallback(
+                primary,
+                options({ harmonyFallbackDeg: 150 }),
+            );
+            expect(fb.hsl!.h).toBeCloseTo(90, 5);
+            expect(fb.hsl!.h).toBeGreaterThanOrEqual(0);
+            expect(fb.hsl!.h).toBeLessThan(360);
+        });
+    });
 
-  describe('AC: applies saturation and lightness floors', () => {
-    it('raises saturation when primary saturation is below the floor', () => {
-      const primary = hslCluster(0, 0.1, 0.5)
-      const fb = buildHarmonyFallback(primary, options())
-      expect(fb.hsl!.s).toBeGreaterThanOrEqual(0.4)
-    })
+    describe('AC: applies saturation and lightness floors', () => {
+        it('raises saturation when primary saturation is below the floor', () => {
+            const primary = hslCluster(0, 0.1, 0.5);
+            const fb = buildHarmonyFallback(primary, options());
+            expect(fb.hsl!.s).toBeGreaterThanOrEqual(0.4);
+        });
 
-    it('keeps saturation when primary saturation already meets the floor', () => {
-      const primary = hslCluster(0, 0.8, 0.5)
-      const fb = buildHarmonyFallback(primary, options())
-      expect(fb.hsl!.s).toBeCloseTo(0.8, 5)
-    })
+        it('keeps saturation when primary saturation already meets the floor', () => {
+            const primary = hslCluster(0, 0.8, 0.5);
+            const fb = buildHarmonyFallback(primary, options());
+            expect(fb.hsl!.s).toBeCloseTo(0.8, 5);
+        });
 
-    it('clamps lightness into [0.3, 0.7]', () => {
-      const tooDark = hslCluster(0, 0.5, 0.1)
-      const fbDark = buildHarmonyFallback(tooDark, options())
-      expect(fbDark.hsl!.l).toBeGreaterThanOrEqual(0.3)
+        it('clamps lightness into [0.3, 0.7]', () => {
+            const tooDark = hslCluster(0, 0.5, 0.1);
+            const fbDark = buildHarmonyFallback(tooDark, options());
+            expect(fbDark.hsl!.l).toBeGreaterThanOrEqual(0.3);
 
-      const tooLight = hslCluster(0, 0.5, 0.95)
-      const fbLight = buildHarmonyFallback(tooLight, options())
-      expect(fbLight.hsl!.l).toBeLessThanOrEqual(0.7)
-    })
-  })
+            const tooLight = hslCluster(0, 0.5, 0.95);
+            const fbLight = buildHarmonyFallback(tooLight, options());
+            expect(fbLight.hsl!.l).toBeLessThanOrEqual(0.7);
+        });
+    });
 
-  describe('AC: marks color source as fallback', () => {
-    it('sets role=secondary and source=fallback', () => {
-      const primary = hslCluster(0, 0.5, 0.5)
-      const fb = buildHarmonyFallback(primary, options())
-      expect(fb.role).toBe('secondary')
-      expect(fb.source).toBe('fallback')
-    })
+    describe('AC: marks color source as fallback', () => {
+        it('sets role=secondary and source=fallback', () => {
+            const primary = hslCluster(0, 0.5, 0.5);
+            const fb = buildHarmonyFallback(primary, options());
+            expect(fb.role).toBe('secondary');
+            expect(fb.source).toBe('fallback');
+        });
 
-    it('does not carry cluster-derived population or proportion', () => {
-      const primary = hslCluster(0, 0.5, 0.5, 250)
-      const fb = buildHarmonyFallback(primary, options())
-      expect(fb.population).toBeUndefined()
-      expect(fb.proportion).toBeUndefined()
-    })
-  })
+        it('does not carry cluster-derived population or proportion', () => {
+            const primary = hslCluster(0, 0.5, 0.5, 250);
+            const fb = buildHarmonyFallback(primary, options());
+            expect(fb.population).toBeUndefined();
+            expect(fb.proportion).toBeUndefined();
+        });
+    });
 
-  describe('AC: returns a consistent ExtractedColor shape', () => {
-    it('produces matching hex, rgb, hsl and lab', () => {
-      const primary = hslCluster(30, 0.6, 0.5)
-      const fb = buildHarmonyFallback(primary, options())
-      expect(fb.hex).toMatch(/^#[0-9a-f]{6}$/)
-      expect(fb.rgb).toBeDefined()
-      expect(fb.hsl).toBeDefined()
-      expect(fb.lab).toBeDefined()
-      expect(fb.chroma).toBeGreaterThan(0)
-    })
-  })
-})
+    describe('AC: returns a consistent ExtractedColor shape', () => {
+        it('produces matching hex, rgb, hsl and lab', () => {
+            const primary = hslCluster(30, 0.6, 0.5);
+            const fb = buildHarmonyFallback(primary, options());
+            expect(fb.hex).toMatch(/^#[0-9a-f]{6}$/);
+            expect(fb.rgb).toBeDefined();
+            expect(fb.hsl).toBeDefined();
+            expect(fb.lab).toBeDefined();
+            expect(fb.chroma).toBeGreaterThan(0);
+        });
+    });
+});
 
 describe('selectSecondary (ADZ-45)', () => {
-  function options(overrides: { harmonyFallbackDeg?: number; contrastMinDE?: number; fallback?: 'harmony' | 'null' | 'nearest' } = {}): ResolvedOptions {
-    return {
-      ...DEFAULT_OPTIONS,
-      secondary: {
-        fallback: overrides.fallback ?? 'harmony',
-        contrastMinDE: overrides.contrastMinDE ?? 20,
-        harmonyFallbackDeg: overrides.harmonyFallbackDeg ?? 150,
-      },
+    function options(
+        overrides: {
+            harmonyFallbackDeg?: number;
+            contrastMinDE?: number;
+            fallback?: 'harmony' | 'null' | 'nearest';
+        } = {},
+    ): ResolvedOptions {
+        return {
+            ...DEFAULT_OPTIONS,
+            secondary: {
+                fallback: overrides.fallback ?? 'harmony',
+                contrastMinDE: overrides.contrastMinDE ?? 20,
+                harmonyFallbackDeg: overrides.harmonyFallbackDeg ?? 150,
+            },
+        };
     }
-  }
 
-  describe('AC: harmony mode returns generated fallback when no candidate passes', () => {
-    it('returns harmony fallback when the only candidate is below contrast threshold', () => {
-      const primary = labCluster(50, 50, 0, 100)
-      const tooClose = labCluster(55, 50, 0, 100, 0.1)
-      const result = selectSecondary(primary, [tooClose], options({ fallback: 'harmony' }))
-      expect(result).not.toBeNull()
-      expect(result!.color.source).toBe('fallback')
-      expect(result!.color.role).toBe('secondary')
-      expect(result!.color.hsl).toBeDefined()
-      expect(result!.sourceClusterIndex).toBeNull()
-    })
+    describe('AC: harmony mode returns generated fallback when no candidate passes', () => {
+        it('returns harmony fallback when the only candidate is below contrast threshold', () => {
+            const primary = labCluster(50, 50, 0, 100);
+            const tooClose = labCluster(55, 50, 0, 100, 0.1);
+            const result = selectSecondary(
+                primary,
+                [tooClose],
+                options({ fallback: 'harmony' }),
+            );
+            expect(result).not.toBeNull();
+            expect(result!.color.source).toBe('fallback');
+            expect(result!.color.role).toBe('secondary');
+            expect(result!.color.hsl).toBeDefined();
+            expect(result!.sourceClusterIndex).toBeNull();
+        });
 
-    it('uses a cluster when the top candidate passes the contrast threshold', () => {
-      const primary = labCluster(50, 50, 0, 100)
-      const passing = labCluster(95, 0, 50, 100, 0.1)
-      const result = selectSecondary(primary, [passing], options({ fallback: 'harmony' }))
-      expect(result).not.toBeNull()
-      expect(result!.color.source).toBe('cluster')
-      expect(result!.color.lab).toEqual(passing.lab)
-      expect(result!.sourceClusterIndex).toBe(passing.index)
-    })
-  })
+        it('uses a cluster when the top candidate passes the contrast threshold', () => {
+            const primary = labCluster(50, 50, 0, 100);
+            const passing = labCluster(95, 0, 50, 100, 0.1);
+            const result = selectSecondary(
+                primary,
+                [passing],
+                options({ fallback: 'harmony' }),
+            );
+            expect(result).not.toBeNull();
+            expect(result!.color.source).toBe('cluster');
+            expect(result!.color.lab).toEqual(passing.lab);
+            expect(result!.sourceClusterIndex).toBe(passing.index);
+        });
+    });
 
-  describe('AC: null mode returns null when no candidate passes', () => {
-    it('returns null when the only candidate is below threshold with null fallback', () => {
-      const primary = labCluster(50, 50, 0, 100)
-      const tooClose = labCluster(55, 50, 0, 100, 0.1)
-      const result = selectSecondary(primary, [tooClose], options({ fallback: 'null' }))
-      expect(result).toBeNull()
-    })
+    describe('AC: null mode returns null when no candidate passes', () => {
+        it('returns null when the only candidate is below threshold with null fallback', () => {
+            const primary = labCluster(50, 50, 0, 100);
+            const tooClose = labCluster(55, 50, 0, 100, 0.1);
+            const result = selectSecondary(
+                primary,
+                [tooClose],
+                options({ fallback: 'null' }),
+            );
+            expect(result).toBeNull();
+        });
 
-    it('returns a cluster when a candidate passes contrast', () => {
-      const primary = labCluster(50, 50, 0, 100)
-      const passing = labCluster(95, 0, 50, 100, 0.1)
-      const result = selectSecondary(primary, [passing], options({ fallback: 'null' }))
-      expect(result).not.toBeNull()
-      expect(result!.color.source).toBe('cluster')
-    })
-  })
+        it('returns a cluster when a candidate passes contrast', () => {
+            const primary = labCluster(50, 50, 0, 100);
+            const passing = labCluster(95, 0, 50, 100, 0.1);
+            const result = selectSecondary(
+                primary,
+                [passing],
+                options({ fallback: 'null' }),
+            );
+            expect(result).not.toBeNull();
+            expect(result!.color.source).toBe('cluster');
+        });
+    });
 
-  describe('AC: nearest mode returns the best candidate even below threshold', () => {
-    it('returns the best-scoring cluster with source=fallback when all candidates are below threshold', () => {
-      const primary = labCluster(50, 50, 0, 100)
-      const a = labCluster(55, 50, 0, 100, 0.1)
-      const b = labCluster(60, 50, 0, 200, 0.2)
-      const result = selectSecondary(primary, [a, b], options({ fallback: 'nearest' }))
-      expect(result).not.toBeNull()
-      expect(result!.color.source).toBe('fallback')
-      expect(result!.color.lab).toEqual(b.lab)
-      expect(result!.sourceClusterIndex).toBe(b.index)
-    })
+    describe('AC: nearest mode returns the best candidate even below threshold', () => {
+        it('returns the best-scoring cluster with source=fallback when all candidates are below threshold', () => {
+            const primary = labCluster(50, 50, 0, 100);
+            const a = labCluster(55, 50, 0, 100, 0.1);
+            const b = labCluster(60, 50, 0, 200, 0.2);
+            const result = selectSecondary(
+                primary,
+                [a, b],
+                options({ fallback: 'nearest' }),
+            );
+            expect(result).not.toBeNull();
+            expect(result!.color.source).toBe('fallback');
+            expect(result!.color.lab).toEqual(b.lab);
+            expect(result!.sourceClusterIndex).toBe(b.index);
+        });
 
-    it('returns a cluster with source=cluster when top candidate passes contrast', () => {
-      const primary = labCluster(50, 50, 0, 100)
-      const passing = labCluster(95, 0, 50, 100, 0.1)
-      const result = selectSecondary(primary, [passing], options({ fallback: 'nearest' }))
-      expect(result).not.toBeNull()
-      expect(result!.color.source).toBe('cluster')
-    })
-  })
+        it('returns a cluster with source=cluster when top candidate passes contrast', () => {
+            const primary = labCluster(50, 50, 0, 100);
+            const passing = labCluster(95, 0, 50, 100, 0.1);
+            const result = selectSecondary(
+                primary,
+                [passing],
+                options({ fallback: 'nearest' }),
+            );
+            expect(result).not.toBeNull();
+            expect(result!.color.source).toBe('cluster');
+        });
+    });
 
-  describe('AC: metadata marks when fallback behavior is used', () => {
-    it('low-contrast candidate with harmony fallback is marked with source=fallback', () => {
-      const primary = labCluster(50, 50, 0, 100)
-      const tooClose = labCluster(55, 50, 0, 100, 0.1)
-      const result = selectSecondary(primary, [tooClose], options({ fallback: 'harmony' }))
-      expect(result!.color.source).toBe('fallback')
-    })
+    describe('AC: metadata marks when fallback behavior is used', () => {
+        it('low-contrast candidate with harmony fallback is marked with source=fallback', () => {
+            const primary = labCluster(50, 50, 0, 100);
+            const tooClose = labCluster(55, 50, 0, 100, 0.1);
+            const result = selectSecondary(
+                primary,
+                [tooClose],
+                options({ fallback: 'harmony' }),
+            );
+            expect(result!.color.source).toBe('fallback');
+        });
 
-    it('low-contrast candidate with nearest fallback is marked with source=fallback', () => {
-      const primary = labCluster(50, 50, 0, 100)
-      const tooClose = labCluster(55, 50, 0, 100, 0.1)
-      const result = selectSecondary(primary, [tooClose], options({ fallback: 'nearest' }))
-      expect(result!.color.source).toBe('fallback')
-    })
+        it('low-contrast candidate with nearest fallback is marked with source=fallback', () => {
+            const primary = labCluster(50, 50, 0, 100);
+            const tooClose = labCluster(55, 50, 0, 100, 0.1);
+            const result = selectSecondary(
+                primary,
+                [tooClose],
+                options({ fallback: 'nearest' }),
+            );
+            expect(result!.color.source).toBe('fallback');
+        });
 
-    it('cluster-derived secondary is marked with source=cluster', () => {
-      const primary = labCluster(50, 50, 0, 100)
-      const passing = labCluster(95, 0, 50, 100, 0.1)
-      const result = selectSecondary(primary, [passing], options({ fallback: 'harmony' }))
-      expect(result!.color.source).toBe('cluster')
-    })
-  })
+        it('cluster-derived secondary is marked with source=cluster', () => {
+            const primary = labCluster(50, 50, 0, 100);
+            const passing = labCluster(95, 0, 50, 100, 0.1);
+            const result = selectSecondary(
+                primary,
+                [passing],
+                options({ fallback: 'harmony' }),
+            );
+            expect(result!.color.source).toBe('cluster');
+        });
+    });
 
-  describe('AC: respects custom contrastMinDE', () => {
-    it('high contrastMinDE with a low-contrast candidate and null fallback returns null', () => {
-      const primary = labCluster(50, 50, 0, 100)
-      const candidate = labCluster(60, 0, 50, 100, 0.1)
-      const result = selectSecondary(primary, [candidate], options({ contrastMinDE: 200, fallback: 'null' }))
-      expect(result).toBeNull()
-    })
+    describe('AC: respects custom contrastMinDE', () => {
+        it('high contrastMinDE with a low-contrast candidate and null fallback returns null', () => {
+            const primary = labCluster(50, 50, 0, 100);
+            const candidate = labCluster(60, 0, 50, 100, 0.1);
+            const result = selectSecondary(
+                primary,
+                [candidate],
+                options({ contrastMinDE: 200, fallback: 'null' }),
+            );
+            expect(result).toBeNull();
+        });
 
-    it('lowers the contrast threshold so a marginal candidate passes', () => {
-      const primary = labCluster(50, 50, 0, 100)
-      const candidate = labCluster(60, 0, 50, 100, 0.1)
-      const result = selectSecondary(primary, [candidate], options({ contrastMinDE: 5, fallback: 'null' }))
-      expect(result).not.toBeNull()
-      expect(result!.color.source).toBe('cluster')
-    })
-  })
-})
+        it('lowers the contrast threshold so a marginal candidate passes', () => {
+            const primary = labCluster(50, 50, 0, 100);
+            const candidate = labCluster(60, 0, 50, 100, 0.1);
+            const result = selectSecondary(
+                primary,
+                [candidate],
+                options({ contrastMinDE: 5, fallback: 'null' }),
+            );
+            expect(result).not.toBeNull();
+            expect(result!.color.source).toBe('cluster');
+        });
+    });
+});
 
 describe('buildPalette (ADZ-46)', () => {
-  function indexedCluster(index: number, chroma: number, population: number, proportion: number = 0.1): Cluster {
-    return { ...cluster(chroma, population, proportion), index }
-  }
-
-  function options(overrides: { paletteSize?: number; preset?: 'strict' | 'balanced' | 'vibrant' | 'dominant' } = {}): ResolvedOptions {
-    return {
-      ...DEFAULT_OPTIONS,
-      paletteSize: overrides.paletteSize ?? 5,
-      primary: { preset: overrides.preset ?? 'strict' },
+    function indexedCluster(
+        index: number,
+        chroma: number,
+        population: number,
+        proportion: number = 0.1,
+    ): Cluster {
+        return { ...cluster(chroma, population, proportion), index };
     }
-  }
 
-  describe('AC: palette length respects paletteSize', () => {
-    it('returns at most paletteSize entries', () => {
-      const clusters = [
-        indexedCluster(0, 30, 100),
-        indexedCluster(1, 20, 80),
-        indexedCluster(2, 15, 60),
-        indexedCluster(3, 10, 40),
-      ]
-      const palette = buildPalette(clusters, options({ paletteSize: 2 }))
-      expect(palette).toHaveLength(2)
-    })
+    function options(
+        overrides: {
+            paletteSize?: number;
+            preset?: 'strict' | 'balanced' | 'vibrant' | 'dominant';
+        } = {},
+    ): ResolvedOptions {
+        return {
+            ...DEFAULT_OPTIONS,
+            paletteSize: overrides.paletteSize ?? 5,
+            primary: { preset: overrides.preset ?? 'strict' },
+        };
+    }
 
-    it('returns an empty array when paletteSize is 0', () => {
-      const clusters = [indexedCluster(0, 30, 100)]
-      const palette = buildPalette(clusters, options({ paletteSize: 0 }))
-      expect(palette).toEqual([])
-    })
+    describe('AC: palette length respects paletteSize', () => {
+        it('returns at most paletteSize entries', () => {
+            const clusters = [
+                indexedCluster(0, 30, 100),
+                indexedCluster(1, 20, 80),
+                indexedCluster(2, 15, 60),
+                indexedCluster(3, 10, 40),
+            ];
+            const palette = buildPalette(clusters, options({ paletteSize: 2 }));
+            expect(palette).toHaveLength(2);
+        });
 
-    it('returns all available clusters when fewer than paletteSize remain', () => {
-      const clusters = [indexedCluster(0, 30, 100), indexedCluster(1, 20, 80)]
-      const palette = buildPalette(clusters, options({ paletteSize: 5 }))
-      expect(palette).toHaveLength(2)
-    })
-  })
+        it('returns an empty array when paletteSize is 0', () => {
+            const clusters = [indexedCluster(0, 30, 100)];
+            const palette = buildPalette(clusters, options({ paletteSize: 0 }));
+            expect(palette).toEqual([]);
+        });
 
-  describe('AC: higher perceptual score appears earlier in the palette', () => {
-    it('orders by primary score (strict: chroma * log(pop+1))', () => {
-      const clusters = [
-        indexedCluster(0, 10, 100, 0.2),
-        indexedCluster(1, 50, 80, 0.4),
-        indexedCluster(2, 30, 50, 0.3),
-      ]
-      const palette = buildPalette(clusters, options({ paletteSize: 3, preset: 'strict' }))
-      const chromas = palette.map((c) => c.chroma)
-      const sortedDesc = [...chromas].sort((a, b) => (b ?? 0) - (a ?? 0))
-      expect(chromas).toEqual(sortedDesc)
-    })
+        it('returns all available clusters when fewer than paletteSize remain', () => {
+            const clusters = [
+                indexedCluster(0, 30, 100),
+                indexedCluster(1, 20, 80),
+            ];
+            const palette = buildPalette(clusters, options({ paletteSize: 5 }));
+            expect(palette).toHaveLength(2);
+        });
+    });
 
-    it('orders by population when preset is dominant', () => {
-      const clusters = [
-        indexedCluster(0, 5, 500, 0.5),
-        indexedCluster(1, 80, 10, 0.05),
-        indexedCluster(2, 40, 200, 0.2),
-      ]
-      const palette = buildPalette(clusters, options({ paletteSize: 3, preset: 'dominant' }))
-      const pops = palette.map((c) => c.population)
-      const sortedDesc = [...pops].sort((a, b) => (b ?? 0) - (a ?? 0))
-      expect(pops).toEqual(sortedDesc)
-    })
-  })
+    describe('AC: higher perceptual score appears earlier in the palette', () => {
+        it('orders by primary score (strict: chroma * log(pop+1))', () => {
+            const clusters = [
+                indexedCluster(0, 10, 100, 0.2),
+                indexedCluster(1, 50, 80, 0.4),
+                indexedCluster(2, 30, 50, 0.3),
+            ];
+            const palette = buildPalette(
+                clusters,
+                options({ paletteSize: 3, preset: 'strict' }),
+            );
+            const chromas = palette.map((c) => c.chroma);
+            const sortedDesc = [...chromas].sort((a, b) => (b ?? 0) - (a ?? 0));
+            expect(chromas).toEqual(sortedDesc);
+        });
 
-  describe('AC: palette output is deterministic', () => {
-    it('returns the same order on repeated calls with identical input', () => {
-      const clusters = [
-        indexedCluster(0, 30, 100),
-        indexedCluster(1, 20, 80),
-        indexedCluster(2, 25, 90),
-      ]
-      const a = buildPalette(clusters, options())
-      const b = buildPalette(clusters, options())
-      expect(a.map((c) => c.chroma)).toEqual(b.map((c) => c.chroma))
-    })
+        it('orders by population when preset is dominant', () => {
+            const clusters = [
+                indexedCluster(0, 5, 500, 0.5),
+                indexedCluster(1, 80, 10, 0.05),
+                indexedCluster(2, 40, 200, 0.2),
+            ];
+            const palette = buildPalette(
+                clusters,
+                options({ paletteSize: 3, preset: 'dominant' }),
+            );
+            const pops = palette.map((c) => c.population);
+            const sortedDesc = [...pops].sort((a, b) => (b ?? 0) - (a ?? 0));
+            expect(pops).toEqual(sortedDesc);
+        });
+    });
 
-    it('breaks ties by original cluster index', () => {
-      const clusters = [
-        indexedCluster(3, 20, 100, 0.1),
-        indexedCluster(0, 20, 100, 0.1),
-        indexedCluster(7, 20, 100, 0.1),
-      ]
-      const palette = buildPalette(clusters, options({ paletteSize: 3, preset: 'strict' }))
-      const chromas = palette.map((c) => c.chroma)
-      const proportions = palette.map((c) => c.proportion)
-      expect(chromas).toEqual([20, 20, 20])
-      expect(proportions).toEqual([0.1, 0.1, 0.1])
-    })
-  })
+    describe('AC: palette output is deterministic', () => {
+        it('returns the same order on repeated calls with identical input', () => {
+            const clusters = [
+                indexedCluster(0, 30, 100),
+                indexedCluster(1, 20, 80),
+                indexedCluster(2, 25, 90),
+            ];
+            const a = buildPalette(clusters, options());
+            const b = buildPalette(clusters, options());
+            expect(a.map((c) => c.chroma)).toEqual(b.map((c) => c.chroma));
+        });
 
-  describe('AC: excludes primary/secondary consistently', () => {
-    it('excludes clusters by index via excludeIndices', () => {
-      const clusters = [
-        indexedCluster(0, 50, 200, 0.4),
-        indexedCluster(1, 30, 100, 0.2),
-        indexedCluster(2, 10, 50, 0.1),
-      ]
-      const palette = buildPalette(clusters, options({ paletteSize: 3 }), { excludeIndices: [0, 1] })
-      expect(palette).toHaveLength(1)
-      expect(palette[0]!.chroma).toBe(10)
-    })
-  })
+        it('breaks ties by original cluster index', () => {
+            const clusters = [
+                indexedCluster(3, 20, 100, 0.1),
+                indexedCluster(0, 20, 100, 0.1),
+                indexedCluster(7, 20, 100, 0.1),
+            ];
+            const palette = buildPalette(
+                clusters,
+                options({ paletteSize: 3, preset: 'strict' }),
+            );
+            const chromas = palette.map((c) => c.chroma);
+            const proportions = palette.map((c) => c.proportion);
+            expect(chromas).toEqual([20, 20, 20]);
+            expect(proportions).toEqual([0.1, 0.1, 0.1]);
+        });
+    });
 
-  describe('AC: palette colors are marked with role=palette and source=cluster', () => {
-    it('marks every palette entry with role=palette and source=cluster', () => {
-      const clusters = [indexedCluster(0, 30, 100), indexedCluster(1, 20, 80)]
-      const palette = buildPalette(clusters, options())
-      for (const c of palette) {
-        expect(c.role).toBe('palette')
-        expect(c.source).toBe('cluster')
-      }
-    })
-  })
-})
+    describe('AC: excludes primary/secondary consistently', () => {
+        it('excludes clusters by index via excludeIndices', () => {
+            const clusters = [
+                indexedCluster(0, 50, 200, 0.4),
+                indexedCluster(1, 30, 100, 0.2),
+                indexedCluster(2, 10, 50, 0.1),
+            ];
+            const palette = buildPalette(
+                clusters,
+                options({ paletteSize: 3 }),
+                { excludeIndices: [0, 1] },
+            );
+            expect(palette).toHaveLength(1);
+            expect(palette[0]!.chroma).toBe(10);
+        });
+    });
+
+    describe('AC: palette colors are marked with role=palette and source=cluster', () => {
+        it('marks every palette entry with role=palette and source=cluster', () => {
+            const clusters = [
+                indexedCluster(0, 30, 100),
+                indexedCluster(1, 20, 80),
+            ];
+            const palette = buildPalette(clusters, options());
+            for (const c of palette) {
+                expect(c.role).toBe('palette');
+                expect(c.source).toBe('cluster');
+            }
+        });
+    });
+});
 
 describe('filterByContrastThreshold (ADZ-49)', () => {
-  function options(overrides: { contrastMinDE?: number } = {}): ResolvedOptions {
-    return {
-      ...DEFAULT_OPTIONS,
-      secondary: {
-        fallback: 'harmony',
-        contrastMinDE: overrides.contrastMinDE ?? 20,
-        harmonyFallbackDeg: 150,
-      },
+    function options(
+        overrides: { contrastMinDE?: number } = {},
+    ): ResolvedOptions {
+        return {
+            ...DEFAULT_OPTIONS,
+            secondary: {
+                fallback: 'harmony',
+                contrastMinDE: overrides.contrastMinDE ?? 20,
+                harmonyFallbackDeg: 150,
+            },
+        };
     }
-  }
 
-  describe('AC: candidates below contrastMinDE are excluded from passing set', () => {
-    it('puts a low-contrast candidate into rejected', () => {
-      const primary = labCluster(50, 50, 0, 100)
-      const close = labCluster(55, 50, 0, 100, 0.1)
-      const result = filterByContrastThreshold(primary, [close], options())
-      expect(result.passing).toHaveLength(0)
-      expect(result.rejected).toHaveLength(1)
-      expect(result.rejected[0]).toBe(close)
-    })
+    describe('AC: candidates below contrastMinDE are excluded from passing set', () => {
+        it('puts a low-contrast candidate into rejected', () => {
+            const primary = labCluster(50, 50, 0, 100);
+            const close = labCluster(55, 50, 0, 100, 0.1);
+            const result = filterByContrastThreshold(
+                primary,
+                [close],
+                options(),
+            );
+            expect(result.passing).toHaveLength(0);
+            expect(result.rejected).toHaveLength(1);
+            expect(result.rejected[0]).toBe(close);
+        });
 
-    it('puts a high-contrast candidate into passing', () => {
-      const primary = labCluster(50, 50, 0, 100)
-      const far = labCluster(95, 0, 50, 100, 0.1)
-      const result = filterByContrastThreshold(primary, [far], options())
-      expect(result.passing).toHaveLength(1)
-      expect(result.passing[0]).toBe(far)
-      expect(result.rejected).toHaveLength(0)
-    })
+        it('puts a high-contrast candidate into passing', () => {
+            const primary = labCluster(50, 50, 0, 100);
+            const far = labCluster(95, 0, 50, 100, 0.1);
+            const result = filterByContrastThreshold(primary, [far], options());
+            expect(result.passing).toHaveLength(1);
+            expect(result.passing[0]).toBe(far);
+            expect(result.rejected).toHaveLength(0);
+        });
 
-    it('partitions a mixed batch by contrast threshold', () => {
-      const primary = labCluster(50, 50, 0, 100)
-      const a = labCluster(95, 0, 50, 100, 0.1)
-      const b = labCluster(55, 50, 0, 100, 0.1)
-      const c = labCluster(60, 0, 50, 100, 0.1)
-      const result = filterByContrastThreshold(primary, [a, b, c], options())
-      expect(result.passing).toContain(a)
-      expect(result.passing).toContain(c)
-      expect(result.rejected).toContain(b)
-    })
-  })
+        it('partitions a mixed batch by contrast threshold', () => {
+            const primary = labCluster(50, 50, 0, 100);
+            const a = labCluster(95, 0, 50, 100, 0.1);
+            const b = labCluster(55, 50, 0, 100, 0.1);
+            const c = labCluster(60, 0, 50, 100, 0.1);
+            const result = filterByContrastThreshold(
+                primary,
+                [a, b, c],
+                options(),
+            );
+            expect(result.passing).toContain(a);
+            expect(result.passing).toContain(c);
+            expect(result.rejected).toContain(b);
+        });
+    });
 
-  describe('AC: integration with selectSecondary in normal mode', () => {
-    it('a low-contrast candidate triggers harmony fallback in normal mode', () => {
-      const primary = labCluster(50, 50, 0, 100)
-      const tooClose = labCluster(55, 50, 0, 100, 0.1)
-      const result = selectSecondary(primary, [tooClose], options())
-      expect(result).not.toBeNull()
-      expect(result!.color.source).toBe('fallback')
-    })
+    describe('AC: integration with selectSecondary in normal mode', () => {
+        it('a low-contrast candidate triggers harmony fallback in normal mode', () => {
+            const primary = labCluster(50, 50, 0, 100);
+            const tooClose = labCluster(55, 50, 0, 100, 0.1);
+            const result = selectSecondary(primary, [tooClose], options());
+            expect(result).not.toBeNull();
+            expect(result!.color.source).toBe('fallback');
+        });
 
-    it('rejected candidates are scored and selected as fallback when no candidates pass, with nearest', () => {
-      const primary = labCluster(50, 50, 0, 100)
-      const a = labCluster(55, 50, 0, 100, 0.1)
-      const b = labCluster(60, 50, 0, 200, 0.2)
-      const filtered = filterByContrastThreshold(primary, [a, b], options())
-      const result = selectSecondary(primary, [...filtered.passing, ...filtered.rejected], {
-        ...options(),
-        secondary: { fallback: 'nearest', contrastMinDE: 20, harmonyFallbackDeg: 150 },
-      })
-      expect(result).not.toBeNull()
-      expect(result!.color.source).toBe('fallback')
-      expect(result!.color.lab).toEqual(b.lab)
-    })
-  })
+        it('rejected candidates are scored and selected as fallback when no candidates pass, with nearest', () => {
+            const primary = labCluster(50, 50, 0, 100);
+            const a = labCluster(55, 50, 0, 100, 0.1);
+            const b = labCluster(60, 50, 0, 200, 0.2);
+            const filtered = filterByContrastThreshold(
+                primary,
+                [a, b],
+                options(),
+            );
+            const result = selectSecondary(
+                primary,
+                [...filtered.passing, ...filtered.rejected],
+                {
+                    ...options(),
+                    secondary: {
+                        fallback: 'nearest',
+                        contrastMinDE: 20,
+                        harmonyFallbackDeg: 150,
+                    },
+                },
+            );
+            expect(result).not.toBeNull();
+            expect(result!.color.source).toBe('fallback');
+            expect(result!.color.lab).toEqual(b.lab);
+        });
+    });
 
-  describe('AC: empty input is handled', () => {
-    it('returns empty arrays for empty candidates', () => {
-      const primary = labCluster(50, 50, 0, 100)
-      const result = filterByContrastThreshold(primary, [], options())
-      expect(result.passing).toEqual([])
-      expect(result.rejected).toEqual([])
-    })
-  })
-})
+    describe('AC: empty input is handled', () => {
+        it('returns empty arrays for empty candidates', () => {
+            const primary = labCluster(50, 50, 0, 100);
+            const result = filterByContrastThreshold(primary, [], options());
+            expect(result.passing).toEqual([]);
+            expect(result.rejected).toEqual([]);
+        });
+    });
+});
 
-function secondaryFromHsl(h: number, s: number, l: number, source: 'cluster' | 'fallback' = 'cluster'): import('../../src/core/types.js').ExtractedColor {
-  const hueRad = (h * Math.PI) / 180
-  const a = 50 * Math.cos(hueRad)
-  const b = 50 * Math.sin(hueRad)
-  return {
-    hex: '#000000',
-    rgb: { r: 0, g: 0, b: 0 },
-    hsl: { h, s, l },
-    lab: { L: l * 100, a, b },
-    chroma: 50,
-    role: 'secondary',
-    source,
-  }
+function secondaryFromHsl(
+    h: number,
+    s: number,
+    l: number,
+    source: 'cluster' | 'fallback' = 'cluster',
+): import('../../src/core/types.js').ExtractedColor {
+    const hueRad = (h * Math.PI) / 180;
+    const a = 50 * Math.cos(hueRad);
+    const b = 50 * Math.sin(hueRad);
+    return {
+        hex: '#000000',
+        rgb: { r: 0, g: 0, b: 0 },
+        hsl: { h, s, l },
+        lab: { L: l * 100, a, b },
+        chroma: 50,
+        role: 'secondary',
+        source,
+    };
 }
 
 describe('applyLightnessGap (ADZ-40)', () => {
-  function options(overrides: { enforceGap?: boolean; minGap?: number } = {}): ResolvedOptions {
-    return {
-      ...DEFAULT_OPTIONS,
-      lightness: {
-        enforceGap: overrides.enforceGap ?? false,
-        minGap: overrides.minGap ?? 18,
-      },
+    function options(
+        overrides: { enforceGap?: boolean; minGap?: number } = {},
+    ): ResolvedOptions {
+        return {
+            ...DEFAULT_OPTIONS,
+            lightness: {
+                enforceGap: overrides.enforceGap ?? false,
+                minGap: overrides.minGap ?? 18,
+            },
+        };
     }
-  }
 
-  function primaryWithL(l: number): Cluster {
-    return hslCluster(180, 0.5, l, 100)
-  }
+    function primaryWithL(l: number): Cluster {
+        return hslCluster(180, 0.5, l, 100);
+    }
 
-  describe('AC: default output does not modify extracted colors', () => {
-    it('returns the secondary unchanged when enforceGap is false', () => {
-      const primary = primaryWithL(0.5)
-      const secondary = secondaryFromHsl(0, 0.5, 0.52)
-      const result = applyLightnessGap(primary, secondary, options())
-      expect(result).toBe(secondary)
-    })
+    describe('AC: default output does not modify extracted colors', () => {
+        it('returns the secondary unchanged when enforceGap is false', () => {
+            const primary = primaryWithL(0.5);
+            const secondary = secondaryFromHsl(0, 0.5, 0.52);
+            const result = applyLightnessGap(primary, secondary, options());
+            expect(result).toBe(secondary);
+        });
 
-    it('does not mark a no-op as adjusted', () => {
-      const primary = primaryWithL(0.5)
-      const secondary = secondaryFromHsl(0, 0.5, 0.52)
-      const result = applyLightnessGap(primary, secondary, options())
-      expect(result.source).toBe(secondary.source)
-    })
-  })
+        it('does not mark a no-op as adjusted', () => {
+            const primary = primaryWithL(0.5);
+            const secondary = secondaryFromHsl(0, 0.5, 0.52);
+            const result = applyLightnessGap(primary, secondary, options());
+            expect(result.source).toBe(secondary.source);
+        });
+    });
 
-  describe('AC: enforcement ensures the configured lightness gap (minGap in 0-100 scale)', () => {
-    it('darkens the secondary when primary is light and gap is too small', () => {
-      const primary = primaryWithL(0.7)
-      const secondary = secondaryFromHsl(0, 0.5, 0.6)
-      const result = applyLightnessGap(primary, secondary, options({ enforceGap: true, minGap: 18 }))
-      expect(result.hsl).toBeDefined()
-      const gap = Math.abs(result.hsl!.l - primary.hsl.l) * 100
-      expect(gap).toBeCloseTo(18, 5)
-      expect(result.hsl!.l).toBeLessThan(primary.hsl.l)
-    })
+    describe('AC: enforcement ensures the configured lightness gap (minGap in 0-100 scale)', () => {
+        it('darkens the secondary when primary is light and gap is too small', () => {
+            const primary = primaryWithL(0.7);
+            const secondary = secondaryFromHsl(0, 0.5, 0.6);
+            const result = applyLightnessGap(
+                primary,
+                secondary,
+                options({ enforceGap: true, minGap: 18 }),
+            );
+            expect(result.hsl).toBeDefined();
+            const gap = Math.abs(result.hsl!.l - primary.hsl.l) * 100;
+            expect(gap).toBeCloseTo(18, 5);
+            expect(result.hsl!.l).toBeLessThan(primary.hsl.l);
+        });
 
-    it('lightens the secondary when primary is dark and gap is too small', () => {
-      const primary = primaryWithL(0.2)
-      const secondary = secondaryFromHsl(0, 0.5, 0.3)
-      const result = applyLightnessGap(primary, secondary, options({ enforceGap: true, minGap: 18 }))
-      expect(result.hsl!.l).toBeGreaterThan(primary.hsl.l)
-      const gap = Math.abs(result.hsl!.l - primary.hsl.l) * 100
-      expect(gap).toBeCloseTo(18, 5)
-    })
+        it('lightens the secondary when primary is dark and gap is too small', () => {
+            const primary = primaryWithL(0.2);
+            const secondary = secondaryFromHsl(0, 0.5, 0.3);
+            const result = applyLightnessGap(
+                primary,
+                secondary,
+                options({ enforceGap: true, minGap: 18 }),
+            );
+            expect(result.hsl!.l).toBeGreaterThan(primary.hsl.l);
+            const gap = Math.abs(result.hsl!.l - primary.hsl.l) * 100;
+            expect(gap).toBeCloseTo(18, 5);
+        });
 
-    it('keeps the secondary when the gap already satisfies the threshold', () => {
-      const primary = primaryWithL(0.5)
-      const secondary = secondaryFromHsl(0, 0.5, 0.2)
-      const result = applyLightnessGap(primary, secondary, options({ enforceGap: true, minGap: 18 }))
-      expect(result).toBe(secondary)
-    })
-  })
+        it('keeps the secondary when the gap already satisfies the threshold', () => {
+            const primary = primaryWithL(0.5);
+            const secondary = secondaryFromHsl(0, 0.5, 0.2);
+            const result = applyLightnessGap(
+                primary,
+                secondary,
+                options({ enforceGap: true, minGap: 18 }),
+            );
+            expect(result).toBe(secondary);
+        });
+    });
 
-  describe('AC: adjusted output remains valid RGB/HSL/HEX', () => {
-    it('produces a valid hex and rgb for the adjusted HSL', () => {
-      const primary = primaryWithL(0.8)
-      const secondary = secondaryFromHsl(90, 0.6, 0.7)
-      const result = applyLightnessGap(primary, secondary, options({ enforceGap: true, minGap: 30 }))
-      expect(result.hex).toMatch(/^#[0-9a-f]{6}$/)
-      expect(result.rgb.r).toBeGreaterThanOrEqual(0)
-      expect(result.rgb.r).toBeLessThanOrEqual(255)
-      expect(result.rgb.g).toBeGreaterThanOrEqual(0)
-      expect(result.rgb.g).toBeLessThanOrEqual(255)
-      expect(result.rgb.b).toBeGreaterThanOrEqual(0)
-      expect(result.rgb.b).toBeLessThanOrEqual(255)
-      expect(result.hsl).toBeDefined()
-      expect(result.lab).toBeDefined()
-    })
+    describe('AC: adjusted output remains valid RGB/HSL/HEX', () => {
+        it('produces a valid hex and rgb for the adjusted HSL', () => {
+            const primary = primaryWithL(0.8);
+            const secondary = secondaryFromHsl(90, 0.6, 0.7);
+            const result = applyLightnessGap(
+                primary,
+                secondary,
+                options({ enforceGap: true, minGap: 30 }),
+            );
+            expect(result.hex).toMatch(/^#[0-9a-f]{6}$/);
+            expect(result.rgb.r).toBeGreaterThanOrEqual(0);
+            expect(result.rgb.r).toBeLessThanOrEqual(255);
+            expect(result.rgb.g).toBeGreaterThanOrEqual(0);
+            expect(result.rgb.g).toBeLessThanOrEqual(255);
+            expect(result.rgb.b).toBeGreaterThanOrEqual(0);
+            expect(result.rgb.b).toBeLessThanOrEqual(255);
+            expect(result.hsl).toBeDefined();
+            expect(result.lab).toBeDefined();
+        });
 
-    it('clamps L into [0, 1] when target exceeds boundaries', () => {
-      const primary = primaryWithL(0.95)
-      const secondary = secondaryFromHsl(0, 0.5, 0.93)
-      const result = applyLightnessGap(primary, secondary, options({ enforceGap: true, minGap: 80 }))
-      expect(result.hsl!.l).toBeGreaterThanOrEqual(0)
-      expect(result.hsl!.l).toBeLessThanOrEqual(1)
-    })
-  })
+        it('clamps L into [0, 1] when target exceeds boundaries', () => {
+            const primary = primaryWithL(0.95);
+            const secondary = secondaryFromHsl(0, 0.5, 0.93);
+            const result = applyLightnessGap(
+                primary,
+                secondary,
+                options({ enforceGap: true, minGap: 80 }),
+            );
+            expect(result.hsl!.l).toBeGreaterThanOrEqual(0);
+            expect(result.hsl!.l).toBeLessThanOrEqual(1);
+        });
+    });
 
-  describe('AC: adjusted colors are marked with source=adjusted', () => {
-    it('marks an enforced adjustment with source=adjusted', () => {
-      const primary = primaryWithL(0.7)
-      const secondary = secondaryFromHsl(0, 0.5, 0.6)
-      const result = applyLightnessGap(primary, secondary, options({ enforceGap: true, minGap: 18 }))
-      expect(result.source).toBe('adjusted')
-    })
-  })
+    describe('AC: adjusted colors are marked with source=adjusted', () => {
+        it('marks an enforced adjustment with source=adjusted', () => {
+            const primary = primaryWithL(0.7);
+            const secondary = secondaryFromHsl(0, 0.5, 0.6);
+            const result = applyLightnessGap(
+                primary,
+                secondary,
+                options({ enforceGap: true, minGap: 18 }),
+            );
+            expect(result.source).toBe('adjusted');
+        });
+    });
 
-  describe('AC: tolerance for secondary without HSL', () => {
-    it('returns the secondary unchanged when HSL is missing', () => {
-      const primary = primaryWithL(0.5)
-      const secondary: import('../../src/core/types.js').ExtractedColor = {
-        hex: '#000000',
-        rgb: { r: 0, g: 0, b: 0 },
-        role: 'secondary',
-        source: 'cluster',
-      }
-      const result = applyLightnessGap(primary, secondary, options({ enforceGap: true, minGap: 18 }))
-      expect(result).toBe(secondary)
-    })
-  })
+    describe('AC: tolerance for secondary without HSL', () => {
+        it('returns the secondary unchanged when HSL is missing', () => {
+            const primary = primaryWithL(0.5);
+            const secondary: import('../../src/core/types.js').ExtractedColor =
+                {
+                    hex: '#000000',
+                    rgb: { r: 0, g: 0, b: 0 },
+                    role: 'secondary',
+                    source: 'cluster',
+                };
+            const result = applyLightnessGap(
+                primary,
+                secondary,
+                options({ enforceGap: true, minGap: 18 }),
+            );
+            expect(result).toBe(secondary);
+        });
+    });
 
-  describe('AC: when minGap cannot be satisfied due to [0, 1] clamp', () => {
-    it('clamps L to 0 and exposes the maximum achievable gap (50, not 80)', () => {
-      const primary = primaryWithL(0.5)
-      const secondary = secondaryFromHsl(0, 0.5, 0.5)
-      const result = applyLightnessGap(primary, secondary, options({ enforceGap: true, minGap: 80 }))
-      expect(result.hsl!.l).toBe(0)
-      const achievedGap = Math.abs(primary.hsl.l - result.hsl!.l) * 100
-      expect(achievedGap).toBeCloseTo(50, 5)
-      expect(result.source).toBe('adjusted')
-    })
+    describe('AC: when minGap cannot be satisfied due to [0, 1] clamp', () => {
+        it('clamps L to 0 and exposes the maximum achievable gap (50, not 80)', () => {
+            const primary = primaryWithL(0.5);
+            const secondary = secondaryFromHsl(0, 0.5, 0.5);
+            const result = applyLightnessGap(
+                primary,
+                secondary,
+                options({ enforceGap: true, minGap: 80 }),
+            );
+            expect(result.hsl!.l).toBe(0);
+            const achievedGap = Math.abs(primary.hsl.l - result.hsl!.l) * 100;
+            expect(achievedGap).toBeCloseTo(50, 5);
+            expect(result.source).toBe('adjusted');
+        });
 
-    it('clamps L to 1 from the other side and exposes the maximum achievable gap', () => {
-      const primary = primaryWithL(0.4)
-      const secondary = secondaryFromHsl(0, 0.5, 0.4)
-      const result = applyLightnessGap(primary, secondary, options({ enforceGap: true, minGap: 70 }))
-      expect(result.hsl!.l).toBe(1)
-      const achievedGap = Math.abs(primary.hsl.l - result.hsl!.l) * 100
-      expect(achievedGap).toBeCloseTo(60, 5)
-    })
-  })
-})
+        it('clamps L to 1 from the other side and exposes the maximum achievable gap', () => {
+            const primary = primaryWithL(0.4);
+            const secondary = secondaryFromHsl(0, 0.5, 0.4);
+            const result = applyLightnessGap(
+                primary,
+                secondary,
+                options({ enforceGap: true, minGap: 70 }),
+            );
+            expect(result.hsl!.l).toBe(1);
+            const achievedGap = Math.abs(primary.hsl.l - result.hsl!.l) * 100;
+            expect(achievedGap).toBeCloseTo(60, 5);
+        });
+    });
+});
