@@ -49,8 +49,9 @@ describe('primary presets with synthetic fixtures (ADZ-90)', () => {
 
     it('bicolorRedBlue fixture: dominant picks the first block (half/half tie goes to first)', () => {
       const clusters = clustersFromFixture('bicolorRedBlue', 2)
+      expect(clusters[0]!.population).toBe(clusters[1]!.population)
       const idx = findPrimaryIndex(clusters, 'dominant')
-      expect(idx).not.toBe(-1)
+      expect(idx).toBe(0)
     })
   })
 

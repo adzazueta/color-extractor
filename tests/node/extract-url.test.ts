@@ -78,13 +78,17 @@ describe('Node URL extraction with local server (ADZ-81)', () => {
   })
 
   describe('AC: mock oversized responses', () => {
-    it('throws INPUT_TOO_LARGE when payload exceeds maxBytes', async () => {
-      const { extractColors } = await import('../../src/node/index.js')
-      await expect(
-        extractColors(`http://127.0.0.1:${port}/big.png`, {
+    it('throws COLOR_EXTRACTOR_INPUT_TOO_LARGE when payload exceeds maxBytes', async () => {
+      const { extractColors, ColorExtractorError } = await import('../../src/node/index.js')
+      try {
+        await extractColors(`http://127.0.0.1:${port}/big.png`, {
           remote: { allowPrivateNetworks: true, maxBytes: 1024 },
-        }),
-      ).rejects.toThrow(ColorExtractorError)
+        })
+        expect.fail('Expected error')
+      } catch (e) {
+        expect(e).toBeInstanceOf(ColorExtractorError)
+        expect((e as ColorExtractorError).code).toBe('COLOR_EXTRACTOR_INPUT_TOO_LARGE')
+      }
     })
   })
 

@@ -64,7 +64,7 @@
     "test:watch": "vitest",
     "test:smoke": "node scripts/smoke.mjs",
     "typecheck": "tsc --noEmit",
-    "prepublishOnly": "pnpm typecheck && pnpm test && pnpm build"
+    "prepublishOnly": "pnpm typecheck && pnpm test && pnpm build && pnpm test:smoke"
   },
   "peerDependencies": {
     "sharp": "^0.33.0"

@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { runExtractionPipeline } from '../../src/core/extract.js'
 import { FIXTURES } from './fixtures.js'
 
-const INPUT = FIXTURES.bicolorRedBlue
+const INPUT = FIXTURES.multiColorPalette
 
 describe('output flags through pipeline (ADZ-75)', () => {
   describe('AC: default result contains only required public color fields', () => {
@@ -75,10 +75,12 @@ describe('output flags through pipeline (ADZ-75)', () => {
 
     it('palette colors always have rgb and hex', () => {
       const result = runExtractionPipeline(INPUT, { output: { includePalette: true } })
-      const palette = (result as unknown as Record<string, unknown>).palette as Array<Record<string, unknown>> | undefined
-      if (palette && palette.length > 0) {
-        expect(palette[0]!.rgb).toBeDefined()
-        expect(palette[0]!.hex).toBeTruthy()
+      const palette = (result as unknown as Record<string, unknown>).palette as Array<Record<string, unknown>>
+      expect(palette).toBeDefined()
+      expect(palette.length).toBeGreaterThan(0)
+      for (const color of palette) {
+        expect(color.rgb).toBeDefined()
+        expect(color.hex).toBeTruthy()
       }
     })
   })
