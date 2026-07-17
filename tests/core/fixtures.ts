@@ -41,18 +41,18 @@ function bicolorBlocks(
   return makePixels(w, h, (i) => (i < half ? colorA : colorB))
 }
 
-const RED: RgbColor = { r: 255, g: 0, b: 0 }
-const GREEN: RgbColor = { r: 0, g: 255, b: 0 }
-const BLUE: RgbColor = { r: 0, g: 0, b: 255 }
-const WHITE: RgbColor = { r: 255, g: 255, b: 255 }
-const BLACK: RgbColor = { r: 0, g: 0, b: 0 }
+const RED: RgbColor = { r: 244, g: 10, b: 10 }
+const GREEN: RgbColor = { r: 10, g: 244, b: 10 }
+const BLUE: RgbColor = { r: 10, g: 10, b: 244 }
+const WHITE: RgbColor = { r: 244, g: 244, b: 244 }
+const BLACK: RgbColor = { r: 10, g: 10, b: 10 }
 const GRAY128: RgbColor = { r: 128, g: 128, b: 128 }
-const MUTED_GRAY: RgbColor = { r: 148, g: 145, b: 140 }
+const MUTED_GRAY: RgbColor = { r: 150, g: 140, b: 130 }
 const CRIMSON: RgbColor = { r: 220, g: 20, b: 60 }
-const TEAL: RgbColor = { r: 0, g: 128, b: 128 }
-const PURPLE: RgbColor = { r: 128, g: 0, b: 128 }
-const ORANGE: RgbColor = { r: 255, g: 165, b: 0 }
-const YELLOW: RgbColor = { r: 255, g: 255, b: 0 }
+const TEAL: RgbColor = { r: 10, g: 128, b: 128 }
+const PURPLE: RgbColor = { r: 128, g: 10, b: 128 }
+const ORANGE: RgbColor = { r: 244, g: 160, b: 10 }
+const YELLOW: RgbColor = { r: 244, g: 244, b: 10 }
 const DARK_GRAY: RgbColor = { r: 50, g: 50, b: 50 }
 const LIGHT_GRAY: RgbColor = { r: 200, g: 200, b: 200 }
 
