@@ -1,94 +1,109 @@
 {
-  "name": "@adzazueta/color-extractor",
-  "version": "0.1.0",
-  "description": "ESM-only npm package for extracting perceptually meaningful primary and secondary colors from images in browser and Node.js",
-  "type": "module",
-  "keywords": [
-    "color",
-    "extraction",
-    "palette",
-    "image",
-    "cielab",
-    "kmeans",
-    "typescript",
-    "esm"
-  ],
-  "author": "Alexis D. Zazueta <alexisd.zazueta@gmail.com>",
-  "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/adzazueta/color-extractor.git"
-  },
-  "bugs": {
-    "url": "https://github.com/adzazueta/color-extractor/issues"
-  },
-  "homepage": "https://github.com/adzazueta/color-extractor#readme",
-  "engines": {
-    "node": "^20.19.0 || >=22.12.0"
-  },
-  "publishConfig": {
-    "access": "public"
-  },
-  "packageManager": "pnpm@10.7.0",
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "browser": "./dist/browser/index.js",
-      "node": "./dist/node/index.js",
-      "default": "./dist/browser/index.js"
+    "name": "@adzazueta/color-extractor",
+    "version": "0.1.0",
+    "description": "ESM-only npm package for extracting perceptually meaningful primary and secondary colors from images in browser and Node.js",
+    "type": "module",
+    "keywords": [
+        "color",
+        "extraction",
+        "palette",
+        "image",
+        "cielab",
+        "kmeans",
+        "typescript",
+        "esm"
+    ],
+    "author": "Alexis D. Zazueta <alexisd.zazueta@gmail.com>",
+    "license": "MIT",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/adzazueta/color-extractor.git"
     },
-    "./browser": {
-      "types": "./dist/browser/index.d.ts",
-      "import": "./dist/browser/index.js"
+    "bugs": {
+        "url": "https://github.com/adzazueta/color-extractor/issues"
     },
-    "./node": {
-      "types": "./dist/node/index.d.ts",
-      "import": "./dist/node/index.js"
+    "homepage": "https://github.com/adzazueta/color-extractor#readme",
+    "engines": {
+        "node": "^20.19.0 || >=22.12.0"
     },
-    "./core": {
-      "types": "./dist/core/index.d.ts",
-      "import": "./dist/core/index.js"
+    "publishConfig": {
+        "access": "public"
     },
-    "./package.json": "./package.json"
-  },
-  "files": [
-    "dist",
-    "README.md",
-    "LICENSE"
-  ],
-  "sideEffects": false,
-  "scripts": {
-    "build": "tsdown",
-    "changeset": "changeset",
-    "release": "changeset publish",
-    "test": "vitest run",
-    "test:verbose": "vitest run --reporter=verbose",
-    "test:watch": "vitest",
-    "test:smoke": "node scripts/smoke.mjs",
-    "typecheck": "tsc --noEmit",
-    "prepublishOnly": "pnpm build && pnpm test && pnpm typecheck && pnpm test:smoke"
-  },
-  "peerDependencies": {
-    "sharp": "^0.33.0"
-  },
-  "peerDependenciesMeta": {
-    "sharp": {
-      "optional": true
+    "packageManager": "pnpm@10.7.0",
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.ts",
+            "browser": "./dist/browser/index.js",
+            "node": "./dist/node/index.js",
+            "default": "./dist/browser/index.js"
+        },
+        "./browser": {
+            "types": "./dist/browser/index.d.ts",
+            "import": "./dist/browser/index.js"
+        },
+        "./node": {
+            "types": "./dist/node/index.d.ts",
+            "import": "./dist/node/index.js"
+        },
+        "./core": {
+            "types": "./dist/core/index.d.ts",
+            "import": "./dist/core/index.js"
+        },
+        "./package.json": "./package.json"
+    },
+    "files": [
+        "dist",
+        "README.md",
+        "LICENSE"
+    ],
+    "sideEffects": false,
+    "scripts": {
+        "build": "tsdown",
+        "changeset": "changeset",
+        "release": "changeset publish",
+        "test": "vitest run",
+        "test:verbose": "vitest run --reporter=verbose",
+        "test:watch": "vitest",
+        "test:smoke": "node scripts/smoke.mjs",
+        "typecheck": "tsc --noEmit",
+        "prepublishOnly": "pnpm build && pnpm test && pnpm typecheck && pnpm test:smoke",
+        "lint": "biome check .",
+        "lint:fix": "biome check --write .",
+        "prepare": "simple-git-hooks"
+    },
+    "simple-git-hooks": {
+        "pre-commit": "pnpm lint-staged && pnpm typecheck"
+    },
+    "lint-staged": {
+        "*.{js,ts,cjs,mjs}": [
+            "biome check --write --no-errors-on-unmatched",
+            "vitest related --run --passWithNoTests"
+        ]
+    },
+    "peerDependencies": {
+        "sharp": "^0.33.0"
+    },
+    "peerDependenciesMeta": {
+        "sharp": {
+            "optional": true
+        }
+    },
+    "pnpm": {
+        "onlyBuiltDependencies": [
+            "esbuild"
+        ]
+    },
+    "devDependencies": {
+        "@biomejs/biome": "^2.5.4",
+        "@changesets/cli": "^2.31.1",
+        "@types/node": "^26.1.0",
+        "lint-staged": "^17.0.8",
+        "publint": "^0.3.21",
+        "sharp": "^0.35.0",
+        "simple-git-hooks": "^2.13.1",
+        "tsdown": "^0.22.0",
+        "typescript": "^6.0.0",
+        "unrun": "^0.3.1",
+        "vitest": "^4.1.0"
     }
-  },
-  "pnpm": {
-    "onlyBuiltDependencies": [
-      "esbuild"
-    ]
-  },
-  "devDependencies": {
-    "@changesets/cli": "^2.31.1",
-    "@types/node": "^26.1.0",
-    "publint": "^0.3.21",
-    "sharp": "^0.35.0",
-    "tsdown": "^0.22.0",
-    "typescript": "^6.0.0",
-    "unrun": "^0.3.1",
-    "vitest": "^4.1.0"
-  }
 }
