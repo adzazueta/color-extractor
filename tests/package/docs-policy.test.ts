@@ -7,7 +7,13 @@ const ROOT = resolve(import.meta.dirname, '../..');
 const DOCS_DIR = resolve(ROOT, 'docs');
 const LINEAR_APP_RE = /linear\.app/g;
 
-const PUBLIC_FILES = ['README.md', 'LICENSE', 'CHANGELOG.md', 'package.json'];
+const PUBLIC_FILES = [
+    'README.md',
+    'LICENSE',
+    'CHANGELOG.md',
+    'CONTRIBUTING.md',
+    'package.json',
+];
 
 const PUBLIC_SOURCE_PATTERNS = [
     'src/**/*.ts',
@@ -33,6 +39,67 @@ describe('documentation policy (ADZ-139)', () => {
         }
     });
 
+    it('README links to CONTRIBUTING.md', () => {
+        const readme = readFileSync(resolve(ROOT, 'README.md'), 'utf-8');
+        expect(readme).toMatch(/\[CONTRIBUTING\.md\]\(CONTRIBUTING\.md\)/);
+    });
+});
+
+describe('contributing guide (ADZ-138)', () => {
+    const REQUIRED_HEADINGS = [
+        'Current contribution model',
+        'Reporting bugs',
+        'Requesting features',
+        'Documentation feedback',
+        'Security vulnerabilities',
+        'Development conventions',
+        'Pull request policy',
+        'Branch and release governance',
+        'Code of conduct',
+        'License',
+        'Policy evolution',
+    ];
+
+    const contributingPath = resolve(ROOT, 'CONTRIBUTING.md');
+    const contributing = readFileSync(contributingPath, 'utf-8');
+
+    it('exists at the repository root', () => {
+        expect(existsSync(contributingPath)).toBe(true);
+    });
+
+    it('contains all required headings', () => {
+        for (const heading of REQUIRED_HEADINGS) {
+            expect(
+                contributing,
+                `CONTRIBUTING.md must contain heading "${heading}"`,
+            ).toMatch(new RegExp(`^## ${heading}`, 'm'));
+        }
+    });
+
+    it('states that unsolicited external PRs are not accepted', () => {
+        expect(contributing).toMatch(
+            /does\s+not\s+currently\s+accept\s+unsolicited\s+external\s+pull\s+requests/i,
+        );
+    });
+
+    it('does not claim external PRs are accepted', () => {
+        expect(contributing).not.toMatch(
+            /(?:pull\s+requests?\s+are\s+welcomed?|we\s+accept\s+pull\s+requests?)/i,
+        );
+    });
+
+    it('does not contain a placeholder contact', () => {
+        expect(contributing).not.toMatch(
+            /(?:todo|placeholder|\[email\s+protected\])/i,
+        );
+    });
+
+    it('does not contain a linear.app URL', () => {
+        expect(contributing).not.toMatch(LINEAR_APP_RE);
+    });
+});
+
+describe('documentation policy (cont.)', () => {
     it('npm pack tarball does not include docs/', () => {
         const raw = execFileSync(
             'npm',
