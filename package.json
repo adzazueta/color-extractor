@@ -58,18 +58,20 @@
     ],
     "sideEffects": false,
     "scripts": {
-        "build": "tsdown",
+        "build": "pnpm sync-version && tsdown",
         "changeset": "changeset",
         "release": "changeset publish",
+        "sync-version": "node scripts/sync-version.mjs",
+        "check-version": "pnpm sync-version && git diff --quiet src/generated/version.ts || (echo 'error: src/generated/version.ts is out of sync — run pnpm sync-version and commit the result'; exit 1)",
         "test": "vitest run",
         "test:verbose": "vitest run --reporter=verbose",
         "test:watch": "vitest",
         "test:smoke": "node scripts/smoke.mjs",
         "typecheck": "tsc --noEmit",
-        "prepublishOnly": "pnpm build && pnpm test && pnpm typecheck && pnpm test:smoke",
+        "prepublishOnly": "pnpm check-version && pnpm build && pnpm test && pnpm typecheck && pnpm test:smoke",
         "lint": "biome check .",
         "lint:fix": "biome check --write .",
-        "prepare": "simple-git-hooks"
+        "prepare": "node -e \"try{require('child_process').execFileSync('simple-git-hooks',{stdio:'pipe'})}catch(e){}\""
     },
     "simple-git-hooks": {
         "pre-commit": "pnpm lint-staged && pnpm typecheck"

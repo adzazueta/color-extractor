@@ -58,10 +58,14 @@ describe('publish files configuration', () => {
 });
 
 describe('npm pack --dry-run contents', () => {
-    const raw = execFileSync('npm', ['pack', '--dry-run', '--json'], {
-        cwd: rootDir,
-        encoding: 'utf-8',
-    });
+    const raw = execFileSync(
+        'npm',
+        ['pack', '--dry-run', '--json', '--ignore-scripts'],
+        {
+            cwd: rootDir,
+            encoding: 'utf-8',
+        },
+    );
     // npm pack --json can print [INFO] lifecycle messages before the JSON
     const lines = raw.split('\n');
     const jsonStart = lines.findIndex((l) => l.trim() === '[');

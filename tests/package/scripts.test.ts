@@ -22,11 +22,13 @@ describe('package scripts', () => {
         expect(Object.keys(scripts).sort()).toEqual([
             'build',
             'changeset',
+            'check-version',
             'lint',
             'lint:fix',
             'prepare',
             'prepublishOnly',
             'release',
+            'sync-version',
             'test',
             'test:smoke',
             'test:verbose',
@@ -35,8 +37,8 @@ describe('package scripts', () => {
         ]);
     });
 
-    it('build runs tsdown', () => {
-        expect(scripts.build).toBe('tsdown');
+    it('build runs sync-version then tsdown', () => {
+        expect(scripts.build).toBe('pnpm sync-version && tsdown');
     });
 
     it('test runs vitest in single-run mode', () => {

@@ -15,7 +15,6 @@ import type { BrowserInputKind } from './detect.js';
 import { detectBrowserInputKind } from './detect.js';
 import type { BrowserExtractColorsInput } from './types.js';
 
-export const VERSION = '0.1.0';
 export type {
     AnimatedHandling,
     ColorRole,
@@ -49,6 +48,7 @@ export {
     type ResolvedOptions,
     resolveOptions,
 } from '../core/index.js';
+export { VERSION } from '../generated/version.js';
 export type { BrowserExtractColorsInput } from './types.js';
 
 function decoderForKind(kind: BrowserInputKind): 'canvas' | 'image-data' {
