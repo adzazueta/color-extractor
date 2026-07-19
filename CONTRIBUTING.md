@@ -4,7 +4,7 @@ Thank you for your interest in this project. The source code is public for trans
 
 ## Project scope
 
-`@adzazueta/color-extractor` extracts perceptually meaningful primary, secondary, accent, and palette colors from images. It focuses on the extractor responsibility — color space conversion, K-means clustering, chroma-weighted scoring, and role assignment. Broader color science utilities and higher-level composable pipelines belong in `@adzazueta/color-engine`.
+`@adzazueta/color-extractor` extracts perceptually meaningful primary, secondary, accent, and palette colors from images. It focuses on the extractor responsibility — color space conversion, K-means clustering, chroma-weighted scoring, and role assignment.
 
 ## Current contribution model
 
@@ -39,7 +39,7 @@ Please include:
 - Proposed behavior or API surface.
 - Why the existing options, entrypoints, or output flags are insufficient.
 - Affected runtime or entrypoint.
-- Whether the concern belongs to extraction (this package) or broader color-science tooling (`@adzazueta/color-engine`).
+- Whether the concern belongs to extraction (this package) or broader color-science tooling outside this package's scope.
 - Compatibility implications for existing users.
 
 Feature requests are evaluated against the extractor-only responsibility boundary and the project roadmap.

@@ -35,6 +35,7 @@ describe('package scripts', () => {
             'test:verbose',
             'test:watch',
             'typecheck',
+            'verify-fixtures',
         ]);
     });
 

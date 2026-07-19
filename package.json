@@ -68,6 +68,7 @@
         "test:verbose": "vitest run --reporter=verbose",
         "test:watch": "vitest",
         "test:smoke": "node scripts/smoke.mjs",
+        "verify-fixtures": "node scripts/verify-fixtures.mjs",
         "typecheck": "tsc --noEmit",
         "prepublishOnly": "pnpm check-version && pnpm build && pnpm test && pnpm typecheck && pnpm test:smoke",
         "lint": "biome check .",
