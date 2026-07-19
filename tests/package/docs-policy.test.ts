@@ -12,13 +12,8 @@ const PUBLIC_FILES = [
     'LICENSE',
     'CHANGELOG.md',
     'CONTRIBUTING.md',
+    'SECURITY.md',
     'package.json',
-];
-
-const PUBLIC_SOURCE_PATTERNS = [
-    'src/**/*.ts',
-    'tests/**/*.ts',
-    'scripts/**/*.mjs',
 ];
 
 describe('documentation policy (ADZ-139)', () => {
@@ -42,6 +37,11 @@ describe('documentation policy (ADZ-139)', () => {
     it('README links to CONTRIBUTING.md', () => {
         const readme = readFileSync(resolve(ROOT, 'README.md'), 'utf-8');
         expect(readme).toMatch(/\[CONTRIBUTING\.md\]\(CONTRIBUTING\.md\)/);
+    });
+
+    it('README links to SECURITY.md', () => {
+        const readme = readFileSync(resolve(ROOT, 'README.md'), 'utf-8');
+        expect(readme).toMatch(/\[SECURITY\.md\]\(SECURITY\.md\)/);
     });
 });
 
@@ -122,5 +122,7 @@ describe('documentation policy (cont.)', () => {
         expect(tarballPaths).toContain('package.json');
         expect(tarballPaths).toContain('README.md');
         expect(tarballPaths).toContain('LICENSE');
+        expect(tarballPaths).toContain('CHANGELOG.md');
+        expect(tarballPaths).toContain('SECURITY.md');
     });
 });

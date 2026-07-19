@@ -39,6 +39,8 @@ describe('package tarball — manifest', () => {
         'package.json',
         'README.md',
         'LICENSE',
+        'CHANGELOG.md',
+        'SECURITY.md',
     ];
 
     it('pnpm pack creates a tarball', () => {
@@ -64,6 +66,8 @@ describe('package tarball — manifest', () => {
             'package.json',
             'README.md',
             'LICENSE',
+            'CHANGELOG.md',
+            'SECURITY.md',
         ]);
         for (const entry of topLevel) {
             expect(allowed.has(entry)).toBe(true);

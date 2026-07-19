@@ -10,7 +10,6 @@ import { ENTRYPOINT_DISTS, loadPackageJson } from './version-sync.shared.js';
 
 const ROOT = resolve(import.meta.dirname, '../..');
 const { version: PKG_VERSION } = loadPackageJson(ROOT);
-const VERSION_FILE = resolve(ROOT, 'src/generated/version.ts');
 
 function makePixels(
     width: number,

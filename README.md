@@ -289,6 +289,10 @@ try {
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for the contribution model, bug reporting, feature requests, and development conventions.
 
+## Security
+
+See [SECURITY.md](SECURITY.md) for responsible vulnerability-reporting guidance.
+
 ## License
 
 MIT © 2026 Alexis D. Zazueta

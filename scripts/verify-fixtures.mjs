@@ -9,8 +9,7 @@ import {
     writeFileSync,
 } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { basename, dirname, extname, resolve, sep } from 'node:path';
-import { createInterface } from 'node:readline';
+import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -51,13 +50,6 @@ function listTarball(filePath) {
         .split('\n')
         .filter(Boolean);
     return lines.map((f) => f.replace(/^package\//, ''));
-}
-
-async function readOutput(child) {
-    const lines = [];
-    const rl = createInterface({ input: child.stdout });
-    for await (const line of rl) lines.push(line);
-    return lines;
 }
 
 async function main() {
@@ -118,6 +110,8 @@ async function main() {
         'package.json',
         'README.md',
         'LICENSE',
+        'CHANGELOG.md',
+        'SECURITY.md',
     ];
     for (const file of expected) {
         if (!contents.includes(file)) {
@@ -135,6 +129,8 @@ async function main() {
         'package.json',
         'README.md',
         'LICENSE',
+        'CHANGELOG.md',
+        'SECURITY.md',
     ]);
     const topLevel = new Set(contents.map((f) => f.split('/')[0]));
     for (const entry of topLevel) {

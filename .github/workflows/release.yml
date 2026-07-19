@@ -42,11 +42,13 @@ jobs:
             ${{ runner.os }}-pnpm-store-
 
       - run: pnpm install --frozen-lockfile
-      - run: pnpm build
 
-      - uses: changesets/action@v1
+      - uses: changesets/action@v2
         with:
-          publish: pnpm release
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          version-script: pnpm release:version
+          publish-script: pnpm release
+          create-github-releases: true
+          push-git-tags: true
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
