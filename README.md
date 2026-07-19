@@ -1,6 +1,6 @@
 # @adzazueta/color-extractor
 
-Extract perceptually meaningful observed colors from images in browsers and Node.js.
+Extract perceptually meaningful primary, secondary, accent, and palette colors from images in browsers and Node.js.
 
 It uses CIELAB K-means with chroma-weighted scoring, favoring colors people perceive as visually dominant instead of only the most frequent pixels.
 
@@ -284,14 +284,6 @@ try {
 | `COLOR_EXTRACTOR_UNSUPPORTED_FORMAT` | The decoder cannot process the image format. |
 | `COLOR_EXTRACTOR_SHARP_MISSING` | Node decoding requires `sharp`. |
 | `COLOR_EXTRACTOR_NO_VALID_PIXELS` | Filtering removed all pixels from the image. |
-
-## Contributing
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for the contribution model, bug reporting, feature requests, and development conventions.
-
-## Security
-
-See [SECURITY.md](SECURITY.md) for responsible vulnerability-reporting guidance.
 
 ## License
 

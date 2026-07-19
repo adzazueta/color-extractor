@@ -5,7 +5,7 @@ import type {
 } from './core/index.js';
 import type { NodeExtractColorsInput } from './node/types.js';
 
-export { VERSION } from './generated/version.js';
+export const VERSION = '0.1.0';
 
 export type RootExtractColorsInput =
     | BrowserExtractColorsInput

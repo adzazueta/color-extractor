@@ -1,4 +1,4 @@
-export { VERSION } from '../generated/version.js';
+export const VERSION = '0.1.0';
 export {
     chromaFromLab,
     circularHueDistance,

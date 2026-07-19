@@ -1,6 +1,3 @@
-import { readFileSync } from 'node:fs';
-import { dirname, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { describe, expect, expectTypeOf, it } from 'vitest';
 import {
     extractColorsFromImageData,
@@ -11,16 +8,6 @@ import {
 import { ColorExtractorError } from '../../../src/core/index.js';
 import type { ExtractedColor } from '../../../src/core/types.js';
 import type { PixelInput } from '../../../src/core/validation.js';
-
-const PKG_VERSION: string = JSON.parse(
-    readFileSync(
-        resolve(
-            dirname(fileURLToPath(import.meta.url)),
-            '../../../package.json',
-        ),
-        'utf-8',
-    ),
-).version;
 
 function makePixels(
     width: number,
@@ -210,7 +197,7 @@ describe('extractColorsFromPixels (e2e pipeline)', () => {
             expect(result.metadata!.algorithm).toBe(
                 'lab-kmeans-chroma-weighted',
             );
-            expect(result.metadata!.packageVersion).toBe(PKG_VERSION);
+            expect(result.metadata!.packageVersion).toBe('0.1.0');
             expect(result.metadata!.cacheVersion).toBe('1.0');
             expect(result.metadata!.sampleSize).toBe(150);
             expect(result.metadata!.sampledPixels).toBeGreaterThan(0);
