@@ -19,9 +19,15 @@ const pkg: PackageJson = JSON.parse(
 ) as PackageJson;
 
 describe('publish files configuration', () => {
-    it('declares dist, README.md and LICENSE in files', () => {
+    it('declares package artifacts and public policies in files', () => {
         expect(pkg.files).toEqual(
-            expect.arrayContaining(['dist', 'README.md', 'LICENSE']),
+            expect.arrayContaining([
+                'dist',
+                'README.md',
+                'LICENSE',
+                'CHANGELOG.md',
+                'SECURITY.md',
+            ]),
         );
     });
 
@@ -31,6 +37,11 @@ describe('publish files configuration', () => {
 
     it('README.md exists at the package root', () => {
         expect(existsSync(resolve(rootDir, 'README.md'))).toBe(true);
+    });
+
+    it('public changelog and security policy exist at the package root', () => {
+        expect(existsSync(resolve(rootDir, 'CHANGELOG.md'))).toBe(true);
+        expect(existsSync(resolve(rootDir, 'SECURITY.md'))).toBe(true);
     });
 
     it('dist/ build output exists', () => {
@@ -58,10 +69,14 @@ describe('publish files configuration', () => {
 });
 
 describe('npm pack --dry-run contents', () => {
-    const raw = execFileSync('npm', ['pack', '--dry-run', '--json'], {
-        cwd: rootDir,
-        encoding: 'utf-8',
-    });
+    const raw = execFileSync(
+        'npm',
+        ['pack', '--dry-run', '--json', '--ignore-scripts'],
+        {
+            cwd: rootDir,
+            encoding: 'utf-8',
+        },
+    );
     // npm pack --json can print [INFO] lifecycle messages before the JSON
     const lines = raw.split('\n');
     const jsonStart = lines.findIndex((l) => l.trim() === '[');
@@ -91,9 +106,11 @@ describe('npm pack --dry-run contents', () => {
         }
     });
 
-    it('includes LICENSE and README.md', () => {
+    it('includes public repository documentation', () => {
         expect(tarballFiles).toContain('LICENSE');
         expect(tarballFiles).toContain('README.md');
+        expect(tarballFiles).toContain('CHANGELOG.md');
+        expect(tarballFiles).toContain('SECURITY.md');
     });
 
     it('includes package.json', () => {
