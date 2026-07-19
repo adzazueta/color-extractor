@@ -22,21 +22,28 @@ describe('package scripts', () => {
         expect(Object.keys(scripts).sort()).toEqual([
             'build',
             'changeset',
+            'check-build-warnings',
+            'check-version',
             'lint',
             'lint:fix',
             'prepare',
             'prepublishOnly',
             'release',
+            'release:version',
+            'sync-version',
             'test',
             'test:smoke',
             'test:verbose',
             'test:watch',
             'typecheck',
+            'verify-fixtures',
         ]);
     });
 
-    it('build runs tsdown', () => {
-        expect(scripts.build).toBe('tsdown');
+    it('build runs sync-version, tsdown, then check-build-warnings', () => {
+        expect(scripts.build).toBe(
+            'pnpm sync-version && tsdown && node scripts/check-build-warnings.mjs',
+        );
     });
 
     it('test runs vitest in single-run mode', () => {
@@ -76,6 +83,13 @@ describe('package scripts', () => {
             expect(iSmoke).toBeGreaterThan(iType);
         });
 
+        it('runs packed-consumer verification after smoke tests', () => {
+            const chain = scripts.prepublishOnly ?? '';
+            expect(chain.indexOf('verify-fixtures')).toBeGreaterThan(
+                chain.indexOf('test:smoke'),
+            );
+        });
+
         it('exits non-zero when a chained step fails', () => {
             const fakeChain =
                 'node -e "process.exit(1)" && node -e "process.exit(0)"';
@@ -90,5 +104,11 @@ describe('package scripts', () => {
                 expect(e.status).not.toBe(0);
             }
         });
+    });
+
+    it('versions packages before synchronizing generated runtime metadata and build output', () => {
+        expect(scripts['release:version']).toBe(
+            'pnpm changeset version && pnpm sync-version && pnpm build',
+        );
     });
 });
