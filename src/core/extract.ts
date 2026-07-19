@@ -1,4 +1,3 @@
-import { VERSION } from '../generated/version.js';
 import { labSquaredDistance } from './color/lab.js';
 import { resolveOptions } from './defaults.js';
 import { ColorExtractorError } from './errors.js';
@@ -48,7 +47,7 @@ function toUint8Array(
     return Uint8Array.from(data);
 }
 
-const PACKAGE_VERSION = VERSION;
+const PACKAGE_VERSION = '0.1.0';
 
 export function runExtractionPipeline(
     input: PixelInput,
