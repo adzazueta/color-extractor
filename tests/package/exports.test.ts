@@ -116,6 +116,10 @@ describe('public exports contract', () => {
 });
 
 describe('built entrypoints can be imported from Node', () => {
+    const expectedVersion: string = JSON.parse(
+        readFileSync(resolve(rootDir, 'package.json'), 'utf-8'),
+    ).version;
+
     it.each([
         ['./dist/index.js'],
         ['./dist/browser/index.js'],
@@ -125,6 +129,6 @@ describe('built entrypoints can be imported from Node', () => {
         const url = pathToFileURL(resolve(rootDir, relPath)).href;
         const mod = (await import(url)) as { VERSION: string };
         expect(typeof mod.VERSION).toBe('string');
-        expect(mod.VERSION).toBe('0.1.0');
+        expect(mod.VERSION).toBe(expectedVersion);
     });
 });

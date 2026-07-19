@@ -6,3 +6,4 @@ coverage
 .vitest-cache
 .tsbuildinfo
 *.tsbuildinfo
+*.tgz

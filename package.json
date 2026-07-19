@@ -1,7 +1,7 @@
 {
     "name": "@adzazueta/color-extractor",
     "version": "0.1.1",
-    "description": "ESM-only npm package for extracting perceptually meaningful primary and secondary colors from images in browser and Node.js",
+    "description": "Extract perceptually meaningful observed colors and palette data from images in browsers and Node.js",
     "type": "module",
     "keywords": [
         "color",
@@ -54,22 +54,29 @@
     "files": [
         "dist",
         "README.md",
-        "LICENSE"
+        "LICENSE",
+        "CHANGELOG.md",
+        "SECURITY.md"
     ],
     "sideEffects": false,
     "scripts": {
-        "build": "tsdown",
+        "build": "pnpm sync-version && tsdown && node scripts/check-build-warnings.mjs",
+        "check-build-warnings": "node scripts/check-build-warnings.mjs",
         "changeset": "changeset",
         "release": "changeset publish",
+        "release:version": "pnpm changeset version && pnpm sync-version && pnpm build",
+        "sync-version": "node scripts/sync-version.mjs",
+        "check-version": "pnpm sync-version && git diff --quiet src/generated/version.ts || (echo 'error: src/generated/version.ts is out of sync — run pnpm sync-version and commit the result'; exit 1)",
         "test": "vitest run",
         "test:verbose": "vitest run --reporter=verbose",
         "test:watch": "vitest",
         "test:smoke": "node scripts/smoke.mjs",
+        "verify-fixtures": "node scripts/verify-fixtures.mjs",
         "typecheck": "tsc --noEmit",
-        "prepublishOnly": "pnpm build && pnpm test && pnpm typecheck && pnpm test:smoke",
+        "prepublishOnly": "pnpm check-version && pnpm build && pnpm test && pnpm typecheck && pnpm test:smoke && pnpm verify-fixtures",
         "lint": "biome check .",
         "lint:fix": "biome check --write .",
-        "prepare": "simple-git-hooks"
+        "prepare": "node -e \"try{require('child_process').execFileSync('simple-git-hooks',{stdio:'pipe'})}catch(e){}\""
     },
     "simple-git-hooks": {
         "pre-commit": "pnpm lint-staged && pnpm typecheck"

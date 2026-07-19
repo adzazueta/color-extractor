@@ -12,7 +12,6 @@ import { loadLocalPath } from './load.js';
 import { followRedirects } from './redirects.js';
 import type { NodeExtractColorsInput } from './types.js';
 
-export const VERSION = '0.1.0';
 export type {
     AnimatedHandling,
     ColorRole,
@@ -46,6 +45,7 @@ export {
     type ResolvedOptions,
     resolveOptions,
 } from '../core/index.js';
+export { VERSION } from '../generated/version.js';
 export type { NodeExtractColorsInput } from './types.js';
 
 export async function extractColors(
