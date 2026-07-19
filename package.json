@@ -58,7 +58,8 @@
     ],
     "sideEffects": false,
     "scripts": {
-        "build": "pnpm sync-version && tsdown",
+        "build": "pnpm sync-version && tsdown && node scripts/check-build-warnings.mjs",
+        "check-build-warnings": "node scripts/check-build-warnings.mjs",
         "changeset": "changeset",
         "release": "changeset publish",
         "sync-version": "node scripts/sync-version.mjs",

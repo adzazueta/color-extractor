@@ -22,6 +22,7 @@ describe('package scripts', () => {
         expect(Object.keys(scripts).sort()).toEqual([
             'build',
             'changeset',
+            'check-build-warnings',
             'check-version',
             'lint',
             'lint:fix',
@@ -37,8 +38,10 @@ describe('package scripts', () => {
         ]);
     });
 
-    it('build runs sync-version then tsdown', () => {
-        expect(scripts.build).toBe('pnpm sync-version && tsdown');
+    it('build runs sync-version, tsdown, then check-build-warnings', () => {
+        expect(scripts.build).toBe(
+            'pnpm sync-version && tsdown && node scripts/check-build-warnings.mjs',
+        );
     });
 
     it('test runs vitest in single-run mode', () => {
