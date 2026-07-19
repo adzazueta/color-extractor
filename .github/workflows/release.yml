@@ -43,12 +43,11 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      - uses: changesets/action@v2
+      - uses: changesets/action@v1
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          version-script: pnpm release:version
-          publish-script: pnpm release
-          create-github-releases: true
-          push-git-tags: true
+          version: pnpm release:version
+          publish: pnpm release
+          createGithubReleases: true
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
