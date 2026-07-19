@@ -1,6 +1,6 @@
 # @adzazueta/color-extractor
 
-Extract perceptually meaningful primary, secondary, accent, and palette colors from images in browsers and Node.js.
+Extract perceptually meaningful observed colors from images in browsers and Node.js.
 
 It uses CIELAB K-means with chroma-weighted scoring, favoring colors people perceive as visually dominant instead of only the most frequent pixels.
 
