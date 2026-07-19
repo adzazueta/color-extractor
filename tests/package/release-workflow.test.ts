@@ -13,21 +13,20 @@ describe('release workflow', () => {
         expect(workflow).toMatch(/push:\s*\n\s+branches:\s*\n\s+- main/);
     });
 
-    it('uses the current Changesets action inputs', () => {
-        expect(workflow).toContain('uses: changesets/action@v2');
+    it('uses published Changesets action inputs', () => {
+        expect(workflow).toContain('uses: changesets/action@v1');
         expect(workflow).toContain(
             `github-token: \${{ secrets.GITHUB_TOKEN }}`,
         );
-        expect(workflow).toContain('version-script: pnpm release:version');
-        expect(workflow).toContain('publish-script: pnpm release');
+        expect(workflow).toContain('version: pnpm release:version');
+        expect(workflow).toContain('publish: pnpm release');
     });
 
     it('builds only after the version script updates generated metadata', () => {
         expect(workflow).not.toMatch(/- run: pnpm build/);
     });
 
-    it('creates a GitHub Release and pushes the package tag', () => {
-        expect(workflow).toContain('create-github-releases: true');
-        expect(workflow).toContain('push-git-tags: true');
+    it('creates a GitHub Release and its package tag', () => {
+        expect(workflow).toContain('createGithubReleases: true');
     });
 });
