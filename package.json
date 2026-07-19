@@ -1,7 +1,7 @@
 {
     "name": "@adzazueta/color-extractor",
     "version": "0.1.1",
-    "description": "ESM-only npm package for extracting perceptually meaningful primary and secondary colors from images in browser and Node.js",
+    "description": "Extract perceptually meaningful observed colors and palette data from images in browsers and Node.js",
     "type": "module",
     "keywords": [
         "color",
