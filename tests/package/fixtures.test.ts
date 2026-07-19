@@ -9,9 +9,23 @@ const PKG_SCOPE_SLUG = PKG.name.replace('/', '-').replace('@', '');
 const TARBALL_NAME = `${PKG_SCOPE_SLUG}-${PKG.version}.tgz`;
 
 function pnpmPackTgz(): string {
-    const result = spawnSync('pnpm', ['pack'], { cwd: ROOT, stdio: 'pipe' });
-    const lines = (result.stdout?.toString().trim() ?? '').split('\n');
-    return lines[lines.length - 1] ?? '';
+    const result = spawnSync('pnpm', ['pack', '--json'], {
+        cwd: ROOT,
+        encoding: 'utf-8',
+    });
+    if (result.status !== 0) {
+        throw new Error(result.stderr || 'pnpm pack failed');
+    }
+
+    const lines = (result.stdout ?? '').split('\n');
+    const jsonStart = lines.findIndex((line) => line.trim() === '{');
+    if (jsonStart === -1) {
+        throw new Error('pnpm pack did not return JSON output');
+    }
+
+    return (
+        JSON.parse(lines.slice(jsonStart).join('\n')) as { filename: string }
+    ).filename;
 }
 
 function listTarball(tarball: string): string[] {
