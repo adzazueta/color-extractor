@@ -1,6 +1,6 @@
 {
     "name": "@adzazueta/color-extractor",
-    "version": "0.1.1",
+    "version": "0.1.2",
     "description": "Extract perceptually meaningful observed colors and palette data from images in browsers and Node.js",
     "type": "module",
     "keywords": [
