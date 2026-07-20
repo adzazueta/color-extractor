@@ -29,7 +29,8 @@ describe('package scripts', () => {
             'prepare',
             'prepublishOnly',
             'release',
-            'release:version',
+            'release:check',
+            'release:prepare',
             'sync-version',
             'test',
             'test:smoke',
@@ -63,28 +64,39 @@ describe('package scripts', () => {
     });
 
     describe('prepublishOnly', () => {
-        it('chains typecheck, test and build with &&', () => {
-            const chain = scripts.prepublishOnly ?? '';
-            expect(chain).toMatch(/typecheck/);
-            expect(chain).toMatch(/test/);
-            expect(chain).toMatch(/build/);
+        it('delegates to release:check', () => {
+            expect(scripts.prepublishOnly).toBe('pnpm release:check');
+        });
+    });
+
+    describe('release:check', () => {
+        const chain = scripts['release:check'] ?? '';
+
+        it('chains all validation steps with &&', () => {
+            expect(chain).toContain('lint');
+            expect(chain).toContain('typecheck');
+            expect(chain).toContain('test');
+            expect(chain).toContain('build');
+            expect(chain).toContain('test:smoke');
+            expect(chain).toContain('verify-fixtures');
             expect(chain).toContain('&&');
         });
 
-        it('runs build first, then test, then typecheck, then smoke', () => {
-            const chain = scripts.prepublishOnly ?? '';
+        it('runs lint first', () => {
+            const iLint = chain.indexOf('lint');
             const iBuild = chain.indexOf('build');
-            const iTest = chain.indexOf('test');
-            const iType = chain.indexOf('typecheck');
+            expect(iLint).toBeGreaterThanOrEqual(0);
+            expect(iBuild).toBeGreaterThan(iLint);
+        });
+
+        it('runs build before smoke tests', () => {
+            const iBuild = chain.indexOf('build');
             const iSmoke = chain.indexOf('test:smoke');
             expect(iBuild).toBeGreaterThanOrEqual(0);
-            expect(iTest).toBeGreaterThan(iBuild);
-            expect(iType).toBeGreaterThan(iTest);
-            expect(iSmoke).toBeGreaterThan(iType);
+            expect(iSmoke).toBeGreaterThan(iBuild);
         });
 
         it('runs packed-consumer verification after smoke tests', () => {
-            const chain = scripts.prepublishOnly ?? '';
             expect(chain.indexOf('verify-fixtures')).toBeGreaterThan(
                 chain.indexOf('test:smoke'),
             );
@@ -106,9 +118,11 @@ describe('package scripts', () => {
         });
     });
 
-    it('versions packages before synchronizing generated runtime metadata and build output', () => {
-        expect(scripts['release:version']).toBe(
-            'pnpm changeset version && pnpm sync-version && pnpm build',
-        );
+    describe('release:prepare', () => {
+        it('versions packages before synchronizing generated runtime metadata', () => {
+            expect(scripts['release:prepare']).toBe(
+                'pnpm changeset version && pnpm sync-version',
+            );
+        });
     });
 });
