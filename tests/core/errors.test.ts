@@ -6,8 +6,8 @@ import {
 } from '../../src/core/errors.js';
 
 describe('COLOR_EXTRACTOR_ERROR_CODES', () => {
-    it('contains the 11 documented package error codes', () => {
-        expect(COLOR_EXTRACTOR_ERROR_CODES.length).toBe(11);
+    it('contains the 13 documented package error codes', () => {
+        expect(COLOR_EXTRACTOR_ERROR_CODES.length).toBe(13);
     });
 
     it('matches the documentation exactly', () => {
@@ -23,6 +23,8 @@ describe('COLOR_EXTRACTOR_ERROR_CODES', () => {
             'COLOR_EXTRACTOR_UNSUPPORTED_FORMAT',
             'COLOR_EXTRACTOR_SHARP_MISSING',
             'COLOR_EXTRACTOR_NO_VALID_PIXELS',
+            'COLOR_EXTRACTOR_INVALID_OPTIONS',
+            'COLOR_EXTRACTOR_ABORTED',
         ]);
     });
 
@@ -40,6 +42,8 @@ describe('COLOR_EXTRACTOR_ERROR_CODES', () => {
                 'COLOR_EXTRACTOR_UNSUPPORTED_FORMAT',
                 'COLOR_EXTRACTOR_SHARP_MISSING',
                 'COLOR_EXTRACTOR_NO_VALID_PIXELS',
+                'COLOR_EXTRACTOR_INVALID_OPTIONS',
+                'COLOR_EXTRACTOR_ABORTED',
             ]
         >();
     });

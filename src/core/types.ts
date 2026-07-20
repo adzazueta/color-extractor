@@ -1,9 +1,18 @@
 import type { HslColor, LabColor, RgbColor } from './palette-types.js';
 
+/**
+ * Scheduled for deprecation in 0.4.0. Use {@link RgbColor} instead.
+ */
 export type RGB = RgbColor;
 
+/**
+ * Scheduled for deprecation in 0.4.0. Use {@link HslColor} instead.
+ */
 export type HSL = HslColor;
 
+/**
+ * Scheduled for deprecation in 0.4.0. Use {@link LabColor} instead.
+ */
 export type Lab = LabColor;
 
 export type ColorRole = 'primary' | 'secondary' | 'accent' | 'palette';

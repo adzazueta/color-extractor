@@ -39,6 +39,24 @@ export {
     kmeans,
 } from './kmeans.js';
 export type {
+    AdvancedExtractionOptions,
+    BaseExtractPaletteOptions,
+    BrowserDecodeOptions,
+    BrowserExtractPaletteOptions,
+    CoreExtractPaletteOptions,
+    ExtractPaletteOptions,
+    LabKmeansOptions,
+    NodeDecodeOptions,
+    NodeExtractPaletteOptions,
+    NodeRemoteOptions,
+    PaletteResultOptions,
+    PerceptualRankingOptions,
+    ResolvedBrowserExtractPaletteOptions,
+    ResolvedCoreExtractPaletteOptions,
+    ResolvedNodeExtractPaletteOptions,
+    SamplingOptions,
+} from './neutral-options.js';
+export type {
     AnimatedHandling,
     DecodeOptions,
     ExtractColorsOptions,
