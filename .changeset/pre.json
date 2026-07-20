@@ -1,10 +1,8 @@
 {
-  "mode": "pre",
-  "tag": "next",
-  "initialVersions": {
-    "@adzazueta/color-extractor": "0.1.2"
-  },
-  "changesets": [
-    "neutral-palette-api"
-  ]
+    "mode": "pre",
+    "tag": "next",
+    "initialVersions": {
+        "@adzazueta/color-extractor": "0.1.2"
+    },
+    "changesets": ["neutral-palette-api"]
 }

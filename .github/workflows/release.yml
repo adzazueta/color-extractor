@@ -1,11 +1,12 @@
 name: Release
 
 on:
-  push:
+  pull_request:
+    types: [closed]
     branches:
-      - main
+      - 'release/**'
 
-concurrency: ${{ github.workflow }}-${{ github.ref }}
+concurrency: ${{ github.workflow }}-${{ github.event.pull_request.base.ref }}
 
 permissions:
   contents: write
@@ -13,10 +14,12 @@ permissions:
 
 jobs:
   release:
+    if: github.event.pull_request.merged == true && github.event.pull_request.head.ref == 'develop'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
+          ref: ${{ github.event.pull_request.base.ref }}
           fetch-depth: 0
 
       - uses: pnpm/action-setup@v4
@@ -26,28 +29,71 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 22
-
-      - name: Get pnpm store directory
-        shell: bash
-        run: |
-          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
-
-      - uses: actions/cache@v4
-        name: Setup pnpm cache
-        with:
-          path: ${{ env.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-store-
+          node-version: 22.12.0
+          cache: pnpm
 
       - run: pnpm install --frozen-lockfile
 
-      - uses: changesets/action@v1
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          version: pnpm release:version
-          publish: pnpm release
-          createGithubReleases: true
+      - name: Prepare release version
+        run: pnpm release:prepare
+
+      - name: Run release checks
+        run: pnpm release:check
+
+      - name: Check if version already exists on npm
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > ~/.npmrc
+          VERSION=$(node -p "require('./package.json').version")
+          if npm view "@adzazueta/color-extractor@${VERSION}" version &>/dev/null; then
+            echo "Version ${VERSION} already published — skipping"
+            exit 1
+          fi
+
+      - name: Commit validated release state
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          VERSION=$(node -p "require('./package.json').version")
+          git commit -m "chore: release v${VERSION} [skip ci]"
+
+      - name: Push to release branch
+        run: git push
+
+      - name: Publish to npm
+        run: pnpm release
+        env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Create git tag
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          git tag "v${VERSION}"
+          git push origin "v${VERSION}"
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          gh release create "v${VERSION}" \
+            --title "v${VERSION}" \
+            --notes "See [CHANGELOG.md](./CHANGELOG.md) for details."
+
+      - name: Create PR to main
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+        run: |
+          BRANCH="${{ github.event.pull_request.base.ref }}"
+          if gh pr list --base main --head "${BRANCH}" --state open --json number --jq 'length > 0' | grep -qx true; then
+            echo "PR already exists"
+            exit 0
+          fi
+          VERSION=$(node -p "require('./package.json').version")
+          gh pr create \
+            --base main \
+            --head "${BRANCH}" \
+            --title "chore: release v${VERSION}" \
+            --body "Validated release v${VERSION}. Merge to publish stable."

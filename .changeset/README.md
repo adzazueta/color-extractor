@@ -14,6 +14,14 @@ Select the semver bump type and write a summary. Commit the generated `.md` file
 
 ## How releases work
 
-1. A PR with a changeset file merges to `main`.
-2. The `Release` workflow creates or updates a "Version Packages" PR.
-3. When that PR merges, the workflow bumps the version, updates `CHANGELOG.md`, creates a git tag, and publishes to npm.
+1. A PR with a changeset file merges into `develop`.
+2. A `release/*` branch is cut from `develop` and pushed.
+3. Merge `develop` into the release branch via PR. The `Release` workflow:
+   - Consumes pending changesets with `pnpm changeset version`.
+   - Synchronizes the generated version with `pnpm sync-version`.
+   - Runs full validation (lint, typecheck, test, build, smoke, fixtures).
+   - Commits the validated state.
+   - Publishes to npm with `pnpm changeset publish`.
+   - Tags the release and creates a GitHub Release.
+   - Opens a PR to merge the release branch into `main`.
+4. After the release PR merges to `main`, the `Backmerge` workflow opens a `main` → `develop` PR to synchronize version, changelog, generated files, and consumed changesets.

@@ -1,9 +1,25 @@
 name: CI
 
 on:
+  push:
+    branches:
+      - main
+      - develop
+      - 'release/**'
+      - 'feature/**'
   pull_request:
     branches:
       - main
+      - develop
+      - 'release/**'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   ci:
@@ -11,7 +27,6 @@ jobs:
     strategy:
       matrix:
         node-version: [20, 22]
-        
     steps:
       - uses: actions/checkout@v4
 
@@ -26,7 +41,9 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
       - run: pnpm check-version
-      - run: pnpm build
+      - run: pnpm lint
       - run: pnpm typecheck
+      - run: pnpm build
       - run: pnpm test
+      - run: pnpm test:smoke
       - run: pnpm verify-fixtures
