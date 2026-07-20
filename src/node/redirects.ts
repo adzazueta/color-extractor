@@ -36,6 +36,7 @@ export interface FollowRedirectsOptions {
     readonly allowPrivateNetworks?: boolean;
     readonly allowedProtocols?: readonly string[];
     readonly resolveAndFetch?: ResolveAndFetch;
+    readonly signal?: AbortSignal;
 }
 
 export async function followRedirects(
@@ -71,10 +72,34 @@ export async function followRedirects(
         );
     }, timeoutMs);
 
+    let onExternalAbort: (() => void) | null = null;
+    if (options.signal) {
+        if (options.signal.aborted) {
+            clearTimeout(timeoutHandle);
+            controller.abort(options.signal.reason);
+        } else {
+            onExternalAbort = () => {
+                clearTimeout(timeoutHandle);
+                controller.abort(options.signal!.reason);
+            };
+            options.signal.addEventListener('abort', onExternalAbort, {
+                once: true,
+            });
+        }
+    }
+
     try {
         let currentUrl = startUrl;
         const chain: string[] = [];
         for (let hop = 0; hop <= maxRedirects; hop++) {
+            if (options.signal?.aborted) {
+                throw new ColorExtractorError(
+                    'COLOR_EXTRACTOR_ABORTED',
+                    'Operation was aborted during redirect walk.',
+                    { cause: options.signal.reason },
+                );
+            }
+
             const parsed = options.allowedProtocols
                 ? assertAllowedProtocol(currentUrl, options.allowedProtocols)
                 : assertAllowedProtocol(currentUrl);
@@ -89,6 +114,13 @@ export async function followRedirects(
                     },
                 );
             } catch (err) {
+                if (options.signal?.aborted) {
+                    throw new ColorExtractorError(
+                        'COLOR_EXTRACTOR_ABORTED',
+                        'Operation was aborted during redirect fetch.',
+                        { cause: options.signal.reason },
+                    );
+                }
                 if (err instanceof ColorExtractorError) throw err;
                 if ((err as { name?: string })?.name === 'AbortError') {
                     throw new ColorExtractorError(
@@ -146,5 +178,8 @@ export async function followRedirects(
         );
     } finally {
         clearTimeout(timeoutHandle);
+        if (onExternalAbort) {
+            options.signal?.removeEventListener('abort', onExternalAbort);
+        }
     }
 }

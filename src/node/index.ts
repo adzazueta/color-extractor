@@ -1,13 +1,16 @@
 import { type ResolvedOptions, resolveOptions } from '../core/defaults.js';
-import { ColorExtractorError } from '../core/errors.js';
+import { ColorExtractorError, checkAborted } from '../core/errors.js';
 import {
     extractPaletteFromPixels,
     runExtractionPipeline,
 } from '../core/extract.js';
 import type {
+    CoreExtractPaletteOptions,
     ExtractPaletteResult,
     NodeExtractPaletteOptions,
+    ResolvedNodeExtractPaletteOptions,
 } from '../core/index.js';
+import { resolveNeutralOptions } from '../core/neutral-options.js';
 import type { ExtractColorsOptions } from '../core/options.js';
 import type { ExtractColorsResult } from '../core/result.js';
 import { validateContentType } from './content-type.js';
@@ -34,6 +37,7 @@ export type {
     ExtractedSwatch,
     ExtractionAlgorithm,
     ExtractionDecoder,
+    ExtractionMetadata,
     ExtractionRuntime,
     ExtractPaletteOptions,
     ExtractPaletteResult,
@@ -96,7 +100,10 @@ export async function extractColors(
             bytes = new Uint8Array(input as ArrayBuffer);
             break;
         case 'localPath':
-            bytes = await loadLocalPath(input as string);
+            bytes = await loadLocalPath(
+                input as string,
+                resolved.remote.maxBytes!,
+            );
             break;
         case 'remoteUrl':
             bytes = await fetchRemoteWithPipeline(input as string, resolved);
@@ -136,33 +143,27 @@ export async function extractColors(
     return result;
 }
 
-function resolveNodeDecodeOptions(
-    options: NodeExtractPaletteOptions | undefined,
-): { maxDimension: number; maxPixels: number } {
-    const maxDimension = options?.sampling?.maxDimension ?? 150;
-    const maxPixels = options?.decode?.maxPixels ?? 25_000_000;
-    if (!Number.isInteger(maxDimension) || maxDimension < 1) {
-        throw new ColorExtractorError(
-            'COLOR_EXTRACTOR_INVALID_OPTIONS',
-            'sampling.maxDimension must be a positive integer.',
-            { cause: maxDimension },
-        );
-    }
-    if (!Number.isFinite(maxPixels) || maxPixels <= 0) {
-        throw new ColorExtractorError(
-            'COLOR_EXTRACTOR_INVALID_OPTIONS',
-            'decode.maxPixels must be a positive finite number.',
-            { cause: maxPixels },
-        );
-    }
-    return { maxDimension, maxPixels };
-}
-
 export async function extractPalette(
     input: NodeExtractPaletteInput,
     options?: NodeExtractPaletteOptions,
 ): Promise<ExtractPaletteResult> {
-    const { maxDimension, maxPixels } = resolveNodeDecodeOptions(options);
+    const resolved = resolveNeutralOptions(options, 'node');
+    const signal = Object.hasOwn(
+        (options ?? {}) as Record<string, unknown>,
+        'signal',
+    )
+        ? options?.signal
+        : undefined;
+
+    if (signal?.aborted) {
+        throw new ColorExtractorError(
+            'COLOR_EXTRACTOR_ABORTED',
+            'Operation was aborted before it could start.',
+            { cause: signal.reason },
+        );
+    }
+
+    const { maxDimension } = resolved.sampling;
 
     let bytes: Buffer | Uint8Array;
     const kind = detectNodeInputKind(input);
@@ -177,10 +178,18 @@ export async function extractPalette(
             bytes = new Uint8Array(input as ArrayBuffer);
             break;
         case 'localPath':
-            bytes = await loadLocalPath(input as string);
+            bytes = await loadLocalPath(
+                input as string,
+                resolved.remote.maxBytes,
+                signal,
+            );
             break;
         case 'remoteUrl':
-            bytes = await fetchRemoteForPalette(input as string, options);
+            bytes = await fetchRemoteForPalette(
+                input as string,
+                resolved,
+                signal,
+            );
             break;
         default:
             throw new ColorExtractorError(
@@ -190,13 +199,27 @@ export async function extractPalette(
             );
     }
 
-    const pixels = await decodeBufferToPixels(bytes, maxDimension, {
-        respectOrientation: options?.decode?.respectOrientation ?? true,
-        maxPixels,
-        svg: options?.decode?.svg ?? 'disabled',
-        animated: options?.decode?.animated ?? 'first-frame',
-        normalizeColorProfile: options?.decode?.normalizeColorProfile ?? true,
-    });
+    const pixels = await decodeBufferToPixels(
+        bytes,
+        maxDimension,
+        {
+            respectOrientation: resolved.decode.respectOrientation,
+            maxPixels: resolved.decode.maxPixels,
+            svg: resolved.decode.svg,
+            animated: resolved.decode.animated,
+            normalizeColorProfile: resolved.decode.normalizeColorProfile,
+        },
+        signal,
+        'nearest',
+    );
+
+    const coreOptions: CoreExtractPaletteOptions = {
+        sampling: resolved.sampling,
+        filtering: resolved.filtering,
+        result: resolved.result,
+        advanced: resolved.advanced,
+        signal,
+    };
 
     const result = await extractPaletteFromPixels(
         {
@@ -205,7 +228,7 @@ export async function extractPalette(
             height: pixels.height,
             channels: 4,
         },
-        options,
+        coreOptions,
     );
 
     return {
@@ -220,24 +243,26 @@ export async function extractPalette(
 
 async function fetchRemoteForPalette(
     href: string,
-    options?: NodeExtractPaletteOptions,
+    resolved: ResolvedNodeExtractPaletteOptions,
+    signal?: AbortSignal,
 ): Promise<Buffer | Uint8Array> {
-    const timeoutMs = options?.remote?.timeoutMs ?? 10_000;
-    const maxBytes = options?.remote?.maxBytes ?? 10_000_000;
-    const maxRedirects = options?.remote?.maxRedirects ?? 3;
-    const allowPrivateNetworks = options?.remote?.allowPrivateNetworks ?? false;
-    const allowedProtocols = options?.remote?.allowedProtocols ?? [
-        'http:',
-        'https:',
-    ];
+    const {
+        timeoutMs,
+        maxBytes,
+        maxRedirects,
+        allowPrivateNetworks,
+        allowedProtocols,
+        validateContentType: validateContentTypeFlag,
+    } = resolved.remote;
 
     const { finalUrl, finalResponse } = await followRedirects(href, {
         maxRedirects,
         timeoutMs,
         allowPrivateNetworks,
         allowedProtocols,
-        resolveAndFetch: (url, signal, hostOptions) =>
-            defaultResolveAndFetch(url, signal, hostOptions),
+        resolveAndFetch: (url, fetchSignal, hostOptions) =>
+            defaultResolveAndFetch(url, fetchSignal, hostOptions),
+        signal,
     });
 
     if (!finalResponse.ok) {
@@ -256,24 +281,25 @@ async function fetchRemoteForPalette(
     }
 
     const contentType = finalResponse.headers.get('content-type');
-    const validateContentTypeFlag =
-        options?.remote?.validateContentType ?? true;
     try {
         validateContentType(contentType, {
             validateContentType: validateContentTypeFlag,
-            svg: options?.decode?.svg ?? ('disabled-in-node' as const),
+            svg:
+                resolved.decode.svg === 'enabled'
+                    ? 'enabled'
+                    : 'disabled-in-node',
         });
     } catch (err) {
         await safeCancelBody(finalResponse);
         throw err;
     }
 
-    if (!Number.isFinite(maxBytes) || maxBytes <= 0) {
+    if (signal?.aborted) {
         await safeCancelBody(finalResponse);
         throw new ColorExtractorError(
-            'COLOR_EXTRACTOR_UNSUPPORTED_INPUT',
-            `remote.maxBytes must be a positive finite number, got ${maxBytes}`,
-            { cause: maxBytes },
+            'COLOR_EXTRACTOR_ABORTED',
+            'Operation was aborted during remote fetch.',
+            { cause: signal.reason },
         );
     }
 
@@ -288,27 +314,74 @@ async function fetchRemoteForPalette(
 
     const bodyController = new AbortController();
     const bodyTimeout = setTimeout(() => {
-        bodyController.abort();
+        bodyController.abort(
+            new ColorExtractorError(
+                'COLOR_EXTRACTOR_TIMEOUT',
+                `Body read from ${finalUrl} exceeded the ${timeoutMs}ms timeout.`,
+                { cause: { url: finalUrl, timeoutMs } },
+            ),
+        );
         reader.cancel().catch(() => {});
     }, timeoutMs);
+
+    let onExternalAbort: (() => void) | null = null;
+    if (signal) {
+        onExternalAbort = () => {
+            clearTimeout(bodyTimeout);
+            bodyController.abort(signal.reason);
+            reader.cancel().catch(() => {});
+        };
+        signal.addEventListener('abort', onExternalAbort, { once: true });
+    }
 
     try {
         const chunks: Uint8Array[] = [];
         let received = 0;
 
         while (true) {
-            const { done, value } = await reader.read();
+            checkAborted(signal);
+
+            let result: ReadableStreamReadResult<Uint8Array>;
+            try {
+                result = await reader.read();
+            } catch (err) {
+                if (err instanceof ColorExtractorError) throw err;
+                if (signal?.aborted) {
+                    throw new ColorExtractorError(
+                        'COLOR_EXTRACTOR_ABORTED',
+                        'Operation was aborted while reading response body.',
+                        { cause: signal.reason },
+                    );
+                }
+                if (bodyController.signal.aborted) {
+                    const reason = bodyController.signal.reason;
+                    if (reason instanceof ColorExtractorError) throw reason;
+                }
+                throw new ColorExtractorError(
+                    'COLOR_EXTRACTOR_FETCH_FAILED',
+                    `Failed to read response body from ${finalUrl}.`,
+                    { cause: err },
+                );
+            }
             if (bodyController.signal.aborted) {
+                if (signal?.aborted) {
+                    throw new ColorExtractorError(
+                        'COLOR_EXTRACTOR_ABORTED',
+                        'Operation was aborted while reading response body.',
+                        { cause: signal.reason },
+                    );
+                }
+                const reason = bodyController.signal.reason;
+                if (reason instanceof ColorExtractorError) throw reason;
                 throw new ColorExtractorError(
                     'COLOR_EXTRACTOR_TIMEOUT',
                     `Body read from ${finalUrl} exceeded the ${timeoutMs}ms timeout.`,
-                    { cause: { url: finalUrl, timeoutMs } },
                 );
             }
-            if (done) break;
-            if (!value) continue;
+            if (result.done) break;
+            if (!result.value) continue;
 
-            received += value.byteLength;
+            received += result.value.byteLength;
             if (received > maxBytes) {
                 reader.cancel();
                 throw new ColorExtractorError(
@@ -318,7 +391,7 @@ async function fetchRemoteForPalette(
                 );
             }
 
-            chunks.push(value);
+            chunks.push(result.value);
         }
 
         const total = chunks.reduce((sum, c) => sum + c.length, 0);
@@ -331,6 +404,9 @@ async function fetchRemoteForPalette(
         return merged;
     } finally {
         clearTimeout(bodyTimeout);
+        if (onExternalAbort) {
+            signal?.removeEventListener('abort', onExternalAbort);
+        }
     }
 }
 

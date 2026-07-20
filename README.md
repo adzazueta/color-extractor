@@ -270,7 +270,7 @@ All options are optional. Defaults favor useful perceptual output and bounded re
 | Option | Default | Description |
 | --- | --- | --- |
 | `remote.timeoutMs` | `10_000` | Request timeout in milliseconds. |
-| `remote.maxBytes` | `10_000_000` | Maximum response body size in bytes. |
+| `remote.maxBytes` | `10_000_000` | Maximum remote response or local file input size in bytes. |
 | `remote.maxRedirects` | `3` | Maximum redirect hops. |
 | `remote.allowedProtocols` | `['http:', 'https:']` | URL protocols allowed for remote input. |
 | `remote.allowPrivateNetworks` | `false` | Permit private or reserved addresses. Do not enable for untrusted URLs. |
@@ -357,7 +357,7 @@ try {
 | `COLOR_EXTRACTOR_DECODE_FAILED` | Decode | Image bytes could not be decoded. |
 | `COLOR_EXTRACTOR_CORS_ERROR` | Decode (browser) | Canvas readback blocked by CORS. |
 | `COLOR_EXTRACTOR_FETCH_FAILED` | Fetch | URL request failed non-2xx response. |
-| `COLOR_EXTRACTOR_INPUT_TOO_LARGE` | Fetch | Remote response exceeded `maxBytes`. |
+| `COLOR_EXTRACTOR_INPUT_TOO_LARGE` | Input | Remote response or local file exceeded `maxBytes`. |
 | `COLOR_EXTRACTOR_IMAGE_TOO_LARGE` | Decode | Image dimensions exceeded `maxPixels`. |
 | `COLOR_EXTRACTOR_TIMEOUT` | Fetch | URL request exceeded `timeoutMs`. |
 | `COLOR_EXTRACTOR_UNSAFE_URL` | Fetch (Node) | URL rejected by safety policy. |
@@ -371,7 +371,7 @@ The `code` field is the stable machine contract. Error message text may change b
 
 - Supported inputs: `File`, `Blob`, URL string, `HTMLImageElement`, `ImageBitmap`, `HTMLCanvasElement`, `ImageData`.
 - URL strings are fetched via `fetch()` and subject to CORS.
-- Decoded images are sampled via `OffscreenCanvas` to `sampling.maxDimension` while preserving aspect ratio.
+- Decoded images are sampled via `OffscreenCanvas` when available, otherwise a DOM canvas fallback, to `sampling.maxDimension` while preserving aspect ratio. `ImageData` uses a software fallback only when no canvas API is available.
 - The browser bundle contains no Node.js dependencies.
 
 ## Node notes

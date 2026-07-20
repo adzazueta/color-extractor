@@ -8,7 +8,6 @@ import {
     findPrimaryIndex,
     selectSecondary,
 } from '../../src/core/index.js';
-import { kmeans } from '../../src/core/kmeans.js';
 import { candidatesToClusters } from '../../src/core/legacy/adapter.js';
 import { normalizePixels } from '../../src/core/pixels.js';
 import {

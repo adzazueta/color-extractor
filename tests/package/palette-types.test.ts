@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
+import type { ExtractionMetadata } from '../../src/core/index.js';
 import type {
     ExtractedSwatch,
     ExtractionAlgorithm,
@@ -20,6 +21,18 @@ const here = dirname(fileURLToPath(import.meta.url));
 const rootDir = resolve(here, '../..');
 
 describe('neutral types — root entrypoint', () => {
+    it('does not accept Node-only options for browser inputs', () => {
+        const assertRootOverload = (
+            extract: typeof import('../../src/index.js').extractPalette,
+            input: Blob,
+        ) => {
+            void extract(input, { sampling: { maxDimension: 100 } });
+            // @ts-expect-error Browser decode options do not support animation handling.
+            void extract(input, { decode: { animated: 'first-frame' } });
+        };
+        expect(assertRootOverload).toBeTypeOf('function');
+    });
+
     it('SwatchId is a branded string type', () => {
         const id: SwatchId = 'swatch-a85f46';
         expect(id).toBe('swatch-a85f46');
@@ -97,9 +110,12 @@ describe('neutral types — root entrypoint', () => {
                 returnedColors: 3,
                 returnedPopulation: 6000,
                 coverage: 0.75,
+                algorithmDetails: {},
             },
         };
+        const metadata: ExtractionMetadata = result.metadata;
         expect(result.metadata.algorithm).toBe('lab-kmeans');
+        expect(metadata.algorithmDetails).toBeDefined();
     });
 
     it('string literal types resolve', () => {
@@ -244,6 +260,7 @@ describe('negative — forbidden fields', () => {
                 returnedColors: 3,
                 returnedPopulation: 6000,
                 coverage: 0.75,
+                algorithmDetails: {},
             },
             // @ts-expect-error — primary is not a neutral result field
             primary: {},
@@ -269,6 +286,7 @@ describe('negative — forbidden fields', () => {
                 returnedColors: 3,
                 returnedPopulation: 6000,
                 coverage: 0.75,
+                algorithmDetails: {},
             },
             // @ts-expect-error — secondary is not a neutral result field
             secondary: {},
@@ -294,6 +312,7 @@ describe('negative — forbidden fields', () => {
                 returnedColors: 3,
                 returnedPopulation: 6000,
                 coverage: 0.75,
+                algorithmDetails: {},
             },
             // @ts-expect-error — accents is not a neutral result field
             accents: [],

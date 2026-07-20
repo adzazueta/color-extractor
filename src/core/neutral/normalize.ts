@@ -1,6 +1,9 @@
 import type { LabKmeansCandidateResult } from '../algorithms/lab-kmeans/types.js';
 import { rgbToHex } from '../color/hex.js';
 import { rgbToHsl } from '../color/hsl.js';
+import { xyzToLab } from '../color/lab.js';
+import { srgbByteToLinear } from '../color/srgb.js';
+import { linearRgbToXyz } from '../color/xyz.js';
 import { ColorExtractorError } from '../errors.js';
 import type { ResolvedCoreExtractPaletteOptions } from '../neutral-options.js';
 import type {
@@ -10,7 +13,7 @@ import type {
     ExtractionRuntime,
     ExtractPaletteResult,
     HslColor,
-    PaletteRankings,
+    LabColor,
     SwatchId,
 } from '../palette-types.js';
 
@@ -172,6 +175,19 @@ function hexFromRgb(r: number, g: number, b: number): string {
     return rgbToHex({ r, g, b });
 }
 
+function rgbToLab(r: number, g: number, b: number): LabColor {
+    const lr = srgbByteToLinear(r);
+    const lg = srgbByteToLinear(g);
+    const lb = srgbByteToLinear(b);
+    const { x, y, z } = linearRgbToXyz(lr, lg, lb);
+    const lab = xyzToLab(x, y, z);
+    return {
+        L: lab.L,
+        a: Math.abs(lab.a) < 1e-4 ? 0 : lab.a,
+        b: Math.abs(lab.b) < 1e-4 ? 0 : lab.b,
+    };
+}
+
 function swatchIdFromHex(hex: string): SwatchId {
     return `swatch-${hex.slice(1)}` as SwatchId;
 }
@@ -293,7 +309,8 @@ export function normalizePalette(
     const scored: ScoredCandidate[] = [];
     for (const m of merged) {
         const hex = hexFromRgb(m.rgb.r, m.rgb.g, m.rgb.b);
-        const chroma = Math.sqrt(m.lab.a ** 2 + m.lab.b ** 2);
+        const lab = rgbToLab(m.rgb.r, m.rgb.g, m.rgb.b);
+        const chroma = Math.sqrt(lab.a ** 2 + lab.b ** 2);
         const proportion = m.population / validPixels;
         const rawScore = calculateRawScore(
             chroma,
@@ -303,7 +320,10 @@ export function normalizePalette(
         );
 
         scored.push({
-            ...m,
+            rgb: m.rgb,
+            lab,
+            population: m.population,
+            sourceIndex: m.sourceIndex,
             hex,
             id: swatchIdFromHex(hex),
             chroma,
@@ -364,12 +384,6 @@ export function normalizePalette(
         const sb = selected.find((s) => s.id === b)!;
         return compareChroma(sa, sb);
     });
-
-    const rankings: PaletteRankings = {
-        perceptual: perceptualRanking,
-        population: populationRanking,
-        chroma: chromaRanking,
-    };
 
     const returnedPopulation = swatches.reduce(
         (sum, s) => sum + s.population,

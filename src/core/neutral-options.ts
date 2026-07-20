@@ -226,7 +226,13 @@ const ADVANCED_NESTED_KEYS = {
 };
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
-    return typeof value === 'object' && value !== null && !Array.isArray(value);
+    return (
+        typeof value === 'object' &&
+        value !== null &&
+        !Array.isArray(value) &&
+        (Object.getPrototypeOf(value) === Object.prototype ||
+            Object.getPrototypeOf(value) === null)
+    );
 }
 
 function invalidOpt(path: string, detail: string): never {
@@ -323,6 +329,20 @@ function resolveBoolean(
     return userValue;
 }
 
+function resolveEnum<T extends string>(
+    userValue: unknown,
+    allowed: readonly T[],
+    path: string,
+): T {
+    if (allowed.includes(userValue as T)) {
+        return userValue as T;
+    }
+    invalidOpt(
+        path,
+        `must be one of [${allowed.map((v) => JSON.stringify(v)).join(', ')}], got ${JSON.stringify(userValue)}`,
+    );
+}
+
 function resolveAllowedProtocols(
     userValue: unknown,
     path: string,
@@ -340,7 +360,7 @@ function resolveAllowedProtocols(
             `must be a non-empty array of "http:" or "https:", got ${JSON.stringify(userValue)}`,
         );
     }
-    return userValue as ('http:' | 'https:')[];
+    return [...(userValue as ('http:' | 'https:')[])];
 }
 
 function checkSignal(signal: unknown, path: string): AbortSignal | undefined {
@@ -350,7 +370,11 @@ function checkSignal(signal: unknown, path: string): AbortSignal | undefined {
     if (
         typeof signal !== 'object' ||
         signal === null ||
-        !('aborted' in signal)
+        typeof (signal as Record<string, unknown>).aborted !== 'boolean' ||
+        typeof (signal as Record<string, unknown>).addEventListener !==
+            'function' ||
+        typeof (signal as Record<string, unknown>).removeEventListener !==
+            'function'
     ) {
         invalidOpt(path, `must be an AbortSignal, got ${String(signal)}`);
     }
@@ -366,6 +390,30 @@ function assertNotAborted(signal: AbortSignal | undefined): void {
     }
 }
 
+function assertPlainObject(
+    value: unknown,
+    path: string,
+): asserts value is Record<string, unknown> {
+    if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+        invalidOpt(path, `must be a plain object, got ${String(value)}`);
+    }
+    const proto = Object.getPrototypeOf(value);
+    if (proto !== null && proto !== Object.prototype) {
+        invalidOpt(
+            path,
+            `must have Object.prototype or null prototype, got ${proto.constructor?.name ?? 'unknown'} prototype`,
+        );
+    }
+}
+
+function ownUnknown(obj: Record<string, unknown>): Record<string, unknown> {
+    const result: Record<string, unknown> = Object.create(null);
+    for (const key of Object.keys(obj)) {
+        result[key] = obj[key];
+    }
+    return result;
+}
+
 function checkCommonGroupBounds(
     resolved: CommonDefaults,
     userGroup: Record<string, unknown> | undefined,
@@ -373,7 +421,8 @@ function checkCommonGroupBounds(
     if (!userGroup) return;
 
     if (userGroup.sampling !== undefined) {
-        const g = userGroup.sampling as Record<string, unknown>;
+        assertPlainObject(userGroup.sampling, 'sampling');
+        const g = ownUnknown(userGroup.sampling);
         checkValidGroupKeys(g, COMMON_NESTED_KEYS.sampling, 'sampling');
         resolved.sampling.maxDimension = resolveInteger(
             g.maxDimension,
@@ -385,7 +434,8 @@ function checkCommonGroupBounds(
     }
 
     if (userGroup.filtering !== undefined) {
-        const g = userGroup.filtering as Record<string, unknown>;
+        assertPlainObject(userGroup.filtering, 'filtering');
+        const g = ownUnknown(userGroup.filtering);
         checkValidGroupKeys(g, COMMON_NESTED_KEYS.filtering, 'filtering');
         resolved.filtering.alphaThreshold = resolveInteger(
             g.alphaThreshold,
@@ -426,7 +476,8 @@ function checkCommonGroupBounds(
     }
 
     if (userGroup.result !== undefined) {
-        const g = userGroup.result as Record<string, unknown>;
+        assertPlainObject(userGroup.result, 'result');
+        const g = ownUnknown(userGroup.result);
         checkValidGroupKeys(g, COMMON_NESTED_KEYS.result, 'result');
         resolved.result.maxColors = resolveInteger(
             g.maxColors,
@@ -451,17 +502,20 @@ function checkAdvancedBounds(
     resolved: CommonDefaults,
     userAdvanced: Record<string, unknown> | undefined,
 ): void {
-    if (!userAdvanced) {
+    if (userAdvanced === undefined) {
         resolved.advanced.labKmeans.clusters = deriveClusterDefault(
             resolved.result.maxColors,
         );
         return;
     }
 
+    assertPlainObject(userAdvanced, 'advanced');
+    userAdvanced = ownUnknown(userAdvanced);
     checkValidGroupKeys(userAdvanced, COMMON_NESTED_KEYS.advanced, 'advanced');
 
     if (userAdvanced.labKmeans !== undefined) {
-        const g = userAdvanced.labKmeans as Record<string, unknown>;
+        assertPlainObject(userAdvanced.labKmeans, 'advanced.labKmeans');
+        const g = ownUnknown(userAdvanced.labKmeans);
         checkValidGroupKeys(
             g,
             ADVANCED_NESTED_KEYS.labKmeans,
@@ -501,7 +555,11 @@ function checkAdvancedBounds(
     }
 
     if (userAdvanced.perceptualRanking !== undefined) {
-        const g = userAdvanced.perceptualRanking as Record<string, unknown>;
+        assertPlainObject(
+            userAdvanced.perceptualRanking,
+            'advanced.perceptualRanking',
+        );
+        const g = ownUnknown(userAdvanced.perceptualRanking);
         checkValidGroupKeys(
             g,
             ADVANCED_NESTED_KEYS.perceptualRanking,
@@ -538,7 +596,9 @@ function checkRejectLegacyKeys(obj: Record<string, unknown>): void {
 function resolveBrowserDecode(
     userDecode: Record<string, unknown> | undefined,
 ): ResolvedBrowserDecodeOptions {
-    if (!userDecode) return { ...BROWSER_DECODE_DEFAULTS };
+    if (userDecode === undefined) return { ...BROWSER_DECODE_DEFAULTS };
+    assertPlainObject(userDecode, 'decode');
+    userDecode = ownUnknown(userDecode);
     checkValidGroupKeys(userDecode, new Set(['maxPixels']), 'decode');
     return {
         maxPixels: resolveInteger(
@@ -554,7 +614,13 @@ function resolveBrowserDecode(
 function resolveNodeRemote(
     userRemote: Record<string, unknown> | undefined,
 ): ResolvedNodeRemoteOptions {
-    if (!userRemote) return { ...NODE_REMOTE_DEFAULTS };
+    if (userRemote === undefined)
+        return {
+            ...NODE_REMOTE_DEFAULTS,
+            allowedProtocols: [...NODE_REMOTE_DEFAULTS.allowedProtocols],
+        };
+    assertPlainObject(userRemote, 'remote');
+    userRemote = ownUnknown(userRemote);
     checkValidGroupKeys(
         userRemote,
         new Set([
@@ -615,7 +681,9 @@ function resolveNodeRemote(
 function resolveNodeDecode(
     userDecode: Record<string, unknown> | undefined,
 ): ResolvedNodeDecodeOptions {
-    if (!userDecode) return { ...NODE_DECODE_DEFAULTS };
+    if (userDecode === undefined) return { ...NODE_DECODE_DEFAULTS };
+    assertPlainObject(userDecode, 'decode');
+    userDecode = ownUnknown(userDecode);
     checkValidGroupKeys(
         userDecode,
         new Set([
@@ -637,11 +705,19 @@ function resolveNodeDecode(
         ),
         animated:
             userDecode.animated !== undefined
-                ? (userDecode.animated as 'first-frame')
+                ? resolveEnum(
+                      userDecode.animated,
+                      ['first-frame'] as const,
+                      'decode.animated',
+                  )
                 : NODE_DECODE_DEFAULTS.animated,
         svg:
             userDecode.svg !== undefined
-                ? (userDecode.svg as 'disabled' | 'enabled')
+                ? resolveEnum(
+                      userDecode.svg,
+                      ['disabled', 'enabled'] as const,
+                      'decode.svg',
+                  )
                 : NODE_DECODE_DEFAULTS.svg,
         respectOrientation:
             userDecode.respectOrientation !== undefined
@@ -672,14 +748,14 @@ function pickRuntimeGroups(
     runtime: string,
 ): Record<string, unknown> {
     checkValidGroupKeys(options, allowed, 'options');
-    const picked: Record<string, unknown> = {};
+    const picked: Record<string, unknown> = Object.create(null);
     for (const key of COMMON_GROUP_KEYS) {
-        if (key in options) picked[key] = options[key];
+        if (Object.hasOwn(options, key)) picked[key] = options[key];
     }
-    if (allowed.has('decode') && 'decode' in options) {
+    if (allowed.has('decode') && Object.hasOwn(options, 'decode')) {
         picked.decode = options.decode;
     }
-    if (allowed.has('remote') && 'remote' in options) {
+    if (allowed.has('remote') && Object.hasOwn(options, 'remote')) {
         if (runtime === 'browser') {
             invalidOpt(
                 'remote',
@@ -730,7 +806,9 @@ export function resolveNeutralOptions(
         },
     };
 
-    const signal = checkSignal(obj.signal, 'signal');
+    const signal = Object.hasOwn(obj, 'signal')
+        ? checkSignal(obj.signal, 'signal')
+        : undefined;
     assertNotAborted(signal);
 
     let runtimeAllowed: Set<string>;

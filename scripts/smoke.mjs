@@ -58,6 +58,10 @@ async function main() {
         typeof nodeEntry.extractColors === 'function',
         'node entry exports extractColors',
     );
+    assert(
+        typeof nodeEntry.extractPalette === 'function',
+        'node entry exports extractPalette',
+    );
     assert(typeof nodeEntry.VERSION === 'string', 'node entry exports VERSION');
     assert(
         typeof nodeEntry.ColorExtractorError === 'function',
@@ -73,6 +77,10 @@ async function main() {
     assert(
         typeof browserEntry.extractColors === 'function',
         'browser entry exports extractColors',
+    );
+    assert(
+        typeof browserEntry.extractPalette === 'function',
+        'browser entry exports extractPalette',
     );
     assert(
         typeof browserEntry.VERSION === 'string',
@@ -92,6 +100,10 @@ async function main() {
     assert(
         typeof coreEntry.extractColorsFromPixels === 'function',
         'core entry exports extractColorsFromPixels',
+    );
+    assert(
+        typeof coreEntry.extractPaletteFromPixels === 'function',
+        'core entry exports extractPaletteFromPixels',
     );
     assert(typeof coreEntry.VERSION === 'string', 'core entry exports VERSION');
     assert(

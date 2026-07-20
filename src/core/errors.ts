@@ -30,3 +30,13 @@ export class ColorExtractorError extends Error {
         this.code = code;
     }
 }
+
+export function checkAborted(signal?: AbortSignal): void {
+    if (signal?.aborted) {
+        throw new ColorExtractorError(
+            'COLOR_EXTRACTOR_ABORTED',
+            'Operation was aborted.',
+            { cause: signal.reason },
+        );
+    }
+}

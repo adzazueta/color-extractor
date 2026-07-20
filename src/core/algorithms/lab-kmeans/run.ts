@@ -1,4 +1,4 @@
-import { labToXyz } from '../../color/lab.js';
+import { labSquaredDistance, labToXyz } from '../../color/lab.js';
 import { linearToSrgbByte } from '../../color/srgb.js';
 import { xyzToLinearRgb } from '../../color/xyz.js';
 import type { LabColor, RgbColor } from '../../palette-types.js';
@@ -74,7 +74,7 @@ export function kmeans(
 
 export function runLabKmeans(
     samples: LabSample[],
-    options: { clusters: number; iterations: number },
+    options: { clusters: number; iterations: number; useObservedRgb?: boolean },
 ): LabKmeansCandidateResult {
     const result = kmeans(samples, options);
 
@@ -84,12 +84,27 @@ export function runLabKmeans(
         const population = result.populations[i]!;
         if (population === 0) continue;
 
-        const lab = result.centroids[i]!;
-        const rgb = centroidToRgb(lab);
+        const centroidLab = result.centroids[i]!;
+
+        let rgb: RgbColor;
+        if (options.useObservedRgb) {
+            rgb = samples[0]!.rgb;
+            let nearestDist = Number.POSITIVE_INFINITY;
+            for (let j = 0; j < samples.length; j++) {
+                if (result.assignments[j] !== i) continue;
+                const d = labSquaredDistance(samples[j]!.lab, centroidLab);
+                if (d < nearestDist) {
+                    nearestDist = d;
+                    rgb = samples[j]!.rgb;
+                }
+            }
+        } else {
+            rgb = centroidToRgb(centroidLab);
+        }
 
         candidates.push({
             rgb,
-            lab: { L: lab.L, a: lab.a, b: lab.b },
+            lab: { L: centroidLab.L, a: centroidLab.a, b: centroidLab.b },
             population,
             sourceIndex: sourceIndex++,
         });

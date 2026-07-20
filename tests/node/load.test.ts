@@ -8,7 +8,7 @@ import { loadLocalPath } from '../../src/node/load.js';
 describe('loadLocalPath (ADZ-55)', () => {
     describe('AC: returns buffer from valid file path', () => {
         it('reads a file that exists and returns a Buffer', async () => {
-            const buf = await loadLocalPath(import.meta.filename);
+            const buf = await loadLocalPath(import.meta.filename, 10_000_000);
             expect(Buffer.isBuffer(buf)).toBe(true);
             expect(buf.length).toBeGreaterThan(0);
         });
@@ -19,6 +19,7 @@ describe('loadLocalPath (ADZ-55)', () => {
             try {
                 await loadLocalPath(
                     '/tmp/nonexistent-color-extractor-test-file.png',
+                    10_000_000,
                 );
                 expect.fail('expected throw');
             } catch (err) {
@@ -38,7 +39,7 @@ describe('loadLocalPath (ADZ-55)', () => {
             const tmpPath = join(dir, 'test-file.bin');
             try {
                 writeFileSync(tmpPath, Buffer.from([1, 2, 3, 4]));
-                const buf = await loadLocalPath(tmpPath);
+                const buf = await loadLocalPath(tmpPath, 10_000_000);
                 expect(buf).toEqual(Buffer.from([1, 2, 3, 4]));
             } finally {
                 if (existsSync(tmpPath)) unlinkSync(tmpPath);
@@ -49,5 +50,23 @@ describe('loadLocalPath (ADZ-55)', () => {
                 }
             }
         });
+    });
+
+    it('rejects files larger than maxBytes before reading them', async () => {
+        const dir = mkdtempSync(join(tmpdir(), 'color-extractor-load-test-'));
+        const tmpPath = join(dir, 'too-large.bin');
+        try {
+            writeFileSync(tmpPath, Buffer.alloc(4));
+            await expect(loadLocalPath(tmpPath, 3)).rejects.toMatchObject({
+                code: 'COLOR_EXTRACTOR_INPUT_TOO_LARGE',
+            });
+        } finally {
+            if (existsSync(tmpPath)) unlinkSync(tmpPath);
+            try {
+                unlinkSync(dir);
+            } catch {
+                /* ignore */
+            }
+        }
     });
 });

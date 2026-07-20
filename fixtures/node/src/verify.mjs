@@ -1,7 +1,9 @@
+import { extractPalette as extractRootPalette } from '@adzazueta/color-extractor';
 import {
     COLOR_EXTRACTOR_ERROR_CODES,
     ColorExtractorError,
     extractColors,
+    extractPalette,
     VERSION,
 } from '@adzazueta/color-extractor/node';
 import sharp from 'sharp';
@@ -23,6 +25,21 @@ async function main() {
     });
 
     if (!result.metadata) throw new Error('metadata is undefined');
+
+    const palette = await extractPalette(buffer, {
+        result: { maxColors: 1 },
+    });
+    if (palette.metadata.runtime !== 'node') {
+        throw new Error(
+            `expected palette runtime 'node', got '${palette.metadata.runtime}'`,
+        );
+    }
+    const rootPalette = await extractRootPalette(buffer, {
+        result: { maxColors: 1 },
+    });
+    if (rootPalette.metadata.runtime !== 'node') {
+        throw new Error('expected root palette runtime to be node');
+    }
     if (result.metadata.runtime !== 'node') {
         throw new Error(
             `expected runtime 'node', got '${result.metadata.runtime}'`,

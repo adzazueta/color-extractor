@@ -138,7 +138,10 @@ export function runNeutralPalettePipeline(
         input.height,
         input.channels,
     );
-    const samples = sampleSquareGrid(pixels, options.sampling.maxDimension);
+    const samples = sampleSquareGrid(
+        pixels,
+        Math.max(pixels.width, pixels.height),
+    );
 
     const criteria = {
         alphaThreshold: options.filtering.alphaThreshold,
@@ -164,6 +167,7 @@ export function runNeutralPalettePipeline(
     const candidateResult = runLabKmeans(labSamples, {
         clusters: k,
         iterations: options.advanced.labKmeans.iterations,
+        useObservedRgb: true,
     });
 
     checkAborted(signal);
@@ -187,8 +191,14 @@ export async function extractPaletteFromPixels(
     input: PalettePixelInput,
     options?: CoreExtractPaletteOptions,
 ): Promise<ExtractPaletteResult> {
-    const resolved = resolveNeutralOptions(options ?? {}, 'core');
-    return runNeutralPalettePipeline(input, resolved);
+    const signal = Object.hasOwn(
+        (options ?? {}) as Record<string, unknown>,
+        'signal',
+    )
+        ? options?.signal
+        : undefined;
+    const resolved = resolveNeutralOptions(options, 'core');
+    return runNeutralPalettePipeline(input, resolved, signal);
 }
 
 function emptyResult(): ExtractColorsResult {

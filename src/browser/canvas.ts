@@ -1,5 +1,10 @@
 import { ColorExtractorError } from '../core/errors.js';
 
+type RasterCanvas = OffscreenCanvas | HTMLCanvasElement;
+type RasterContext =
+    | OffscreenCanvasRenderingContext2D
+    | CanvasRenderingContext2D;
+
 export function computeCanvasTargetSize(
     sourceWidth: number,
     sourceHeight: number,
@@ -21,19 +26,32 @@ export function computeCanvasTargetSize(
 export function createOffscreenCanvas(
     width: number,
     height: number,
-): { canvas: OffscreenCanvas; ctx: OffscreenCanvasRenderingContext2D } {
-    if (typeof OffscreenCanvas === 'undefined') {
+): { canvas: RasterCanvas; ctx: RasterContext } {
+    if (typeof OffscreenCanvas !== 'undefined') {
+        const canvas = new OffscreenCanvas(width, height);
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+            throw new ColorExtractorError(
+                'COLOR_EXTRACTOR_DECODE_FAILED',
+                'Failed to get 2D rendering context from OffscreenCanvas.',
+            );
+        }
+        return { canvas, ctx };
+    }
+    if (typeof document === 'undefined') {
         throw new ColorExtractorError(
             'COLOR_EXTRACTOR_DECODE_FAILED',
-            'OffscreenCanvas is not available in this environment.',
+            'No canvas implementation is available in this environment.',
         );
     }
-    const canvas = new OffscreenCanvas(width, height);
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
     const ctx = canvas.getContext('2d');
     if (!ctx) {
         throw new ColorExtractorError(
             'COLOR_EXTRACTOR_DECODE_FAILED',
-            'Failed to get 2D rendering context from OffscreenCanvas.',
+            'Failed to get 2D rendering context from canvas.',
         );
     }
     return { canvas, ctx };
@@ -44,6 +62,7 @@ export function sampleImageToCanvas(
     sourceWidth: number,
     sourceHeight: number,
     sampleSize: number,
+    smooth?: boolean,
 ): { pixels: Uint8ClampedArray; width: number; height: number } {
     if (!Number.isInteger(sampleSize) || sampleSize < 1) {
         throw new ColorExtractorError(
@@ -60,6 +79,7 @@ export function sampleImageToCanvas(
     );
     const { ctx } = createOffscreenCanvas(target.width, target.height);
 
+    ctx.imageSmoothingEnabled = smooth ?? true;
     ctx.drawImage(source, 0, 0, target.width, target.height);
 
     const imageData = ctx.getImageData(0, 0, target.width, target.height);

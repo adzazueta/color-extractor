@@ -1,4 +1,4 @@
-import { ColorExtractorError } from '../core/errors.js';
+import { ColorExtractorError, checkAborted } from '../core/errors.js';
 import type { DecodeOptions } from '../core/options.js';
 import { loadSharp, type SharpModule } from './sharp.js';
 
@@ -25,7 +25,10 @@ type SharpPipeline = {
     resize: (
         width: number,
         height: number,
-        options?: { fit?: 'cover' | 'contain' | 'fill' },
+        options?: {
+            fit?: 'cover' | 'contain' | 'fill';
+            kernel?: 'nearest' | 'lanczos3' | 'cubic' | 'mitchell';
+        },
     ) => SharpPipeline;
     ensureAlpha: () => SharpPipeline;
     withMetadata: (options: { orientation?: number }) => SharpPipeline;
@@ -36,7 +39,53 @@ type SharpPipeline = {
         }) => Promise<RawOutput>;
     };
     metadata: () => Promise<SharpMetadata>;
+    once?: (event: 'error', listener: (error: Error) => void) => unknown;
+    destroy?: (error?: Error) => unknown;
 };
+
+function abortError(signal: AbortSignal): ColorExtractorError {
+    return new ColorExtractorError(
+        'COLOR_EXTRACTOR_ABORTED',
+        'The operation was aborted.',
+        { cause: signal.reason },
+    );
+}
+
+function awaitWithAbort<T>(
+    operation: Promise<T>,
+    signal: AbortSignal | undefined,
+    pipeline: SharpPipeline,
+): Promise<T> {
+    if (!signal) return operation;
+    if (signal.aborted) {
+        destroyPipeline(pipeline, abortError(signal));
+        return Promise.reject(abortError(signal));
+    }
+
+    return new Promise<T>((resolve, reject) => {
+        const onAbort = () => {
+            destroyPipeline(pipeline, abortError(signal));
+            reject(abortError(signal));
+        };
+        signal.addEventListener('abort', onAbort, { once: true });
+        operation.then(
+            (value) => {
+                signal.removeEventListener('abort', onAbort);
+                resolve(value);
+            },
+            (error: unknown) => {
+                signal.removeEventListener('abort', onAbort);
+                reject(error);
+            },
+        );
+    });
+}
+
+function destroyPipeline(pipeline: SharpPipeline, error: Error): void {
+    // Sharp is a stream; destroy(error) emits 'error' asynchronously.
+    pipeline.once?.('error', () => {});
+    pipeline.destroy?.(error);
+}
 
 function isSharpPipeline(value: unknown): value is SharpPipeline {
     if (value === null || typeof value !== 'object') return false;
@@ -138,7 +187,11 @@ export async function decodeBufferToPixels(
         | 'animated'
         | 'normalizeColorProfile'
     >,
+    signal?: AbortSignal,
+    kernel?: 'nearest' | 'lanczos3',
 ): Promise<DecodedPixels> {
+    checkAborted(signal);
+
     if (!Number.isInteger(sampleSize) || sampleSize <= 0) {
         throw new ColorExtractorError(
             'COLOR_EXTRACTOR_UNSUPPORTED_INPUT',
@@ -159,6 +212,7 @@ export async function decodeBufferToPixels(
     }
 
     const Ctor = await loadSharp();
+    checkAborted(signal);
     const animatedMode = options.animated ?? 'first-frame';
     const maxPixels = options.maxPixels ?? 25_000_000;
     const inputOptions: Record<string, unknown> = {};
@@ -222,8 +276,9 @@ export async function decodeBufferToPixels(
     // Step 2: probe dimensions on the now-rotation-neutral pipeline.
     let neutralMeta: SharpMetadata;
     try {
-        neutralMeta = await neutral.metadata();
+        neutralMeta = await awaitWithAbort(neutral.metadata(), signal, neutral);
     } catch (err) {
+        if (err instanceof ColorExtractorError) throw err;
         if (
             err instanceof Error &&
             err.message === 'Input image exceeds pixel limit'
@@ -240,6 +295,7 @@ export async function decodeBufferToPixels(
             { cause: err },
         );
     }
+    checkAborted(signal);
     const storageWidth = neutralMeta.width ?? sampleSize;
     const storageHeight = neutralMeta.height ?? sampleSize;
 
@@ -294,6 +350,7 @@ export async function decodeBufferToPixels(
     try {
         sized = colorManaged.resize(target.width, target.height, {
             fit: 'fill',
+            ...(kernel ? { kernel } : {}),
         });
     } catch (err) {
         throw new ColorExtractorError(
@@ -305,17 +362,22 @@ export async function decodeBufferToPixels(
 
     let rawOut: RawOutput;
     try {
-        rawOut = await sized
-            .ensureAlpha()
-            .raw({ depth: 'uchar' })
-            .toBuffer({ resolveWithObject: true });
+        rawOut = await awaitWithAbort(
+            sized.ensureAlpha().raw({ depth: 'uchar' }).toBuffer({
+                resolveWithObject: true,
+            }),
+            signal,
+            sized,
+        );
     } catch (err) {
+        if (err instanceof ColorExtractorError) throw err;
         throw new ColorExtractorError(
             'COLOR_EXTRACTOR_DECODE_FAILED',
             'Failed to extract raw RGBA pixels from the decoded image.',
             { cause: err },
         );
     }
+    checkAborted(signal);
 
     if (rawOut.info.channels !== 4) {
         throw new ColorExtractorError(

@@ -1,8 +1,8 @@
 {
-  "mode": "pre",
-  "tag": "next",
-  "initialVersions": {
-    "@adzazueta/color-extractor": "0.1.2"
-  },
-  "changesets": []
+    "mode": "pre",
+    "tag": "next",
+    "initialVersions": {
+        "@adzazueta/color-extractor": "0.1.2"
+    },
+    "changesets": []
 }

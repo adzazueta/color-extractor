@@ -74,6 +74,7 @@ export type {
     ExtractedSwatch,
     ExtractionAlgorithm,
     ExtractionDecoder,
+    ExtractionMetadata,
     ExtractionRuntime,
     ExtractPaletteResult,
     HslColor,
@@ -89,7 +90,7 @@ export {
 } from './pixels.js';
 export type {
     ExtractColorsResult,
-    ExtractionMetadata,
+    ExtractionMetadata as LegacyExtractionMetadata,
     MinimalExtractColorsResult,
 } from './result.js';
 export {

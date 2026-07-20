@@ -6,8 +6,10 @@ import {
 } from '../core/extract.js';
 import type {
     BrowserExtractPaletteOptions,
+    CoreExtractPaletteOptions,
     ExtractPaletteResult,
 } from '../core/index.js';
+import { resolveNeutralOptions } from '../core/neutral-options.js';
 import type { ExtractColorsOptions } from '../core/options.js';
 import type { ExtractColorsResult } from '../core/result.js';
 import {
@@ -39,6 +41,7 @@ export type {
     ExtractedSwatch,
     ExtractionAlgorithm,
     ExtractionDecoder,
+    ExtractionMetadata,
     ExtractionRuntime,
     ExtractPaletteOptions,
     ExtractPaletteResult,
@@ -230,38 +233,29 @@ export async function extractColors(
     }
 }
 
-function resolveBrowserDecodeOptions(
-    options: BrowserExtractPaletteOptions | undefined,
-): { maxDimension: number; maxPixels: number } {
-    const sampling = options?.sampling;
-    const maxDimension = sampling?.maxDimension ?? 150;
-    const decode = (options as Record<string, unknown>)?.decode as
-        | Record<string, unknown>
-        | undefined;
-    const maxPixels = (decode?.maxPixels as number | undefined) ?? 25_000_000;
-    if (!Number.isInteger(maxDimension) || maxDimension < 1) {
-        throw new ColorExtractorError(
-            'COLOR_EXTRACTOR_INVALID_OPTIONS',
-            'sampling.maxDimension must be a positive integer.',
-            { cause: maxDimension },
-        );
-    }
-    if (!Number.isFinite(maxPixels) || maxPixels <= 0) {
-        throw new ColorExtractorError(
-            'COLOR_EXTRACTOR_INVALID_OPTIONS',
-            'decode.maxPixels must be a positive finite number.',
-            { cause: maxPixels },
-        );
-    }
-    return { maxDimension, maxPixels };
-}
-
 export async function extractPalette(
     input: BrowserExtractPaletteInput,
     options?: BrowserExtractPaletteOptions,
 ): Promise<ExtractPaletteResult> {
+    const resolved = resolveNeutralOptions(options, 'browser');
+    const signal = Object.hasOwn(
+        (options ?? {}) as Record<string, unknown>,
+        'signal',
+    )
+        ? options?.signal
+        : undefined;
+
+    if (signal?.aborted) {
+        throw new ColorExtractorError(
+            'COLOR_EXTRACTOR_ABORTED',
+            'Operation was aborted before it could start.',
+            { cause: signal.reason },
+        );
+    }
+
     const kind = detectBrowserInputKind(input);
-    const { maxDimension, maxPixels } = resolveBrowserDecodeOptions(options);
+    const { maxDimension } = resolved.sampling;
+    const { maxPixels } = resolved.decode;
 
     let decoded: {
         data: Uint8Array;
@@ -275,30 +269,36 @@ export async function extractPalette(
             input as File | Blob,
             maxDimension,
             maxPixels,
+            signal,
+            false,
         );
     } else if (kind === 'image') {
         decoded = sampleImageElement(
             input as HTMLImageElement,
             maxDimension,
             maxPixels,
+            false,
         );
     } else if (kind === 'bitmap') {
         decoded = sampleImageBitmap(
             input as ImageBitmap,
             maxDimension,
             maxPixels,
+            false,
         );
     } else if (kind === 'canvas') {
         decoded = sampleCanvasElement(
             input as HTMLCanvasElement,
             maxDimension,
             maxPixels,
+            false,
         );
     } else if (kind === 'imageData') {
         decoded = sampleImageDataInput(
             input as ImageData,
             maxDimension,
             maxPixels,
+            false,
         );
     } else if (kind === 'url') {
         decoded = await decodeRemoteUrl(
@@ -307,6 +307,8 @@ export async function extractPalette(
             maxPixels,
             10_000,
             10_000_000,
+            signal,
+            false,
         );
     } else {
         throw new ColorExtractorError(
@@ -316,6 +318,14 @@ export async function extractPalette(
         );
     }
 
+    const coreOptions: CoreExtractPaletteOptions = {
+        sampling: resolved.sampling,
+        filtering: resolved.filtering,
+        result: resolved.result,
+        advanced: resolved.advanced,
+        signal,
+    };
+
     const result = await extractPaletteFromPixels(
         {
             data: decoded.data,
@@ -323,7 +333,7 @@ export async function extractPalette(
             height: decoded.height,
             channels: decoded.channels,
         },
-        options,
+        coreOptions,
     );
 
     return {
@@ -351,18 +361,45 @@ export async function extractPaletteFromImageData(
         );
     }
 
+    const resolved = resolveNeutralOptions(options, 'browser');
+    const signal = Object.hasOwn(
+        (options ?? {}) as Record<string, unknown>,
+        'signal',
+    )
+        ? options?.signal
+        : undefined;
+
+    if (signal?.aborted) {
+        throw new ColorExtractorError(
+            'COLOR_EXTRACTOR_ABORTED',
+            'Operation was aborted before it could start.',
+            { cause: signal.reason },
+        );
+    }
+
+    const decoded = sampleImageDataInput(
+        imageData,
+        resolved.sampling.maxDimension,
+        resolved.decode.maxPixels,
+        false,
+    );
+
+    const coreOptions: CoreExtractPaletteOptions = {
+        sampling: resolved.sampling,
+        filtering: resolved.filtering,
+        result: resolved.result,
+        advanced: resolved.advanced,
+        signal,
+    };
+
     const result = await extractPaletteFromPixels(
         {
-            data: new Uint8Array(
-                imageData.data.buffer,
-                imageData.data.byteOffset,
-                imageData.data.byteLength,
-            ),
-            width: imageData.width,
-            height: imageData.height,
-            channels: 4 as const,
+            data: decoded.data,
+            width: decoded.width,
+            height: decoded.height,
+            channels: decoded.channels,
         },
-        options,
+        coreOptions,
     );
 
     return {

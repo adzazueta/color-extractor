@@ -214,12 +214,10 @@ describe('normalizePalette — RGB deduplication', () => {
         const merged = result.swatches.find((s) => s.hex === '#c86432')!;
         expect(merged).toBeDefined();
         expect(merged.population).toBe(500);
-        const expectedL = (50 * 300 + 52 * 200) / 500;
-        const expectedA = (30 * 300 + 28 * 200) / 500;
-        const expectedB = (20 * 300 + 22 * 200) / 500;
-        expect(merged.lab.L).toBeCloseTo(expectedL, 5);
-        expect(merged.lab.a).toBeCloseTo(expectedA, 5);
-        expect(merged.lab.b).toBeCloseTo(expectedB, 5);
+        // Lab is recalculated from canonical RGB, not weighted mean
+        expect(merged.lab.L).toBeCloseTo(53.6295, 4);
+        expect(merged.lab.a).toBeCloseTo(36.3058, 4);
+        expect(merged.lab.b).toBeCloseTo(45.3795, 4);
     });
 
     it('candidateCount records pre-dedup count', () => {
@@ -305,7 +303,7 @@ describe('normalizePalette — perceptual score and low-chroma penalty', () => {
         const result = normalizePalette({
             candidateResult: candidateResult([
                 cand(200, 100, 50, 50, 30, 20, 500, 0),
-                cand(128, 128, 128, 50, 3, 4, 500, 1),
+                cand(135, 130, 125, 55, 0, 0, 500, 1),
             ]),
             ...BASE_META,
             options: {
@@ -319,18 +317,15 @@ describe('normalizePalette — perceptual score and low-chroma penalty', () => {
                 },
             },
         });
-        const gray = result.swatches.find((s) => s.hex === '#808080')!;
-        const vivid = result.swatches.find((s) => s.hex !== '#808080')!;
-        const maxRaw = Math.max(
-            Math.sqrt(30 ** 2 + 20 ** 2) * Math.log(500 + 1),
-            Math.sqrt(3 ** 2 + 4 ** 2) * Math.log(500 + 1) * 0.5,
-        );
-        const expectedVividScore =
-            (Math.sqrt(30 ** 2 + 20 ** 2) * Math.log(500 + 1)) / maxRaw;
-        const expectedGrayScore =
-            (Math.sqrt(3 ** 2 + 4 ** 2) * Math.log(500 + 1) * 0.5) / maxRaw;
-        expect(vivid.score).toBeCloseTo(expectedVividScore, 5);
-        expect(gray.score).toBeCloseTo(expectedGrayScore, 5);
+        const gray = result.swatches.find((s) => s.hex === '#87827d')!;
+        const vivid = result.swatches.find((s) => s.hex === '#c86432')!;
+        // Vivid: chroma ≈ 58.1 from recalculated Lab of (200, 100, 50)
+        // Gray: chroma ≈ 3.50 from recalculated Lab of (135, 130, 125) — below floor
+        const vividRaw = 58.1155 * Math.log(501);
+        const grayRaw = 3.4972 * Math.log(501) * 0.5;
+        const maxRaw = Math.max(vividRaw, grayRaw);
+        expect(vivid.score).toBeCloseTo(vividRaw / maxRaw, 5);
+        expect(gray.score).toBeCloseTo(grayRaw / maxRaw, 5);
     });
 
     it('no penalty when chroma >= chromaFloor', () => {
@@ -351,10 +346,15 @@ describe('normalizePalette — perceptual score and low-chroma penalty', () => {
                 },
             },
         });
-        const chroma0 = Math.sqrt(15 ** 2 + 15 ** 2);
-        expect(chroma0).toBeGreaterThan(10);
-        const s0 = result.swatches.find((s) => s.chroma === chroma0)!;
-        expect(s0.score).toBeCloseTo(1, 5);
+        // Both swatches have chroma >= 10 from recalculated Lab
+        for (const s of result.swatches) {
+            expect(s.chroma).toBeGreaterThanOrEqual(10);
+        }
+        // Highest-scoring swatch gets score 1
+        const best = result.swatches.reduce((a, b) =>
+            a.score >= b.score ? a : b,
+        );
+        expect(best.score).toBeCloseTo(1, 5);
     });
 });
 

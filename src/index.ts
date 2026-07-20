@@ -5,19 +5,21 @@ import type {
     ExtractColorsResult,
     ExtractPaletteResult,
     NodeExtractPaletteOptions,
-    PalettePixelInput,
 } from './core/index.js';
-import type { NodeExtractColorsInput } from './node/types.js';
 
 export { VERSION } from './generated/version.js';
 
 export type RootExtractColorsInput =
     | BrowserExtractColorsInput
-    | NodeExtractColorsInput;
+    | Uint8Array
+    | ArrayBuffer
+    | string;
 
 export type RootExtractPaletteInput =
     | BrowserExtractColorsInput
-    | NodeExtractColorsInput;
+    | Uint8Array
+    | ArrayBuffer
+    | string;
 
 /** @deprecated Use `extractPalette` instead. Semantic role extraction moved out of the extractor in 0.2.0. See the migration guide in the README. Will be removed in 0.4.0. */
 export declare function extractColors(
@@ -26,8 +28,12 @@ export declare function extractColors(
 ): Promise<ExtractColorsResult>;
 
 export declare function extractPalette(
-    input: RootExtractPaletteInput,
-    options?: BrowserExtractPaletteOptions | NodeExtractPaletteOptions,
+    input: BrowserExtractColorsInput,
+    options?: BrowserExtractPaletteOptions,
+): Promise<ExtractPaletteResult>;
+export declare function extractPalette(
+    input: Uint8Array | ArrayBuffer | string,
+    options?: NodeExtractPaletteOptions,
 ): Promise<ExtractPaletteResult>;
 
 export type {
@@ -47,6 +53,7 @@ export type {
     ExtractedSwatch,
     ExtractionAlgorithm,
     ExtractionDecoder,
+    ExtractionMetadata,
     ExtractionRuntime,
     ExtractPaletteOptions,
     ExtractPaletteResult,
