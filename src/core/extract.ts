@@ -1,9 +1,10 @@
 import { VERSION } from '../generated/version.js';
+import { runLabKmeans } from './algorithms/lab-kmeans/run.js';
 import { labSquaredDistance } from './color/lab.js';
 import { resolveOptions } from './defaults.js';
 import { ColorExtractorError } from './errors.js';
 import { passesFilter } from './filter.js';
-import { buildClusters, kmeans } from './kmeans.js';
+import { candidatesToClusters } from './legacy/adapter.js';
 import type { ExtractColorsOptions } from './options.js';
 import { applyOutputFlags, type FullExtractionResult } from './output.js';
 import { normalizePixels } from './pixels.js';
@@ -83,19 +84,26 @@ export function runExtractionPipeline(
     const labSamples = convertRgbSamplesToLab(validSamples);
 
     const k = Math.min(resolved.kmeans.clusters!, labSamples.length);
-    const kmeansResult = kmeans(labSamples, {
+    const candidateResult = runLabKmeans(labSamples, {
         clusters: k,
         iterations: resolved.kmeans.iterations!,
     });
 
     const singleColor =
-        kmeansResult.centroids.length <= 1 ||
-        kmeansResult.centroids.every((c, i) => {
+        candidateResult.candidates.length <= 1 ||
+        candidateResult.candidates.every((c, i) => {
             if (i === 0) return true;
-            return labSquaredDistance(c, kmeansResult.centroids[0]!) < 1;
+            return (
+                labSquaredDistance(c.lab, candidateResult.candidates[0]!.lab) <
+                1
+            );
         });
 
-    const clusters = buildClusters(labSamples, kmeansResult, resolved);
+    const clusters = candidatesToClusters(
+        candidateResult,
+        labSamples.length,
+        resolved.primary.preset!,
+    );
     if (singleColor) {
         const primaryCluster =
             clusters[findPrimaryIndex(clusters, resolved.primary.preset!)]!;

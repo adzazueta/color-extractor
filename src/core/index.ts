@@ -31,13 +31,7 @@ export {
     passesFilter,
     validateFilterCriteria,
 } from './filter.js';
-export {
-    buildClusters,
-    type Cluster,
-    type KMeansOptions,
-    type KMeansResult,
-    kmeans,
-} from './kmeans.js';
+
 export type {
     AdvancedExtractionOptions,
     BaseExtractPaletteOptions,

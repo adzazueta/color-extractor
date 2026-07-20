@@ -1,9 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-    buildClusters,
-    initializeCentroids,
-    kmeans,
-} from '../../src/core/kmeans.js';
+import { initializeCentroids, kmeans } from '../../src/core/kmeans.js';
 import { normalizePixels } from '../../src/core/pixels.js';
 import {
     convertRgbSamplesToLab,
@@ -21,12 +17,11 @@ function runPipeline(fixtureKey: keyof typeof FIXTURES, k: number = 5) {
     const sampled = sampleSquareGrid(normalized, 150);
     const labs = convertRgbSamplesToLab(sampled);
     const result = kmeans(labs, { clusters: k, iterations: 7 });
-    const clusters = buildClusters(labs, result);
-    return { kmeansResult: result, clusters, labs };
+    return { kmeansResult: result, labs };
 }
 
 describe('deterministic K-means (ADZ-87)', () => {
-    describe('AC: same pixels produce same clusters', () => {
+    describe('AC: same pixels produce same results', () => {
         it('bicolorRedBlue fixture is deterministic across two runs', () => {
             const a = runPipeline('bicolorRedBlue', 2);
             const b = runPipeline('bicolorRedBlue', 2);

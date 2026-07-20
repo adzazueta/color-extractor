@@ -3,7 +3,7 @@ import {
     DEFAULT_OPTIONS,
     type ResolvedOptions,
 } from '../../src/core/defaults.js';
-import type { Cluster } from '../../src/core/kmeans.js';
+import type { Cluster } from '../../src/core/legacy/cluster.js';
 import {
     applyGrayPenalty,
     applyLightnessGap,

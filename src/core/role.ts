@@ -9,7 +9,7 @@ import { labDistance, xyzToLab } from './color/lab.js';
 import { srgbByteToLinear } from './color/srgb.js';
 import { linearRgbToXyz } from './color/xyz.js';
 import type { ResolvedOptions } from './defaults.js';
-import type { Cluster } from './kmeans.js';
+import type { Cluster } from './legacy/cluster.js';
 import type { PrimaryPreset } from './options.js';
 import type { ExtractedColor } from './types.js';
 

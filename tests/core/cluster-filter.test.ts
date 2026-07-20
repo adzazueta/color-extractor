@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { buildClusters, kmeans } from '../../src/core/kmeans.js';
-import type { LabSample } from '../../src/core/sample.js';
+import { runLabKmeans } from '../../src/core/algorithms/lab-kmeans/run.js';
+import type { LabSample } from '../../src/core/algorithms/lab-kmeans/types.js';
+import { candidatesToClusters } from '../../src/core/legacy/adapter.js';
 
 function sample(L: number, a: number, b: number, index: number = 0): LabSample {
     return {
@@ -18,15 +19,24 @@ function clusterB(i: number, n: number): LabSample[] {
     return Array.from({ length: n }, (_, j) => sample(70 + j, -30, 50, i + j));
 }
 
-describe('buildClusters — filtering (reviewer finding #4)', () => {
+const STRICT_PRESET = 'strict';
+
+describe('candidatesToClusters — filtering (reviewer finding #4)', () => {
     it('returns only non-empty clusters (empty clusters filtered out)', () => {
         const samples = [
             sample(50, 0, 0, 0),
             sample(50, 0, 0, 1),
             sample(50, 0, 0, 2),
         ];
-        const kmeansResult = kmeans(samples, { clusters: 3, iterations: 5 });
-        const clusters = buildClusters(samples, kmeansResult);
+        const candidateResult = runLabKmeans(samples, {
+            clusters: 3,
+            iterations: 5,
+        });
+        const clusters = candidatesToClusters(
+            candidateResult,
+            samples.length,
+            STRICT_PRESET,
+        );
         for (const c of clusters) {
             expect(c.population).toBeGreaterThan(0);
         }
@@ -38,15 +48,29 @@ describe('buildClusters — filtering (reviewer finding #4)', () => {
             sample(50, 0, 0, 1),
             sample(50, 0, 0, 2),
         ];
-        const kmeansResult = kmeans(samples, { clusters: 3, iterations: 5 });
-        const clusters = buildClusters(samples, kmeansResult);
+        const candidateResult = runLabKmeans(samples, {
+            clusters: 3,
+            iterations: 5,
+        });
+        const clusters = candidatesToClusters(
+            candidateResult,
+            samples.length,
+            STRICT_PRESET,
+        );
         expect(clusters.length).toBeLessThanOrEqual(3);
     });
 
     it('non-empty cluster has the expected fields', () => {
         const samples = [...clusterA(0, 5), ...clusterB(100, 5)];
-        const kmeansResult = kmeans(samples, { clusters: 2, iterations: 10 });
-        const clusters = buildClusters(samples, kmeansResult);
+        const candidateResult = runLabKmeans(samples, {
+            clusters: 2,
+            iterations: 10,
+        });
+        const clusters = candidatesToClusters(
+            candidateResult,
+            samples.length,
+            STRICT_PRESET,
+        );
         expect(clusters.length).toBe(2);
         for (const c of clusters) {
             expect(c).toHaveProperty('index');
@@ -62,8 +86,15 @@ describe('buildClusters — filtering (reviewer finding #4)', () => {
 
     it('preserves the original cluster index after filtering', () => {
         const samples = [...clusterA(0, 5), ...clusterB(100, 5)];
-        const kmeansResult = kmeans(samples, { clusters: 2, iterations: 10 });
-        const clusters = buildClusters(samples, kmeansResult);
+        const candidateResult = runLabKmeans(samples, {
+            clusters: 2,
+            iterations: 10,
+        });
+        const clusters = candidatesToClusters(
+            candidateResult,
+            samples.length,
+            STRICT_PRESET,
+        );
         const indices = clusters.map((c) => c.index);
         for (const c of clusters) {
             expect(indices).toContain(c.index);
@@ -72,8 +103,15 @@ describe('buildClusters — filtering (reviewer finding #4)', () => {
 
     it('k=1 always returns a single cluster', () => {
         const samples = [...clusterA(0, 5), ...clusterB(100, 5)];
-        const kmeansResult = kmeans(samples, { clusters: 1, iterations: 10 });
-        const clusters = buildClusters(samples, kmeansResult);
+        const candidateResult = runLabKmeans(samples, {
+            clusters: 1,
+            iterations: 10,
+        });
+        const clusters = candidatesToClusters(
+            candidateResult,
+            samples.length,
+            STRICT_PRESET,
+        );
         expect(clusters.length).toBe(1);
         expect(clusters[0]!.population).toBe(samples.length);
         expect(clusters[0]!.proportion).toBe(1);
@@ -81,8 +119,15 @@ describe('buildClusters — filtering (reviewer finding #4)', () => {
 
     it('proportions sum to 1.0 across non-empty clusters', () => {
         const samples = [...clusterA(0, 5), ...clusterB(100, 5)];
-        const kmeansResult = kmeans(samples, { clusters: 2, iterations: 10 });
-        const clusters = buildClusters(samples, kmeansResult);
+        const candidateResult = runLabKmeans(samples, {
+            clusters: 2,
+            iterations: 10,
+        });
+        const clusters = candidatesToClusters(
+            candidateResult,
+            samples.length,
+            STRICT_PRESET,
+        );
         const totalProportion = clusters.reduce((a, c) => a + c.proportion, 0);
         expect(totalProportion).toBeCloseTo(1.0, 10);
     });
