@@ -23,7 +23,10 @@ export {
 export {
     extractColorsFromImageData,
     extractColorsFromPixels,
+    extractPaletteFromPixels,
     type ImageDataLike,
+    type PalettePixelInput,
+    runNeutralPalettePipeline,
 } from './extract.js';
 export {
     type FilterCriteria,

@@ -1,7 +1,11 @@
 import type { BrowserExtractColorsInput } from './browser/types.js';
 import type {
+    BrowserExtractPaletteOptions,
     ExtractColorsOptions,
     ExtractColorsResult,
+    ExtractPaletteResult,
+    NodeExtractPaletteOptions,
+    PalettePixelInput,
 } from './core/index.js';
 import type { NodeExtractColorsInput } from './node/types.js';
 
@@ -11,10 +15,20 @@ export type RootExtractColorsInput =
     | BrowserExtractColorsInput
     | NodeExtractColorsInput;
 
+export type RootExtractPaletteInput =
+    | BrowserExtractColorsInput
+    | NodeExtractColorsInput;
+
+/** @deprecated Use `extractPalette` instead. Semantic role extraction moved out of the extractor in 0.2.0. See the migration guide in the README. Will be removed in 0.4.0. */
 export declare function extractColors(
     input: RootExtractColorsInput,
     options?: ExtractColorsOptions,
 ): Promise<ExtractColorsResult>;
+
+export declare function extractPalette(
+    input: RootExtractPaletteInput,
+    options?: BrowserExtractPaletteOptions | NodeExtractPaletteOptions,
+): Promise<ExtractPaletteResult>;
 
 export type {
     AdvancedExtractionOptions,
@@ -49,6 +63,7 @@ export type {
     NodeExtractPaletteOptions,
     NodeRemoteOptions,
     OutputOptions,
+    PalettePixelInput,
     PaletteRankings,
     PaletteResultOptions,
     PerceptualRankingOptions,

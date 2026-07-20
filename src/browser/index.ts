@@ -1,6 +1,13 @@
 import { resolveOptions } from '../core/defaults.js';
 import { ColorExtractorError } from '../core/errors.js';
-import { extractColorsFromPixels } from '../core/extract.js';
+import {
+    extractColorsFromPixels,
+    extractPaletteFromPixels,
+} from '../core/extract.js';
+import type {
+    BrowserExtractPaletteOptions,
+    ExtractPaletteResult,
+} from '../core/index.js';
 import type { ExtractColorsOptions } from '../core/options.js';
 import type { ExtractColorsResult } from '../core/result.js';
 import {
@@ -14,6 +21,8 @@ import {
 import type { BrowserInputKind } from './detect.js';
 import { detectBrowserInputKind } from './detect.js';
 import type { BrowserExtractColorsInput } from './types.js';
+
+export type BrowserExtractPaletteInput = BrowserExtractColorsInput;
 
 export type {
     AdvancedExtractionOptions,
@@ -88,6 +97,7 @@ function overrideMetadata(
     };
 }
 
+/** @deprecated Use `extractPalette` instead. Semantic role extraction moved out of the extractor in 0.2.0. See the migration guide in the README. Will be removed in 0.4.0. */
 export async function extractColors(
     input: BrowserExtractColorsInput,
     options?: ExtractColorsOptions,
@@ -218,6 +228,151 @@ export async function extractColors(
             { cause },
         );
     }
+}
+
+function resolveBrowserDecodeOptions(
+    options: BrowserExtractPaletteOptions | undefined,
+): { maxDimension: number; maxPixels: number } {
+    const sampling = options?.sampling;
+    const maxDimension = sampling?.maxDimension ?? 150;
+    const decode = (options as Record<string, unknown>)?.decode as
+        | Record<string, unknown>
+        | undefined;
+    const maxPixels = (decode?.maxPixels as number | undefined) ?? 25_000_000;
+    if (!Number.isInteger(maxDimension) || maxDimension < 1) {
+        throw new ColorExtractorError(
+            'COLOR_EXTRACTOR_INVALID_OPTIONS',
+            'sampling.maxDimension must be a positive integer.',
+            { cause: maxDimension },
+        );
+    }
+    if (!Number.isFinite(maxPixels) || maxPixels <= 0) {
+        throw new ColorExtractorError(
+            'COLOR_EXTRACTOR_INVALID_OPTIONS',
+            'decode.maxPixels must be a positive finite number.',
+            { cause: maxPixels },
+        );
+    }
+    return { maxDimension, maxPixels };
+}
+
+export async function extractPalette(
+    input: BrowserExtractPaletteInput,
+    options?: BrowserExtractPaletteOptions,
+): Promise<ExtractPaletteResult> {
+    const kind = detectBrowserInputKind(input);
+    const { maxDimension, maxPixels } = resolveBrowserDecodeOptions(options);
+
+    let decoded: {
+        data: Uint8Array;
+        width: number;
+        height: number;
+        channels: 4;
+    };
+
+    if (kind === 'file' || kind === 'blob') {
+        decoded = await decodeFileOrBlob(
+            input as File | Blob,
+            maxDimension,
+            maxPixels,
+        );
+    } else if (kind === 'image') {
+        decoded = sampleImageElement(
+            input as HTMLImageElement,
+            maxDimension,
+            maxPixels,
+        );
+    } else if (kind === 'bitmap') {
+        decoded = sampleImageBitmap(
+            input as ImageBitmap,
+            maxDimension,
+            maxPixels,
+        );
+    } else if (kind === 'canvas') {
+        decoded = sampleCanvasElement(
+            input as HTMLCanvasElement,
+            maxDimension,
+            maxPixels,
+        );
+    } else if (kind === 'imageData') {
+        decoded = sampleImageDataInput(
+            input as ImageData,
+            maxDimension,
+            maxPixels,
+        );
+    } else if (kind === 'url') {
+        decoded = await decodeRemoteUrl(
+            input as string,
+            maxDimension,
+            maxPixels,
+            10_000,
+            10_000_000,
+        );
+    } else {
+        throw new ColorExtractorError(
+            'COLOR_EXTRACTOR_UNSUPPORTED_INPUT',
+            `Browser input kind '${kind}' is not yet supported.`,
+            { cause: input },
+        );
+    }
+
+    const result = await extractPaletteFromPixels(
+        {
+            data: decoded.data,
+            width: decoded.width,
+            height: decoded.height,
+            channels: decoded.channels,
+        },
+        options,
+    );
+
+    return {
+        ...result,
+        metadata: {
+            ...result.metadata,
+            runtime: 'browser' as const,
+            decoder:
+                kind === 'imageData'
+                    ? ('image-data' as const)
+                    : ('canvas' as const),
+        },
+    };
+}
+
+export async function extractPaletteFromImageData(
+    imageData: ImageData,
+    options?: BrowserExtractPaletteOptions,
+): Promise<ExtractPaletteResult> {
+    if (imageData === null || imageData === undefined) {
+        throw new ColorExtractorError(
+            'COLOR_EXTRACTOR_UNSUPPORTED_INPUT',
+            'ImageData input is required.',
+            { cause: imageData },
+        );
+    }
+
+    const result = await extractPaletteFromPixels(
+        {
+            data: new Uint8Array(
+                imageData.data.buffer,
+                imageData.data.byteOffset,
+                imageData.data.byteLength,
+            ),
+            width: imageData.width,
+            height: imageData.height,
+            channels: 4 as const,
+        },
+        options,
+    );
+
+    return {
+        ...result,
+        metadata: {
+            ...result.metadata,
+            runtime: 'browser' as const,
+            decoder: 'image-data' as const,
+        },
+    };
 }
 
 export type { DecodedPixels } from './decode.js';
