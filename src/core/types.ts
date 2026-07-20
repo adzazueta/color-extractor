@@ -1,20 +1,10 @@
-export interface RGB {
-    readonly r: number;
-    readonly g: number;
-    readonly b: number;
-}
+import type { HslColor, LabColor, RgbColor } from './palette-types.js';
 
-export interface HSL {
-    readonly h: number;
-    readonly s: number;
-    readonly l: number;
-}
+export type RGB = RgbColor;
 
-export interface Lab {
-    readonly L: number;
-    readonly a: number;
-    readonly b: number;
-}
+export type HSL = HslColor;
+
+export type Lab = LabColor;
 
 export type ColorRole = 'primary' | 'secondary' | 'accent' | 'palette';
 

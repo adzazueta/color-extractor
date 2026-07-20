@@ -55,6 +55,18 @@ export type {
     SvgHandling,
 } from './options.js';
 export { applyOutputFlags, type FullExtractionResult } from './output.js';
+export type {
+    ExtractedSwatch,
+    ExtractionAlgorithm,
+    ExtractionDecoder,
+    ExtractionRuntime,
+    ExtractPaletteResult,
+    HslColor,
+    LabColor,
+    PaletteRankings,
+    RgbColor,
+    SwatchId,
+} from './palette-types.js';
 export {
     type NormalizedPixels,
     normalizePixels,
