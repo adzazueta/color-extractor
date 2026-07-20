@@ -43,7 +43,7 @@ jobs:
       - run: pnpm check-version
       - run: pnpm lint
       - run: pnpm typecheck
-      - run: pnpm test
       - run: pnpm build
+      - run: pnpm test
       - run: pnpm test:smoke
       - run: pnpm verify-fixtures
