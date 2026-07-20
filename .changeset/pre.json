@@ -4,5 +4,5 @@
     "initialVersions": {
         "@adzazueta/color-extractor": "0.1.2"
     },
-    "changesets": []
+    "changesets": ["neutral-palette-api"]
 }

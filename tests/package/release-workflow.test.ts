@@ -9,24 +9,35 @@ const workflow = readFileSync(
 );
 
 describe('release workflow', () => {
-    it('runs on pushes to main', () => {
-        expect(workflow).toMatch(/push:\s*\n\s+branches:\s*\n\s+- main/);
+    it('triggers on PR merge to release/*', () => {
+        expect(workflow).toMatch(/pull_request:\s*\n\s+types:\s*\[closed\]/);
+        expect(workflow).toMatch(/branches:\s*\n\s+-\s+'release\/\*\*'/);
     });
 
-    it('uses published Changesets action inputs', () => {
-        expect(workflow).toContain('uses: changesets/action@v1');
+    it('only runs when merged from develop', () => {
         expect(workflow).toContain(
-            `github-token: \${{ secrets.GITHUB_TOKEN }}`,
+            "github.event.pull_request.merged == true && github.event.pull_request.head.ref == 'develop'",
         );
-        expect(workflow).toContain('version: pnpm release:version');
-        expect(workflow).toContain('publish: pnpm release');
     });
 
-    it('builds only after the version script updates generated metadata', () => {
-        expect(workflow).not.toMatch(/- run: pnpm build/);
+    it('prepares version then runs checks', () => {
+        expect(workflow).toContain('pnpm release:prepare');
+        expect(workflow).toContain('pnpm release:check');
     });
 
-    it('creates a GitHub Release and its package tag', () => {
-        expect(workflow).toContain('createGithubReleases: true');
+    it('commits and publishes after validation', () => {
+        expect(workflow).toContain(
+            'git commit -m "chore: release v${VERSION} [skip ci]"',
+        );
+        expect(workflow).toContain('pnpm release');
+    });
+
+    it('creates a GitHub Release via gh', () => {
+        expect(workflow).toContain('gh release create');
+    });
+
+    it('creates a PR to main using RELEASE_TOKEN', () => {
+        expect(workflow).toContain('GH_TOKEN: ${{ secrets.RELEASE_TOKEN }}');
+        expect(workflow).toContain('gh pr create');
     });
 });

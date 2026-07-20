@@ -27,13 +27,15 @@ describe('build smoke setup', () => {
         expect(pkg.scripts['test:smoke']).toBe('node scripts/smoke.mjs');
     });
 
-    it('prepublishOnly runs test:smoke after build', () => {
+    it('prepublishOnly delegates to release:check which includes smoke', () => {
         const pkg = JSON.parse(readFileSync(PKG_JSON, 'utf-8'));
         const prep = pkg.scripts.prepublishOnly;
-        expect(prep).toContain('pnpm build');
-        expect(prep).toContain('pnpm test:smoke');
-        expect(prep.indexOf('pnpm build')).toBeLessThan(
-            prep.indexOf('pnpm test:smoke'),
+        expect(prep).toBe('pnpm release:check');
+        const check = pkg.scripts['release:check'];
+        expect(check).toContain('pnpm build');
+        expect(check).toContain('pnpm test:smoke');
+        expect(check.indexOf('pnpm build')).toBeLessThan(
+            check.indexOf('pnpm test:smoke'),
         );
     });
 });
