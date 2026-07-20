@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - 'release/**'
 
 concurrency: ${{ github.workflow }}-${{ github.ref }}
 
@@ -26,20 +27,8 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 22
-
-      - name: Get pnpm store directory
-        shell: bash
-        run: |
-          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
-
-      - uses: actions/cache@v4
-        name: Setup pnpm cache
-        with:
-          path: ${{ env.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-store-
+          node-version: 22.12.0
+          cache: pnpm
 
       - run: pnpm install --frozen-lockfile
 
@@ -48,6 +37,28 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           version: pnpm release:version
           publish: pnpm release
+          branch: ${{ github.ref_name }}
           createGithubReleases: true
+          pushGitTags: true
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Create PR to develop
+        if: github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git fetch origin main develop
+          if git merge-base --is-ancestor origin/main origin/develop; then
+            echo "main is already ancestor of develop — no sync needed"
+            exit 0
+          fi
+          if gh pr list --base develop --head main --state open --json number --jq 'length > 0' | grep -qx true; then
+            echo "PR already exists"
+            exit 0
+          fi
+          gh pr create \
+            --base develop \
+            --head main \
+            --title "chore: sync release version back to develop" \
+            --body "Synchronizes the published version, changelog, generated version, and consumed changesets from main."
