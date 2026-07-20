@@ -23,7 +23,10 @@ export {
 export {
     extractColorsFromImageData,
     extractColorsFromPixels,
+    extractPaletteFromPixels,
     type ImageDataLike,
+    type PalettePixelInput,
+    runNeutralPalettePipeline,
 } from './extract.js';
 export {
     type FilterCriteria,
@@ -31,13 +34,25 @@ export {
     passesFilter,
     validateFilterCriteria,
 } from './filter.js';
-export {
-    buildClusters,
-    type Cluster,
-    type KMeansOptions,
-    type KMeansResult,
-    kmeans,
-} from './kmeans.js';
+
+export type {
+    AdvancedExtractionOptions,
+    BaseExtractPaletteOptions,
+    BrowserDecodeOptions,
+    BrowserExtractPaletteOptions,
+    CoreExtractPaletteOptions,
+    ExtractPaletteOptions,
+    LabKmeansOptions,
+    NodeDecodeOptions,
+    NodeExtractPaletteOptions,
+    NodeRemoteOptions,
+    PaletteResultOptions,
+    PerceptualRankingOptions,
+    ResolvedBrowserExtractPaletteOptions,
+    ResolvedCoreExtractPaletteOptions,
+    ResolvedNodeExtractPaletteOptions,
+    SamplingOptions,
+} from './neutral-options.js';
 export type {
     AnimatedHandling,
     DecodeOptions,
@@ -55,6 +70,19 @@ export type {
     SvgHandling,
 } from './options.js';
 export { applyOutputFlags, type FullExtractionResult } from './output.js';
+export type {
+    ExtractedSwatch,
+    ExtractionAlgorithm,
+    ExtractionDecoder,
+    ExtractionMetadata,
+    ExtractionRuntime,
+    ExtractPaletteResult,
+    HslColor,
+    LabColor,
+    PaletteRankings,
+    RgbColor,
+    SwatchId,
+} from './palette-types.js';
 export {
     type NormalizedPixels,
     normalizePixels,
@@ -62,7 +90,7 @@ export {
 } from './pixels.js';
 export type {
     ExtractColorsResult,
-    ExtractionMetadata,
+    ExtractionMetadata as LegacyExtractionMetadata,
     MinimalExtractColorsResult,
 } from './result.js';
 export {

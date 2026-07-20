@@ -164,8 +164,26 @@ describe('sampleImageToCanvas (ADZ-60)', () => {
 });
 
 describe('createOffscreenCanvas (ADZ-60)', () => {
-    it('throws when OffscreenCanvas is unavailable', () => {
+    it('uses a DOM canvas when OffscreenCanvas is unavailable', () => {
         vi.stubGlobal('OffscreenCanvas', undefined);
+        const ctx = { drawImage: vi.fn(), getImageData: vi.fn() };
+        const canvas = { width: 0, height: 0, getContext: vi.fn(() => ctx) };
+        vi.stubGlobal('document', {
+            createElement: vi.fn(() => canvas),
+        });
+
+        const result = createOffscreenCanvas(100, 100);
+
+        expect(result.canvas).toBe(canvas);
+        expect(result.ctx).toBe(ctx);
+        expect(canvas.width).toBe(100);
+        expect(canvas.height).toBe(100);
+        vi.unstubAllGlobals();
+    });
+
+    it('throws when no canvas implementation is available', () => {
+        vi.stubGlobal('OffscreenCanvas', undefined);
+        vi.stubGlobal('document', undefined);
         expect(() => createOffscreenCanvas(100, 100)).toThrow(
             ColorExtractorError,
         );

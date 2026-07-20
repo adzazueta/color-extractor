@@ -2,6 +2,7 @@ import {
     COLOR_EXTRACTOR_ERROR_CODES,
     ColorExtractorError,
     extractColorsFromPixels,
+    extractPaletteFromPixels,
     VERSION,
 } from '@adzazueta/color-extractor/core';
 
@@ -20,6 +21,14 @@ async function main() {
     );
 
     if (!result.metadata) throw new Error('metadata is undefined');
+
+    const palette = await extractPaletteFromPixels(
+        { data, width: 20, height: 20, channels: 4 },
+        { result: { maxColors: 1 } },
+    );
+    if (palette.metadata.decoder !== 'pixels') {
+        throw new Error('expected pixels palette decoder');
+    }
     if (result.metadata.runtime !== 'core') {
         throw new Error(
             `expected runtime 'core', got '${result.metadata.runtime}'`,

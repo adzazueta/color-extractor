@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest';
+import { runLabKmeans } from '../../src/core/algorithms/lab-kmeans/run.js';
 import { resolveOptions } from '../../src/core/defaults.js';
 import { passesFilter } from '../../src/core/filter.js';
 import { findPrimaryIndex, scorePrimary } from '../../src/core/index.js';
-import { buildClusters, kmeans } from '../../src/core/kmeans.js';
+import { candidatesToClusters } from '../../src/core/legacy/adapter.js';
+import type { Cluster } from '../../src/core/legacy/cluster.js';
 import { normalizePixels } from '../../src/core/pixels.js';
 import {
     convertRgbSamplesToLab,
@@ -13,7 +15,7 @@ import { FIXTURES } from './fixtures.js';
 function clustersFromFixture(
     fixtureKey: keyof typeof FIXTURES,
     k: number,
-): ReturnType<typeof buildClusters> {
+): Cluster[] {
     const f = FIXTURES[fixtureKey];
     const opts = resolveOptions();
     const normalized = normalizePixels(f.data as Uint8Array, f.width, f.height);
@@ -26,11 +28,15 @@ function clustersFromFixture(
     };
     const validSamples = sampled.filter((p) => passesFilter(p, criteria));
     const labs = convertRgbSamplesToLab(validSamples);
-    const kResult = kmeans(labs, {
+    const candidateResult = runLabKmeans(labs, {
         clusters: Math.min(k, labs.length),
         iterations: opts.kmeans.iterations!,
     });
-    return buildClusters(labs, kResult);
+    return candidatesToClusters(
+        candidateResult,
+        labs.length,
+        opts.primary.preset,
+    );
 }
 
 describe('primary presets with synthetic fixtures (ADZ-90)', () => {

@@ -10,6 +10,8 @@ export const COLOR_EXTRACTOR_ERROR_CODES = [
     'COLOR_EXTRACTOR_UNSUPPORTED_FORMAT',
     'COLOR_EXTRACTOR_SHARP_MISSING',
     'COLOR_EXTRACTOR_NO_VALID_PIXELS',
+    'COLOR_EXTRACTOR_INVALID_OPTIONS',
+    'COLOR_EXTRACTOR_ABORTED',
 ] as const;
 
 export type ColorExtractorErrorCode =
@@ -26,5 +28,15 @@ export class ColorExtractorError extends Error {
         super(message, options);
         this.name = 'ColorExtractorError';
         this.code = code;
+    }
+}
+
+export function checkAborted(signal?: AbortSignal): void {
+    if (signal?.aborted) {
+        throw new ColorExtractorError(
+            'COLOR_EXTRACTOR_ABORTED',
+            'Operation was aborted.',
+            { cause: signal.reason },
+        );
     }
 }

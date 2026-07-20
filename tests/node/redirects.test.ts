@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { ColorExtractorError } from '../../src/core/errors.js';
+import { ColorExtractorError } from '../../src/core/errors.js';
 import type { ResolveAndFetch } from '../../src/node/http-client.js';
 import {
     followRedirects,
@@ -351,5 +351,64 @@ describe('followRedirects (ADZ-57)', () => {
             }
             expect(threw).toBe(true);
         });
+    });
+});
+
+describe('followRedirects — abort with arbitrary reason', () => {
+    it('rejects with COLOR_EXTRACTOR_ABORTED when signal is pre-aborted with string reason', async () => {
+        const ac = new AbortController();
+        ac.abort('user cancelled');
+
+        await expect(
+            followRedirects('https://a.com/', {
+                resolveAndFetch: () =>
+                    new Promise<Response>(() => {
+                        /* never settles */
+                    }),
+                signal: ac.signal,
+                maxRedirects: 0,
+                timeoutMs: 5000,
+            }),
+        ).rejects.toMatchObject({ code: 'COLOR_EXTRACTOR_ABORTED' });
+    });
+
+    it('rejects with COLOR_EXTRACTOR_ABORTED when signal is pre-aborted with non-ABORTED ColorExtractorError', async () => {
+        const ac = new AbortController();
+        ac.abort(
+            new ColorExtractorError('COLOR_EXTRACTOR_TIMEOUT', 'from caller'),
+        );
+
+        await expect(
+            followRedirects('https://a.com/', {
+                resolveAndFetch: () =>
+                    new Promise<Response>(() => {
+                        /* never settles */
+                    }),
+                signal: ac.signal,
+                maxRedirects: 0,
+                timeoutMs: 5000,
+            }),
+        ).rejects.toMatchObject({ code: 'COLOR_EXTRACTOR_ABORTED' });
+    });
+
+    it('rejects with COLOR_EXTRACTOR_ABORTED when signal fires during in-flight resolveAndFetch', async () => {
+        const ac = new AbortController();
+        const resolveAndFetch: ResolveAndFetch = (_url, signal) =>
+            new Promise<Response>((_resolve, reject) => {
+                signal.addEventListener('abort', () => {
+                    reject(new DOMException('Aborted', 'AbortError'));
+                });
+            });
+
+        setTimeout(() => ac.abort('user cancelled'), 10);
+
+        await expect(
+            followRedirects('https://a.com/', {
+                resolveAndFetch,
+                signal: ac.signal,
+                maxRedirects: 0,
+                timeoutMs: 5000,
+            }),
+        ).rejects.toMatchObject({ code: 'COLOR_EXTRACTOR_ABORTED' });
     });
 });

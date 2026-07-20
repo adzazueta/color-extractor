@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { runLabKmeans } from '../../src/core/algorithms/lab-kmeans/run.js';
 import { resolveOptions } from '../../src/core/defaults.js';
 import { passesFilter } from '../../src/core/filter.js';
 import {
@@ -7,7 +8,7 @@ import {
     findPrimaryIndex,
     selectSecondary,
 } from '../../src/core/index.js';
-import { buildClusters, kmeans } from '../../src/core/kmeans.js';
+import { candidatesToClusters } from '../../src/core/legacy/adapter.js';
 import { normalizePixels } from '../../src/core/pixels.js';
 import {
     convertRgbSamplesToLab,
@@ -28,11 +29,15 @@ function clustersFromFixture(fixtureKey: keyof typeof FIXTURES, k: number) {
     };
     const validSamples = sampled.filter((p) => passesFilter(p, criteria));
     const labs = convertRgbSamplesToLab(validSamples);
-    const kResult = kmeans(labs, {
+    const candidateResult = runLabKmeans(labs, {
         clusters: Math.min(k, labs.length),
         iterations: opts.kmeans.iterations!,
     });
-    const clusters = buildClusters(labs, kResult);
+    const clusters = candidatesToClusters(
+        candidateResult,
+        labs.length,
+        opts.primary.preset,
+    );
     return { clusters, options: opts };
 }
 

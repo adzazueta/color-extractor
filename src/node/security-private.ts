@@ -18,6 +18,40 @@ const METADATA_V4 = [
     [169, 254, 169, 254],
     [169, 254, 169, 254],
 ] as const;
+const NON_PUBLIC_V4_RANGES = [
+    [
+        [0, 0, 0, 0],
+        [0, 255, 255, 255],
+    ],
+    [
+        [192, 0, 0, 0],
+        [192, 0, 0, 255],
+    ],
+    [
+        [192, 0, 2, 0],
+        [192, 0, 2, 255],
+    ],
+    [
+        [192, 88, 99, 0],
+        [192, 88, 99, 255],
+    ],
+    [
+        [198, 18, 0, 0],
+        [198, 19, 255, 255],
+    ],
+    [
+        [198, 51, 100, 0],
+        [198, 51, 100, 255],
+    ],
+    [
+        [203, 0, 113, 0],
+        [203, 0, 113, 255],
+    ],
+    [
+        [224, 0, 0, 0],
+        [255, 255, 255, 255],
+    ],
+] as const;
 const PRIVATE_V4_RANGES = [
     [
         [10, 0, 0, 0],
@@ -68,9 +102,9 @@ export function isPrivateIPv4(hostname: string): boolean {
     );
     if (parts.some((n) => n < 0 || n > 255)) return false;
     const ip = ip4ToInt(parts);
-    if (ip === 0) return true;
     if (ip4InAnyRange(ip, PRIVATE_V4_RANGES)) return true;
     if (ip4InAnyRange(ip, [METADATA_V4])) return true;
+    if (ip4InAnyRange(ip, NON_PUBLIC_V4_RANGES)) return true;
     return false;
 }
 
@@ -80,8 +114,11 @@ function extractMappedIPv4(hostname: string): string | null {
         normalized = normalized.slice(1, -1);
     }
     normalized = normalized.split('%')[0]!;
-    if (!normalized.startsWith('::ffff:')) return null;
-    const tail = normalized.slice('::ffff:'.length);
+    const prefix = ['::ffff:', '64:ff9b::', '64:ff9b:1::', '::'].find((value) =>
+        normalized.startsWith(value),
+    );
+    if (prefix === undefined) return null;
+    const tail = normalized.slice(prefix.length);
     const m =
         /^([0-9a-f]{1,3})\.([0-9a-f]{1,3})\.([0-9a-f]{1,3})\.([0-9a-f]{1,3})$/i.exec(
             tail,
@@ -123,6 +160,16 @@ export function isPrivateIPv6(hostname: string): boolean {
     const stripped = normalized.split('%')[0]!;
     if (!stripped.includes(':')) return false;
     if (stripped.startsWith('fc') || stripped.startsWith('fd')) return true;
+    if (stripped.startsWith('ff')) return true;
+    if (stripped.startsWith('2001:db8:')) return true;
+    if (
+        stripped.startsWith('fec') ||
+        stripped.startsWith('fed') ||
+        stripped.startsWith('fee') ||
+        stripped.startsWith('fef')
+    ) {
+        return true;
+    }
     if (
         stripped.startsWith('fe8') ||
         stripped.startsWith('fe9') ||

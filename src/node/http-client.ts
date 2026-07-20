@@ -161,13 +161,16 @@ export function createResolveAndFetch(
               ? 443
               : 80;
         const path = parsedUrl.pathname + parsedUrl.search;
+        const hostHeader = parsedUrl.port
+            ? `${hostname}:${parsedUrl.port}`
+            : hostname;
 
         const httpOptions: Record<string, unknown> = {
             hostname: targetIp,
             port,
             path,
             method: 'GET',
-            headers: { Host: hostname, accept: '*/*' },
+            headers: { Host: hostHeader, accept: '*/*' },
             signal,
             rejectUnauthorized: true,
         };

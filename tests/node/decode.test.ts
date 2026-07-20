@@ -1,12 +1,15 @@
 import sharp from 'sharp';
-import { beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { ColorExtractorError } from '../../src/core/errors.js';
 import {
     _internalComputeResizeTargetForTests,
     _internalIsSharpPipelineForTests,
     decodeBufferToPixels,
 } from '../../src/node/decode.js';
-import { _setSharpImporterForTests } from '../../src/node/sharp.js';
+import {
+    _resetSharpCacheForTests,
+    _setSharpImporterForTests,
+} from '../../src/node/sharp.js';
 
 async function makePng(
     width: number,
@@ -194,6 +197,99 @@ describe('decodeBufferToPixels (ADZ-71)', () => {
             ).rejects.toBeInstanceOf(ColorExtractorError);
         });
     });
+});
+
+describe('decodeBufferToPixels cancellation', () => {
+    let phase: 'metadata' | 'buffer';
+    let destroyed = false;
+    let onPendingOperation: (() => void) | undefined;
+
+    class HangingSharp {
+        withMetadata() {
+            return this;
+        }
+
+        metadata() {
+            if (phase === 'metadata') {
+                onPendingOperation?.();
+                return new Promise<never>(() => {});
+            }
+            return Promise.resolve({ width: 10, height: 10 });
+        }
+
+        rotate() {
+            return this;
+        }
+
+        toColourspace() {
+            return this;
+        }
+
+        resize() {
+            return this;
+        }
+
+        ensureAlpha() {
+            return this;
+        }
+
+        raw() {
+            return {
+                toBuffer: () => {
+                    if (phase === 'buffer') {
+                        onPendingOperation?.();
+                        return new Promise<never>(() => {});
+                    }
+                    return Promise.resolve({
+                        data: Buffer.alloc(400),
+                        info: { width: 10, height: 10, channels: 4 },
+                    });
+                },
+            };
+        }
+
+        destroy() {
+            destroyed = true;
+        }
+    }
+
+    beforeAll(() => {
+        _resetSharpCacheForTests();
+        _setSharpImporterForTests(() =>
+            Promise.resolve({ default: HangingSharp }),
+        );
+    });
+
+    afterAll(() => {
+        _resetSharpCacheForTests();
+        _setSharpImporterForTests(() => Promise.resolve(sharp));
+    });
+
+    it.each(['metadata', 'buffer'] as const)(
+        'rejects and destroys the pipeline when aborted during pending %s work',
+        async (pendingPhase) => {
+            phase = pendingPhase;
+            destroyed = false;
+            const controller = new AbortController();
+            const reachedPendingOperation = new Promise<void>((resolve) => {
+                onPendingOperation = resolve;
+            });
+            const pending = decodeBufferToPixels(
+                Buffer.from([1]),
+                150,
+                { respectOrientation: true },
+                controller.signal,
+            );
+
+            await reachedPendingOperation;
+            controller.abort('cancelled');
+
+            await expect(pending).rejects.toMatchObject({
+                code: 'COLOR_EXTRACTOR_ABORTED',
+            });
+            expect(destroyed).toBe(true);
+        },
+    );
 });
 
 describe('computeResizeTarget (ADZ-71)', () => {

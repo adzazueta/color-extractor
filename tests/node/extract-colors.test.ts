@@ -10,7 +10,7 @@ import { join, resolve } from 'node:path';
 import sharp from 'sharp';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { NodeExtractColorsInput } from '../../src/node/index.js';
-import { extractColors } from '../../src/node/index.js';
+import { extractColors, extractPalette } from '../../src/node/index.js';
 import { _setSharpImporterForTests } from '../../src/node/sharp.js';
 
 const rootDir = resolve(import.meta.dirname, '../..');
@@ -152,6 +152,24 @@ describe('Node extractColors (Phase 7)', () => {
             });
             expect(result.primary).toBeDefined();
             expect(result.primary.hex).toBeTruthy();
+        });
+    });
+});
+
+describe('Node extractPalette', () => {
+    it('runs the neutral pipeline for a Buffer input', async () => {
+        const png = await makePng(300, 150, { r: 180, g: 0, b: 0 });
+        const result = await extractPalette(png, {
+            sampling: { maxDimension: 150 },
+            result: { maxColors: 1 },
+        });
+
+        expect(result.swatches).toHaveLength(1);
+        expect(result.metadata).toMatchObject({
+            runtime: 'node',
+            decoder: 'sharp',
+            sampledWidth: 150,
+            sampledHeight: 75,
         });
     });
 });

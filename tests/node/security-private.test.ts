@@ -63,6 +63,13 @@ describe('isPrivateIPv4 (ADZ-73)', () => {
         expect(isPrivateIPv4('0.0.0.0')).toBe(true);
     });
 
+    it.each(['0.0.0.1', '224.0.0.1', '240.0.0.1'])(
+        'flags %s as non-public',
+        (address) => {
+            expect(isPrivateIPv4(address)).toBe(true);
+        },
+    );
+
     it('does not flag 8.8.8.8 as private', () => {
         expect(isPrivateIPv4('8.8.8.8')).toBe(false);
     });
@@ -87,6 +94,26 @@ describe('isPrivateIPv6 (ADZ-73)', () => {
 
     it('flags :: as private (unspecified, review #1)', () => {
         expect(isPrivateIPv6('::')).toBe(true);
+    });
+
+    it('flags ff02::1 as non-public multicast', () => {
+        expect(isPrivateIPv6('ff02::1')).toBe(true);
+    });
+
+    it('flags fec0::1 as non-public site-local', () => {
+        expect(isPrivateIPv6('fec0::1')).toBe(true);
+    });
+
+    it('flags private IPv4 embedded in the well-known NAT64 prefix', () => {
+        expect(isPrivateIPv6('64:ff9b::a9fe:a9fe')).toBe(true);
+    });
+
+    it('flags private IPv4 embedded in the local NAT64 prefix', () => {
+        expect(isPrivateIPv6('64:ff9b:1::a9fe:a9fe')).toBe(true);
+    });
+
+    it('flags IPv4-compatible IPv6 loopback', () => {
+        expect(isPrivateIPv6('::7f00:1')).toBe(true);
     });
 
     it('flags 0:0:0:0:0:0:0:0 as private (unspecified expanded)', () => {

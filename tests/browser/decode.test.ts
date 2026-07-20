@@ -30,6 +30,7 @@ type MockDrawCall = {
 };
 
 let drawCalls: MockDrawCall[] = [];
+let smoothingValues: boolean[] = [];
 
 function createMockOffscreenCanvas() {
     return class {
@@ -44,13 +45,27 @@ function createMockOffscreenCanvas() {
         get width() {
             return this._width;
         }
+        set width(value: number) {
+            this._width = value;
+        }
         get height() {
             return this._height;
+        }
+        set height(value: number) {
+            this._height = value;
         }
 
         getContext(type: string) {
             if (type !== '2d') return null;
+            let imageSmoothingEnabled = true;
             return {
+                get imageSmoothingEnabled() {
+                    return imageSmoothingEnabled;
+                },
+                set imageSmoothingEnabled(value: boolean) {
+                    imageSmoothingEnabled = value;
+                    smoothingValues.push(value);
+                },
                 drawImage: vi.fn(
                     (
                         image: unknown,
@@ -62,6 +77,7 @@ function createMockOffscreenCanvas() {
                         drawCalls.push({ image, dx, dy, dw, dh });
                     },
                 ),
+                putImageData: vi.fn(),
                 getImageData: vi.fn(
                     (_x: number, _y: number, w: number, h: number) => {
                         return new MockImageData(
@@ -83,6 +99,7 @@ const MAX_BYTES = 10_000_000;
 describe('sampleImageBitmap (ADZ-59)', () => {
     beforeAll(() => {
         drawCalls = [];
+        smoothingValues = [];
         vi.stubGlobal('OffscreenCanvas', createMockOffscreenCanvas());
         vi.stubGlobal('ImageData', MockImageData);
     });
@@ -114,6 +131,19 @@ describe('sampleImageBitmap (ADZ-59)', () => {
         } as unknown as ImageBitmap;
         sampleImageBitmap(bitmap, 150, MAX_PIXELS);
         expect(close).not.toHaveBeenCalled();
+    });
+
+    it('disables smoothing when requested by the neutral path', () => {
+        smoothingValues = [];
+        const bitmap = {
+            width: 200,
+            height: 100,
+            close: vi.fn(),
+        } as unknown as ImageBitmap;
+
+        sampleImageBitmap(bitmap, 100, MAX_PIXELS, false);
+
+        expect(smoothingValues).toContain(false);
     });
 
     it('throws for zero-width bitmap', () => {
@@ -336,6 +366,204 @@ describe('sampleImageDataInput (ADZ-61)', () => {
         expect(() => sampleImageDataInput(imageData, 150, 1_000_000)).toThrow(
             ColorExtractorError,
         );
+    });
+
+    describe('without OffscreenCanvas — software nearest-neighbor fallback', () => {
+        beforeAll(() => {
+            vi.stubGlobal('OffscreenCanvas', undefined);
+        });
+
+        afterAll(() => {
+            vi.unstubAllGlobals();
+        });
+
+        it('downsamples to maxDimension with correct nearest-neighbor pixels', () => {
+            // Create a 300×100 ImageData: first half red, second half blue
+            const w = 300;
+            const h = 100;
+            const data = new Uint8ClampedArray(w * h * 4);
+            for (let y = 0; y < h; y++) {
+                for (let x = 0; x < w; x++) {
+                    const i = (y * w + x) * 4;
+                    if (x < w / 2) {
+                        data[i] = 255;
+                        data[i + 1] = 0;
+                        data[i + 2] = 0;
+                    } else {
+                        data[i] = 0;
+                        data[i + 1] = 0;
+                        data[i + 2] = 255;
+                    }
+                    data[i + 3] = 255;
+                }
+            }
+            const imageData = { data, width: w, height: h } as ImageData;
+            const result = sampleImageDataInput(imageData, 150, MAX_PIXELS);
+
+            // Result should fit within 150×150
+            expect(result.width).toBeLessThanOrEqual(150);
+            expect(result.height).toBeLessThanOrEqual(150);
+            expect(result.width).toBeGreaterThan(0);
+            expect(result.height).toBeGreaterThan(0);
+
+            // First pixel should be red (nearest neighbor from left half)
+            expect(result.data[0]).toBe(255);
+            expect(result.data[1]).toBe(0);
+            expect(result.data[2]).toBe(0);
+
+            // Last pixel should be blue (nearest neighbor from right half)
+            const last = (result.width * result.height - 1) * 4;
+            expect(result.data[last]).toBe(0);
+            expect(result.data[last + 1]).toBe(0);
+            expect(result.data[last + 2]).toBe(255);
+        });
+
+        it('rejects with decode.maxPixels when source exceeds limit', () => {
+            const imageData = {
+                data: new Uint8ClampedArray(1200 * 1200 * 4),
+                width: 1200,
+                height: 1200,
+            } as ImageData;
+            expect(() =>
+                sampleImageDataInput(imageData, 150, 1_000_000),
+            ).toThrow(ColorExtractorError);
+        });
+
+        it('uses the DOM canvas fallback and preserves requested smoothing', () => {
+            smoothingValues = [];
+            const Canvas = createMockOffscreenCanvas();
+            vi.stubGlobal('document', {
+                createElement: vi.fn(() => new Canvas(1, 1)),
+            });
+            const imageData = {
+                data: new Uint8ClampedArray(300 * 100 * 4),
+                width: 300,
+                height: 100,
+            } as ImageData;
+
+            sampleImageDataInput(imageData, 150, MAX_PIXELS, true);
+
+            expect(smoothingValues).toContain(true);
+            vi.unstubAllGlobals();
+        });
+
+        it.each([0, -1, 1.5, Number.NaN])(
+            'rejects invalid sampleSize %p consistently without OffscreenCanvas',
+            (sampleSize) => {
+                const imageData = {
+                    data: new Uint8ClampedArray(300 * 100 * 4),
+                    width: 300,
+                    height: 100,
+                } as ImageData;
+
+                expect(() =>
+                    sampleImageDataInput(imageData, sampleSize, MAX_PIXELS),
+                ).toThrow(
+                    expect.objectContaining({
+                        code: 'COLOR_EXTRACTOR_UNSUPPORTED_INPUT',
+                    }),
+                );
+            },
+        );
+
+        it('pins nearest-neighbor convention on non-integral resize ratio', () => {
+            // 300 → 130: x-ratio = 300/130 ≈ 2.3077
+            // dst_x=0  → floor(0  × 300/130) = floor(0.00)  = 0
+            // dst_x=1  → floor(1  × 300/130) = floor(2.31)  = 2
+            // dst_x=50 → floor(50 × 300/130) = floor(115.38) = 115
+            const w = 300;
+            const h = 1;
+            const data = new Uint8ClampedArray(w * h * 4);
+            for (let x = 0; x < w; x++) {
+                const i = x * 4;
+                data[i] = x; // R = source x
+                data[i + 1] = 0;
+                data[i + 2] = 0;
+                data[i + 3] = 255;
+            }
+            const imageData = { data, width: w, height: h } as ImageData;
+            const result = sampleImageDataInput(imageData, 130, MAX_PIXELS);
+
+            expect(result.width).toBe(130);
+            expect(result.height).toBe(1);
+
+            // dst_x=0  should sample src_x=0  → R=0
+            expect(result.data[0]).toBe(0);
+
+            // dst_x=1  should sample src_x=2  → R=2
+            expect(result.data[4]).toBe(2);
+
+            // dst_x=50 should sample src_x=115 → R=115
+            expect(result.data[200]).toBe(115);
+        });
+
+        it('preserves alpha and does not mutate input buffer', () => {
+            const w = 300;
+            const h = 100;
+            const data = new Uint8ClampedArray(w * h * 4);
+            for (let i = 0; i < data.length; i += 4) {
+                data[i] = 100;
+                data[i + 1] = 150;
+                data[i + 2] = 200;
+                data[i + 3] = 64; // semi-transparent
+            }
+            const original = new Uint8ClampedArray(data);
+            const imageData = { data, width: w, height: h } as ImageData;
+            const result = sampleImageDataInput(imageData, 80, MAX_PIXELS);
+
+            // Every output pixel preserves alpha=64
+            for (let i = 3; i < result.data.length; i += 4) {
+                expect(result.data[i]).toBe(64);
+            }
+
+            // Source buffer untouched
+            expect(data).toStrictEqual(original);
+        });
+    });
+
+    describe('extractPaletteFromImageData — without OffscreenCanvas', () => {
+        beforeAll(() => {
+            vi.stubGlobal('OffscreenCanvas', undefined);
+        });
+
+        afterAll(() => {
+            vi.unstubAllGlobals();
+        });
+
+        it('reports reduced dimensions in metadata after software downsampling', async () => {
+            const w = 600;
+            const h = 400;
+            const data = new Uint8ClampedArray(w * h * 4);
+            for (let i = 0; i < data.length; i += 4) {
+                data[i] = 200;
+                data[i + 1] = 100;
+                data[i + 2] = 50;
+                data[i + 3] = 255;
+            }
+            const imageData = { data, width: w, height: h } as ImageData;
+
+            const { extractPaletteFromImageData: ep } = await import(
+                '../../src/browser/index.js'
+            );
+
+            const result = await ep(imageData, {
+                sampling: { maxDimension: 200 },
+                filtering: {
+                    minBrightness: 0,
+                    maxBrightness: 255,
+                    minSaturation: 0,
+                },
+                result: { maxColors: 1 },
+                advanced: { labKmeans: { clusters: 1 } },
+            });
+
+            expect(result.metadata.sampledWidth).toBe(200);
+            expect(result.metadata.sampledHeight).toBeLessThanOrEqual(200);
+            expect(result.metadata.sampledWidth).toBeGreaterThan(0);
+            expect(result.metadata.sampledHeight).toBeGreaterThan(0);
+            expect(result.metadata.runtime).toBe('browser');
+            expect(result.metadata.decoder).toBe('image-data');
+        });
     });
 });
 
@@ -786,4 +1014,208 @@ describe('decode.maxPixels enforced post-decode (platform limitation)', () => {
             }),
         );
     });
+});
+
+describe('decodeFileOrBlob — abort with arbitrary reason', () => {
+    beforeAll(() => {
+        vi.stubGlobal('createImageBitmap', undefined);
+        vi.stubGlobal('Image', vi.fn().mockReturnValue({}));
+    });
+
+    afterAll(() => {
+        vi.unstubAllGlobals();
+    });
+
+    it('rejects with COLOR_EXTRACTOR_ABORTED when signal is already aborted with string reason', async () => {
+        const ac = new AbortController();
+        ac.abort('user cancelled');
+
+        await expect(
+            decodeFileOrBlob(
+                new Blob(['fake'], { type: 'image/png' }),
+                150,
+                MAX_PIXELS,
+                ac.signal,
+            ),
+        ).rejects.toMatchObject({ code: 'COLOR_EXTRACTOR_ABORTED' });
+    });
+
+    it('rejects with COLOR_EXTRACTOR_ABORTED when signal is already aborted with non-ABORTED ColorExtractorError', async () => {
+        const ac = new AbortController();
+        ac.abort(
+            new ColorExtractorError('COLOR_EXTRACTOR_TIMEOUT', 'from caller'),
+        );
+
+        await expect(
+            decodeFileOrBlob(
+                new Blob(['fake'], { type: 'image/png' }),
+                150,
+                MAX_PIXELS,
+                ac.signal,
+            ),
+        ).rejects.toMatchObject({ code: 'COLOR_EXTRACTOR_ABORTED' });
+    });
+});
+
+describe('decodeFileOrBlob — abort during pending Image load', () => {
+    beforeAll(() => {
+        vi.stubGlobal('createImageBitmap', undefined);
+        vi.stubGlobal('URL', {
+            createObjectURL: vi.fn().mockReturnValue('blob:mock'),
+            revokeObjectURL: vi.fn(),
+        });
+        vi.stubGlobal('Image', function (this: { [k: string]: unknown }) {
+            this.onload = null;
+            this.onerror = null;
+            const self = this;
+            Object.defineProperty(this, 'src', {
+                get() {
+                    return self._src as string;
+                },
+                set(v: string) {
+                    self._src = v;
+                },
+            });
+            this._src = '';
+            this.naturalWidth = 100;
+            this.naturalHeight = 100;
+        } as unknown as typeof Image);
+    });
+
+    afterAll(() => {
+        vi.unstubAllGlobals();
+    });
+
+    it('rejects with COLOR_EXTRACTOR_ABORTED when signal fires during pending Image load', async () => {
+        const ac = new AbortController();
+
+        const promise = decodeFileOrBlob(
+            new Blob(['fake'], { type: 'image/png' }),
+            150,
+            MAX_PIXELS,
+            ac.signal,
+        );
+
+        await new Promise((r) => setTimeout(r, 10));
+        ac.abort('user cancelled');
+
+        await expect(promise).rejects.toMatchObject({
+            code: 'COLOR_EXTRACTOR_ABORTED',
+        });
+    });
+});
+
+describe('decodeFileOrBlob — abort during pending createImageBitmap', () => {
+    beforeAll(() => {
+        vi.stubGlobal(
+            'createImageBitmap',
+            vi.fn().mockImplementation(
+                () =>
+                    new Promise<ImageBitmap>(() => {
+                        /* never settles */
+                    }),
+            ),
+        );
+        vi.stubGlobal('OffscreenCanvas', createMockOffscreenCanvas());
+        vi.stubGlobal('ImageData', MockImageData);
+    });
+
+    afterAll(() => {
+        vi.unstubAllGlobals();
+    });
+
+    it('rejects with COLOR_EXTRACTOR_ABORTED when signal fires during createImageBitmap', async () => {
+        const ac = new AbortController();
+
+        const promise = decodeFileOrBlob(
+            new Blob(['fake'], { type: 'image/png' }),
+            150,
+            MAX_PIXELS,
+            ac.signal,
+        );
+
+        await new Promise((r) => setTimeout(r, 10));
+        ac.abort('user cancelled');
+
+        await expect(promise).rejects.toMatchObject({
+            code: 'COLOR_EXTRACTOR_ABORTED',
+        });
+    });
+});
+
+describe('decodeRemoteUrl — abort with arbitrary reason', () => {
+    beforeAll(() => {
+        vi.stubGlobal('OffscreenCanvas', createMockOffscreenCanvas());
+        vi.stubGlobal('ImageData', MockImageData);
+        vi.stubGlobal('createImageBitmap', vi.fn());
+    });
+
+    afterAll(() => {
+        vi.unstubAllGlobals();
+    });
+
+    it('rejects with COLOR_EXTRACTOR_ABORTED when signal is pre-aborted with string reason', async () => {
+        const ac = new AbortController();
+        ac.abort('user cancelled');
+
+        await expect(
+            decodeRemoteUrl(
+                'https://example.com/image.png',
+                150,
+                MAX_PIXELS,
+                5000,
+                MAX_BYTES,
+                ac.signal,
+            ),
+        ).rejects.toMatchObject({ code: 'COLOR_EXTRACTOR_ABORTED' });
+    });
+
+    it('rejects with COLOR_EXTRACTOR_ABORTED when signal is pre-aborted with non-ABORTED ColorExtractorError', async () => {
+        const ac = new AbortController();
+        ac.abort(
+            new ColorExtractorError('COLOR_EXTRACTOR_TIMEOUT', 'from caller'),
+        );
+
+        await expect(
+            decodeRemoteUrl(
+                'https://example.com/image.png',
+                150,
+                MAX_PIXELS,
+                5000,
+                MAX_BYTES,
+                ac.signal,
+            ),
+        ).rejects.toMatchObject({ code: 'COLOR_EXTRACTOR_ABORTED' });
+    });
+
+    it('rejects with COLOR_EXTRACTOR_ABORTED when signal fires during in-flight fetch', async () => {
+        const ac = new AbortController();
+        vi.stubGlobal(
+            'fetch',
+            vi.fn().mockImplementation(
+                (_url: string, init?: { signal?: AbortSignal }) =>
+                    new Promise<Response>((_resolve, reject) => {
+                        init?.signal?.addEventListener('abort', () => {
+                            reject(new DOMException('Aborted', 'AbortError'));
+                        });
+                    }),
+            ),
+        );
+
+        const promise = decodeRemoteUrl(
+            'https://example.com/image.png',
+            150,
+            MAX_PIXELS,
+            5000,
+            MAX_BYTES,
+            ac.signal,
+        );
+
+        await new Promise((r) => setTimeout(r, 10));
+        ac.abort('user cancelled');
+
+        await expect(promise).rejects.toMatchObject({
+            code: 'COLOR_EXTRACTOR_ABORTED',
+        });
+    }, 10_000);
 });

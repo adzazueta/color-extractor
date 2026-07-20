@@ -8,6 +8,7 @@ globalThis.ImageData = class {
 
 const {
     extractColors,
+    extractPalette,
     VERSION,
     ColorExtractorError,
     COLOR_EXTRACTOR_ERROR_CODES,
@@ -28,6 +29,13 @@ async function main() {
     });
 
     if (!result.metadata) throw new Error('metadata is undefined');
+
+    const palette = await extractPalette(input, {
+        result: { maxColors: 1 },
+    });
+    if (palette.metadata.decoder !== 'image-data') {
+        throw new Error('expected image-data palette decoder');
+    }
     if (result.metadata.runtime !== 'browser') {
         throw new Error(
             `expected runtime 'browser', got '${result.metadata.runtime}'`,

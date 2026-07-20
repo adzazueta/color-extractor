@@ -7,7 +7,7 @@ const here = dirname(fileURLToPath(import.meta.url));
 const rootDir = resolve(here, '../..');
 
 interface ConditionalExport {
-    [condition: string]: string;
+    [condition: string]: string | ConditionalExport;
 }
 
 interface PackageJson {
@@ -26,6 +26,17 @@ function expectCondition(entry: ConditionalExport, condition: string): string {
         'string',
     );
     return value as string;
+}
+
+function expectNestedCondition(
+    entry: ConditionalExport,
+    condition: string,
+): ConditionalExport {
+    const value = entry[condition];
+    expect(typeof value, `condition "${condition}" must be an object`).toBe(
+        'object',
+    );
+    return value as ConditionalExport;
 }
 
 function readExport(subpath: string): ConditionalExport {
@@ -49,35 +60,25 @@ describe('public exports contract', () => {
     });
 
     describe('root . entrypoint', () => {
-        it('declares types, browser, node and default conditions', () => {
+        it('declares browser, node and default conditions', () => {
             const root = readExport('.');
             expect(Object.keys(root).sort()).toEqual([
                 'browser',
                 'default',
                 'node',
-                'types',
             ]);
         });
 
-        it('types declaration points to an existing file', () => {
-            const types = expectCondition(readExport('.'), 'types');
-            expect(existsSync(resolve(rootDir, types))).toBe(true);
-        });
-
-        it('browser bundle exists', () => {
-            const browser = expectCondition(readExport('.'), 'browser');
-            expect(existsSync(resolve(rootDir, browser))).toBe(true);
-        });
-
-        it('node bundle exists', () => {
-            const node = expectCondition(readExport('.'), 'node');
-            expect(existsSync(resolve(rootDir, node))).toBe(true);
-        });
-
-        it('default condition points to an existing file', () => {
-            const def = expectCondition(readExport('.'), 'default');
-            expect(existsSync(resolve(rootDir, def))).toBe(true);
-        });
+        it.each(['browser', 'node', 'default'])(
+            '%s has matching runtime and type declarations',
+            (condition) => {
+                const entry = expectNestedCondition(readExport('.'), condition);
+                const types = expectCondition(entry, 'types');
+                const runtime = expectCondition(entry, 'default');
+                expect(existsSync(resolve(rootDir, types))).toBe(true);
+                expect(existsSync(resolve(rootDir, runtime))).toBe(true);
+            },
+        );
     });
 
     describe('runtime subpaths', () => {

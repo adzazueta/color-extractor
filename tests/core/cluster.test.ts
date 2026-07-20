@@ -1,11 +1,8 @@
 import { describe, expect, it } from 'vitest';
+import { runLabKmeans } from '../../src/core/algorithms/lab-kmeans/run.js';
+import type { LabSample } from '../../src/core/algorithms/lab-kmeans/types.js';
 import { rgbToHsl } from '../../src/core/color/hsl.js';
-import { labToXyz } from '../../src/core/color/lab.js';
-import { linearToSrgbByte } from '../../src/core/color/srgb.js';
-import { xyzToLinearRgb } from '../../src/core/color/xyz.js';
-import { DEFAULT_OPTIONS } from '../../src/core/defaults.js';
-import { buildClusters, kmeans } from '../../src/core/kmeans.js';
-import type { LabSample } from '../../src/core/sample.js';
+import { candidatesToClusters } from '../../src/core/legacy/adapter.js';
 
 function sample(
     L: number,
@@ -37,15 +34,21 @@ function clusterB(i: number, n: number): LabSample[] {
     return result;
 }
 
-describe('buildClusters', () => {
+const STRICT_PRESET = 'strict';
+
+describe('candidatesToClusters (adapter)', () => {
     describe('AC: each non-empty cluster has population and proportion', () => {
-        it('returns k clusters with population and proportion', () => {
+        it('returns clusters with population and proportion', () => {
             const samples = [...clusterA(0, 10), ...clusterB(100, 10)];
-            const kmeansResult = kmeans(samples, {
+            const candidateResult = runLabKmeans(samples, {
                 clusters: 2,
                 iterations: 10,
             });
-            const clusters = buildClusters(samples, kmeansResult);
+            const clusters = candidatesToClusters(
+                candidateResult,
+                samples.length,
+                STRICT_PRESET,
+            );
             expect(clusters.length).toBe(2);
             for (const c of clusters) {
                 expect(c.population).toBeGreaterThan(0);
@@ -56,11 +59,15 @@ describe('buildClusters', () => {
 
         it('proportions sum to 1.0 across all clusters', () => {
             const samples = [...clusterA(0, 10), ...clusterB(100, 10)];
-            const kmeansResult = kmeans(samples, {
+            const candidateResult = runLabKmeans(samples, {
                 clusters: 2,
                 iterations: 10,
             });
-            const clusters = buildClusters(samples, kmeansResult);
+            const clusters = candidatesToClusters(
+                candidateResult,
+                samples.length,
+                STRICT_PRESET,
+            );
             const totalProportion = clusters.reduce(
                 (a, c) => a + c.proportion,
                 0,
@@ -70,11 +77,15 @@ describe('buildClusters', () => {
 
         it('proportion = population / total', () => {
             const samples = [...clusterA(0, 6), ...clusterB(100, 4)];
-            const kmeansResult = kmeans(samples, {
+            const candidateResult = runLabKmeans(samples, {
                 clusters: 2,
                 iterations: 10,
             });
-            const clusters = buildClusters(samples, kmeansResult);
+            const clusters = candidatesToClusters(
+                candidateResult,
+                samples.length,
+                STRICT_PRESET,
+            );
             for (const c of clusters) {
                 expect(c.proportion).toBeCloseTo(
                     c.population / samples.length,
@@ -85,29 +96,34 @@ describe('buildClusters', () => {
     });
 
     describe('AC: chroma is available for primary and secondary scoring', () => {
-        it('chroma = sqrt(a² + b²) from centroid Lab', () => {
+        it('chroma = sqrt(a² + b²) from candidate Lab', () => {
             const samples = [...clusterA(0, 10), ...clusterB(100, 10)];
-            const kmeansResult = kmeans(samples, {
+            const candidateResult = runLabKmeans(samples, {
                 clusters: 2,
                 iterations: 10,
             });
-            const clusters = buildClusters(samples, kmeansResult);
-            for (let i = 0; i < clusters.length; i++) {
-                const expected = Math.sqrt(
-                    kmeansResult.centroids[i]!.a ** 2 +
-                        kmeansResult.centroids[i]!.b ** 2,
-                );
-                expect(clusters[i]!.chroma).toBeCloseTo(expected, 10);
+            const clusters = candidatesToClusters(
+                candidateResult,
+                samples.length,
+                STRICT_PRESET,
+            );
+            for (const c of clusters) {
+                const expected = Math.sqrt(c.lab.a ** 2 + c.lab.b ** 2);
+                expect(c.chroma).toBeCloseTo(expected, 10);
             }
         });
 
         it('all clusters have a non-negative chroma', () => {
             const samples = [...clusterA(0, 5), ...clusterB(100, 5)];
-            const kmeansResult = kmeans(samples, {
+            const candidateResult = runLabKmeans(samples, {
                 clusters: 2,
                 iterations: 10,
             });
-            const clusters = buildClusters(samples, kmeansResult);
+            const clusters = candidatesToClusters(
+                candidateResult,
+                samples.length,
+                STRICT_PRESET,
+            );
             for (const c of clusters) {
                 expect(c.chroma).toBeGreaterThanOrEqual(0);
             }
@@ -115,33 +131,36 @@ describe('buildClusters', () => {
     });
 
     describe('AC: representative colors can be formatted for output', () => {
-        it('derives representative RGB from centroid Lab via lab→xyz→linear→srgb', () => {
+        it('derives representative RGB from centroid Lab via lab->xyz->linear->srgb', () => {
             const samples = [...clusterA(0, 5), ...clusterB(100, 5)];
-            const kmeansResult = kmeans(samples, {
+            const candidateResult = runLabKmeans(samples, {
                 clusters: 2,
                 iterations: 10,
             });
-            const clusters = buildClusters(samples, kmeansResult);
+            const clusters = candidatesToClusters(
+                candidateResult,
+                samples.length,
+                STRICT_PRESET,
+            );
+            const candidates = candidateResult.candidates;
             for (let i = 0; i < clusters.length; i++) {
                 const c = clusters[i]!;
-                const { x, y, z } = labToXyz(c.lab.L, c.lab.a, c.lab.b);
-                const linear = xyzToLinearRgb(x, y, z);
-                const expected = {
-                    r: linearToSrgbByte(linear.r),
-                    g: linearToSrgbByte(linear.g),
-                    b: linearToSrgbByte(linear.b),
-                };
-                expect(c.rgb).toEqual(expected);
+                const cand = candidates[i]!;
+                expect(c.rgb).toEqual(cand.rgb);
             }
         });
 
         it('HSL matches the representative RGB via rgbToHsl', () => {
             const samples = [...clusterA(0, 5), ...clusterB(100, 5)];
-            const kmeansResult = kmeans(samples, {
+            const candidateResult = runLabKmeans(samples, {
                 clusters: 2,
                 iterations: 10,
             });
-            const clusters = buildClusters(samples, kmeansResult);
+            const clusters = candidatesToClusters(
+                candidateResult,
+                samples.length,
+                STRICT_PRESET,
+            );
             for (let i = 0; i < clusters.length; i++) {
                 const c = clusters[i]!;
                 expect(c.hsl).toEqual(rgbToHsl(c.rgb.r, c.rgb.g, c.rgb.b));
@@ -152,11 +171,15 @@ describe('buildClusters', () => {
     describe('cluster index is preserved', () => {
         it('cluster i has index i', () => {
             const samples = [...clusterA(0, 5), ...clusterB(100, 5)];
-            const kmeansResult = kmeans(samples, {
+            const candidateResult = runLabKmeans(samples, {
                 clusters: 2,
                 iterations: 10,
             });
-            const clusters = buildClusters(samples, kmeansResult);
+            const clusters = candidatesToClusters(
+                candidateResult,
+                samples.length,
+                STRICT_PRESET,
+            );
             for (let i = 0; i < clusters.length; i++) {
                 expect(clusters[i]!.index).toBe(i);
             }
@@ -166,11 +189,15 @@ describe('buildClusters', () => {
     describe('Cluster shape (all required fields)', () => {
         it('has the expected keys', () => {
             const samples = [...clusterA(0, 5), ...clusterB(100, 5)];
-            const kmeansResult = kmeans(samples, {
+            const candidateResult = runLabKmeans(samples, {
                 clusters: 2,
                 iterations: 10,
             });
-            const clusters = buildClusters(samples, kmeansResult);
+            const clusters = candidatesToClusters(
+                candidateResult,
+                samples.length,
+                STRICT_PRESET,
+            );
             expect(Object.keys(clusters[0]!).sort()).toEqual(
                 [
                     'chroma',
@@ -189,11 +216,15 @@ describe('buildClusters', () => {
     describe('score uses primary scoring preset', () => {
         it('populates score as chroma * log(population + 1) by default (strict)', () => {
             const samples = [...clusterA(0, 5), ...clusterB(100, 5)];
-            const kmeansResult = kmeans(samples, {
+            const candidateResult = runLabKmeans(samples, {
                 clusters: 2,
                 iterations: 10,
             });
-            const clusters = buildClusters(samples, kmeansResult);
+            const clusters = candidatesToClusters(
+                candidateResult,
+                samples.length,
+                STRICT_PRESET,
+            );
             for (const c of clusters) {
                 const expected = c.chroma * Math.log(c.population + 1);
                 expect(c.score).toBeCloseTo(expected, 10);
@@ -202,14 +233,15 @@ describe('buildClusters', () => {
 
         it('uses balanced preset when options provide one', () => {
             const samples = [...clusterA(0, 5), ...clusterB(100, 5)];
-            const kmeansResult = kmeans(samples, {
+            const candidateResult = runLabKmeans(samples, {
                 clusters: 2,
                 iterations: 10,
             });
-            const clusters = buildClusters(samples, kmeansResult, {
-                ...DEFAULT_OPTIONS,
-                primary: { preset: 'balanced' },
-            });
+            const clusters = candidatesToClusters(
+                candidateResult,
+                samples.length,
+                'balanced',
+            );
             for (const c of clusters) {
                 const expected = c.chroma ** 1.25 * Math.log(c.population + 1);
                 expect(c.score).toBeCloseTo(expected, 10);
@@ -220,11 +252,15 @@ describe('buildClusters', () => {
     describe('k=1 case', () => {
         it('returns a single cluster with all samples, proportion = 1', () => {
             const samples = [...clusterA(0, 5), ...clusterB(100, 5)];
-            const kmeansResult = kmeans(samples, {
+            const candidateResult = runLabKmeans(samples, {
                 clusters: 1,
                 iterations: 10,
             });
-            const clusters = buildClusters(samples, kmeansResult);
+            const clusters = candidatesToClusters(
+                candidateResult,
+                samples.length,
+                STRICT_PRESET,
+            );
             expect(clusters.length).toBe(1);
             expect(clusters[0]!.population).toBe(samples.length);
             expect(clusters[0]!.proportion).toBe(1);

@@ -156,9 +156,11 @@ describe('createResolveAndFetch — validation', () => {
 describe('createResolveAndFetch — integration with local HTTP server', () => {
     let server: http.Server;
     let port: number;
+    let receivedHost: string | undefined;
 
     beforeAll(async () => {
         server = http.createServer((req, res) => {
+            receivedHost = req.headers.host;
             if (req.url === '/test') {
                 res.writeHead(200, { 'content-type': 'text/plain' });
                 res.end('pinned-ok');
@@ -178,7 +180,7 @@ describe('createResolveAndFetch — integration with local HTTP server', () => {
         await new Promise<void>((resolve) => server.close(() => resolve()));
     });
 
-    it('makes an HTTP request to the pinned IP with Host header set to original hostname', async () => {
+    it('makes an HTTP request to the pinned IP with the original host and port', async () => {
         const resolveAndFetch = createResolveAndFetch({
             lookup: async () => [{ address: '127.0.0.1', family: 4 as const }],
             allowPrivateNetworks: true,
@@ -191,5 +193,6 @@ describe('createResolveAndFetch — integration with local HTTP server', () => {
         const body = await response.arrayBuffer();
         expect(new TextDecoder().decode(body)).toBe('pinned-ok');
         expect(response.headers.get('content-type')).toMatch(/text\/plain/);
+        expect(receivedHost).toBe(`original-host.com:${port}`);
     });
 });
