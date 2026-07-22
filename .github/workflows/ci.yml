@@ -4,9 +4,10 @@ on:
   pull_request:
     branches:
       - main
-      - develop
       - 'release/**'
-  workflow_dispatch:
+  push:
+    branches:
+      - main
 
 permissions:
   contents: read
@@ -37,7 +38,7 @@ jobs:
       - run: pnpm check-version
       - run: pnpm lint
       - run: pnpm typecheck
-      - run: pnpm build
       - run: pnpm test
+      - run: pnpm build
       - run: pnpm test:smoke
       - run: pnpm verify-fixtures
