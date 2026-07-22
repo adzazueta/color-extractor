@@ -20,6 +20,11 @@ const scripts = pkg.scripts ?? {};
 describe('package scripts', () => {
     it('declares all required scripts', () => {
         expect(Object.keys(scripts).sort()).toEqual([
+            'benchmark:baseline',
+            'benchmark:compare',
+            'benchmark:corpus',
+            'benchmark:run',
+            'benchmark:smoke',
             'build',
             'changeset',
             'check-build-warnings',
