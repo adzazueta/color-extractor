@@ -36,7 +36,7 @@ export type PaletteRankings = {
     chroma: SwatchId[];
 };
 
-export type ExtractionAlgorithm = 'lab-kmeans';
+export type ExtractionAlgorithm = 'lab-kmeans' | 'mmcq';
 
 export type ExtractionRuntime = 'browser' | 'node' | 'core';
 

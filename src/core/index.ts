@@ -1,4 +1,13 @@
 export { VERSION } from '../generated/version.js';
+export type {
+    AlgorithmCandidateResult,
+    AlgorithmContext,
+    AlgorithmDiagnostics,
+    ExtractionCandidate,
+    ExtractionSample,
+    ExtractionSampleSet,
+    NeutralExtractionAlgorithm,
+} from './algorithms/index.js';
 export {
     chromaFromLab,
     circularHueDistance,
