@@ -214,10 +214,16 @@ export async function extractPalette(
     );
 
     const coreOptions: CoreExtractPaletteOptions = {
+        algorithm: resolved.algorithm,
         sampling: resolved.sampling,
         filtering: resolved.filtering,
         result: resolved.result,
-        advanced: resolved.advanced,
+        advanced: {
+            ...(resolved.algorithm === 'lab-kmeans'
+                ? { labKmeans: resolved.advanced.labKmeans }
+                : { mmcq: resolved.advanced.mmcq }),
+            perceptualRanking: resolved.advanced.perceptualRanking,
+        },
         signal,
     };
 

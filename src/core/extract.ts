@@ -1,5 +1,7 @@
 import { VERSION } from '../generated/version.js';
+import type { ExtractionSampleSet } from './algorithms/contract.js';
 import { runLabKmeans } from './algorithms/lab-kmeans/run.js';
+import { getAlgorithm } from './algorithms/registry.js';
 import { labSquaredDistance } from './color/lab.js';
 import { resolveOptions } from './defaults.js';
 import { ColorExtractorError } from './errors.js';
@@ -41,8 +43,6 @@ export type PalettePixelInput = {
     readonly height: number;
     readonly channels: 3 | 4;
 };
-
-const NEUTRAL_ALGORITHM_VERSION = '1.0.0';
 
 function validatePalettePixelInput(
     input: unknown,
@@ -163,11 +163,30 @@ export function runNeutralPalettePipeline(
     checkAborted(signal);
 
     const labSamples = convertRgbSamplesToLab(validSamples);
-    const k = Math.min(options.advanced.labKmeans.clusters, labSamples.length);
-    const candidateResult = runLabKmeans(labSamples, {
-        clusters: k,
-        iterations: options.advanced.labKmeans.iterations,
-        useObservedRgb: true,
+    const sampleSet: ExtractionSampleSet = {
+        samples: labSamples,
+        validPixels: validSamples.length,
+    };
+
+    const algorithmImpl = getAlgorithm(options.algorithm);
+    const algoOptions =
+        options.algorithm === 'lab-kmeans'
+            ? {
+                  clusters: Math.min(
+                      options.advanced.labKmeans.clusters,
+                      labSamples.length,
+                  ),
+                  iterations: options.advanced.labKmeans.iterations,
+              }
+            : {
+                  boxes: Math.min(
+                      options.advanced.mmcq.boxes,
+                      labSamples.length,
+                  ),
+              };
+
+    const candidateResult = algorithmImpl.run(sampleSet, algoOptions, {
+        signal,
     });
 
     checkAborted(signal);
@@ -181,7 +200,7 @@ export function runNeutralPalettePipeline(
         runtime: 'core',
         decoder: 'pixels',
         packageVersion: PACKAGE_VERSION,
-        algorithmVersion: NEUTRAL_ALGORITHM_VERSION,
+        algorithmVersion: candidateResult.algorithmVersion,
         options,
         signal,
     });

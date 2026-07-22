@@ -1,4 +1,5 @@
 import { ColorExtractorError } from './errors.js';
+import type { ExtractionAlgorithm } from './palette-types.js';
 
 export type SamplingOptions = {
     maxDimension?: number;
@@ -21,6 +22,10 @@ export type LabKmeansOptions = {
     iterations?: number;
 };
 
+export type MmcqOptions = {
+    boxes?: number;
+};
+
 export type PerceptualRankingOptions = {
     chromaFloor?: number;
     lowChromaPenalty?: number;
@@ -28,10 +33,12 @@ export type PerceptualRankingOptions = {
 
 export type AdvancedExtractionOptions = {
     labKmeans?: LabKmeansOptions;
+    mmcq?: MmcqOptions;
     perceptualRanking?: PerceptualRankingOptions;
 };
 
 export type BaseExtractPaletteOptions = {
+    algorithm?: ExtractionAlgorithm;
     sampling?: SamplingOptions;
     filtering?: FilteringOptions;
     result?: PaletteResultOptions;
@@ -96,6 +103,10 @@ export type ResolvedLabKmeansOptions = {
     iterations: number;
 };
 
+export type ResolvedMmcqOptions = {
+    boxes: number;
+};
+
 export type ResolvedPerceptualRankingOptions = {
     chromaFloor: number;
     lowChromaPenalty: number;
@@ -103,6 +114,7 @@ export type ResolvedPerceptualRankingOptions = {
 
 export type ResolvedAdvancedExtractionOptions = {
     labKmeans: ResolvedLabKmeansOptions;
+    mmcq: ResolvedMmcqOptions;
     perceptualRanking: ResolvedPerceptualRankingOptions;
 };
 
@@ -128,6 +140,7 @@ export type ResolvedNodeDecodeOptions = {
 };
 
 type ResolvedBaseOptions = {
+    algorithm: ExtractionAlgorithm;
     sampling: ResolvedSamplingOptions;
     filtering: ResolvedFilteringOptions;
     result: ResolvedPaletteResultOptions;
@@ -146,6 +159,7 @@ export type ResolvedNodeExtractPaletteOptions = ResolvedBaseOptions & {
 export type ResolvedCoreExtractPaletteOptions = ResolvedBaseOptions;
 
 type CommonDefaults = {
+    algorithm: ExtractionAlgorithm;
     sampling: ResolvedSamplingOptions;
     filtering: ResolvedFilteringOptions;
     result: ResolvedPaletteResultOptions;
@@ -153,6 +167,7 @@ type CommonDefaults = {
 };
 
 const COMMON_DEFAULTS: CommonDefaults = {
+    algorithm: 'lab-kmeans',
     sampling: { maxDimension: 150 },
     filtering: {
         alphaThreshold: 128,
@@ -163,6 +178,7 @@ const COMMON_DEFAULTS: CommonDefaults = {
     result: { maxColors: 5, includeHsl: false },
     advanced: {
         labKmeans: { clusters: 8, iterations: 7 },
+        mmcq: { boxes: 8 },
         perceptualRanking: { chromaFloor: 12, lowChromaPenalty: 0.1 },
     },
 };
@@ -201,6 +217,7 @@ const LEGACY_KEYS = new Set([
 ]);
 
 const COMMON_GROUP_KEYS = new Set([
+    'algorithm',
     'sampling',
     'filtering',
     'result',
@@ -217,11 +234,12 @@ const COMMON_NESTED_KEYS = {
         'minSaturation',
     ]),
     result: new Set(['maxColors', 'includeHsl']),
-    advanced: new Set(['labKmeans', 'perceptualRanking']),
+    advanced: new Set(['labKmeans', 'mmcq', 'perceptualRanking']),
 };
 
 const ADVANCED_NESTED_KEYS = {
     labKmeans: new Set(['clusters', 'iterations']),
+    mmcq: new Set(['boxes']),
     perceptualRanking: new Set(['chromaFloor', 'lowChromaPenalty']),
 };
 
@@ -502,16 +520,32 @@ function checkAdvancedBounds(
     resolved: CommonDefaults,
     userAdvanced: Record<string, unknown> | undefined,
 ): void {
+    const activeAlgorithm = resolved.algorithm;
+
     if (userAdvanced === undefined) {
         resolved.advanced.labKmeans.clusters = deriveClusterDefault(
             resolved.result.maxColors,
         );
+        resolved.advanced.mmcq.boxes = Math.max(8, resolved.result.maxColors);
         return;
     }
 
     assertPlainObject(userAdvanced, 'advanced');
     userAdvanced = ownUnknown(userAdvanced);
     checkValidGroupKeys(userAdvanced, COMMON_NESTED_KEYS.advanced, 'advanced');
+
+    if (activeAlgorithm === 'lab-kmeans' && userAdvanced.mmcq !== undefined) {
+        invalidOpt(
+            'advanced.mmcq',
+            "advanced.mmcq is not allowed when algorithm is 'lab-kmeans'",
+        );
+    }
+    if (activeAlgorithm === 'mmcq' && userAdvanced.labKmeans !== undefined) {
+        invalidOpt(
+            'advanced.labKmeans',
+            "advanced.labKmeans is not allowed when algorithm is 'mmcq'",
+        );
+    }
 
     if (userAdvanced.labKmeans !== undefined) {
         assertPlainObject(userAdvanced.labKmeans, 'advanced.labKmeans');
@@ -552,6 +586,33 @@ function checkAdvancedBounds(
         resolved.advanced.labKmeans.clusters = deriveClusterDefault(
             resolved.result.maxColors,
         );
+    }
+
+    if (userAdvanced.mmcq !== undefined) {
+        assertPlainObject(userAdvanced.mmcq, 'advanced.mmcq');
+        const g = ownUnknown(userAdvanced.mmcq);
+        checkValidGroupKeys(g, ADVANCED_NESTED_KEYS.mmcq, 'advanced.mmcq');
+        if (g.boxes !== undefined) {
+            resolved.advanced.mmcq.boxes = assertInteger(
+                'advanced.mmcq.boxes',
+                g.boxes,
+                1,
+                64,
+            );
+            if (resolved.advanced.mmcq.boxes < resolved.result.maxColors) {
+                invalidOpt(
+                    'advanced.mmcq.boxes',
+                    `must be >= result.maxColors (${resolved.result.maxColors}), got ${String(g.boxes)}`,
+                );
+            }
+        } else {
+            resolved.advanced.mmcq.boxes = Math.max(
+                8,
+                resolved.result.maxColors,
+            );
+        }
+    } else {
+        resolved.advanced.mmcq.boxes = Math.max(8, resolved.result.maxColors);
     }
 
     if (userAdvanced.perceptualRanking !== undefined) {
@@ -795,11 +856,13 @@ export function resolveNeutralOptions(
     checkRejectLegacyKeys(obj);
 
     const common: CommonDefaults = {
+        algorithm: 'lab-kmeans',
         sampling: { ...COMMON_DEFAULTS.sampling },
         filtering: { ...COMMON_DEFAULTS.filtering },
         result: { ...COMMON_DEFAULTS.result },
         advanced: {
             labKmeans: { ...COMMON_DEFAULTS.advanced.labKmeans },
+            mmcq: { ...COMMON_DEFAULTS.advanced.mmcq },
             perceptualRanking: {
                 ...COMMON_DEFAULTS.advanced.perceptualRanking,
             },
@@ -821,6 +884,22 @@ export function resolveNeutralOptions(
     }
 
     const picked = pickRuntimeGroups(obj, runtimeAllowed, runtime);
+    if (picked.algorithm !== undefined) {
+        if (typeof picked.algorithm !== 'string') {
+            invalidOpt(
+                'algorithm',
+                `must be a string, got ${typeof picked.algorithm}`,
+            );
+        }
+        if (picked.algorithm !== 'lab-kmeans' && picked.algorithm !== 'mmcq') {
+            invalidOpt(
+                'algorithm',
+                `must be 'lab-kmeans' or 'mmcq', got '${String(picked.algorithm)}'`,
+            );
+        }
+        common.algorithm = picked.algorithm;
+    }
+
     checkCommonGroupBounds(common, picked);
     checkAdvancedBounds(
         common,
@@ -828,11 +907,13 @@ export function resolveNeutralOptions(
     );
 
     const base: ResolvedBaseOptions = {
+        algorithm: common.algorithm,
         sampling: { ...common.sampling },
         filtering: { ...common.filtering },
         result: { ...common.result },
         advanced: {
             labKmeans: { ...common.advanced.labKmeans },
+            mmcq: { ...common.advanced.mmcq },
             perceptualRanking: { ...common.advanced.perceptualRanking },
         },
     };

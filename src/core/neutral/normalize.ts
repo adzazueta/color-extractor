@@ -1,3 +1,7 @@
+import type {
+    AlgorithmCandidateResult,
+    ExtractionCandidate,
+} from '../algorithms/contract.js';
 import type { LabKmeansCandidateResult } from '../algorithms/lab-kmeans/types.js';
 import { rgbToHex } from '../color/hex.js';
 import { rgbToHsl } from '../color/hsl.js';
@@ -18,7 +22,7 @@ import type {
 } from '../palette-types.js';
 
 export type NormalizePaletteInput = {
-    candidateResult: LabKmeansCandidateResult;
+    candidateResult: AlgorithmCandidateResult | LabKmeansCandidateResult;
     validPixels: number;
     sampledWidth: number;
     sampledHeight: number;
@@ -193,7 +197,10 @@ function swatchIdFromHex(hex: string): SwatchId {
 }
 
 function mergeByRgb(
-    candidates: LabKmeansCandidateResult['candidates'],
+    candidates: readonly (
+        | ExtractionCandidate
+        | LabKmeansCandidateResult['candidates'][number]
+    )[],
 ): MergedCandidate[] {
     const groups = new Map<
         string,
@@ -392,15 +399,29 @@ export function normalizePalette(
     const coverage =
         validPixels > 0 ? clamp(returnedPopulation / validPixels, 0, 1) : 0;
 
-    const algorithmDetails: Record<string, unknown> = {
-        requestedClusters: candidateResult.metadata.requestedClusters,
-        producedCandidates: candidateResult.metadata.producedCandidates,
-        iterations: candidateResult.metadata.iterations,
-    };
+    const diagnostics: Record<string, unknown> =
+        'diagnostics' in candidateResult
+            ? (candidateResult.diagnostics as Record<string, unknown>)
+            : {
+                  requestedClusters: candidateResult.metadata.requestedClusters,
+                  producedCandidates:
+                      candidateResult.metadata.producedCandidates,
+                  iterations: candidateResult.metadata.iterations,
+              };
+
+    const algorithm =
+        'algorithm' in candidateResult
+            ? candidateResult.algorithm
+            : input.options.algorithm;
+
+    const algorithmVersion =
+        'algorithmVersion' in candidateResult
+            ? candidateResult.algorithmVersion
+            : input.algorithmVersion;
 
     const metadata: ExtractionMetadata = {
-        algorithm: 'lab-kmeans',
-        algorithmVersion: input.algorithmVersion,
+        algorithm,
+        algorithmVersion,
         packageVersion: input.packageVersion,
         runtime: input.runtime,
         decoder: input.decoder,
@@ -412,7 +433,7 @@ export function normalizePalette(
         returnedColors: swatches.length,
         returnedPopulation,
         coverage,
-        algorithmDetails: Object.freeze(algorithmDetails),
+        algorithmDetails: Object.freeze({ ...diagnostics }),
     };
 
     return {
