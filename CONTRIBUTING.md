@@ -134,9 +134,9 @@ Pull requests are opened and merged only through authorized maintainer workflows
 ## Branch and release governance
 
 * Direct pushes to the `main` branch are prohibited by branch protection.
-* Feature work merges through `feature/*` into `develop`; release candidates are cut as `release/*` from `develop`.
-* Published release metadata is synchronized back through a reviewed `main` -> `develop` pull request.
-* Changes reach `main` through reviewed pull requests.
+* Feature work merges through `feature/*` into `main`; release candidates are cut as `release/*` from `main`.
+* Release branches publish validated packages, tags, and GitHub Releases before a reviewed pull request merges their release metadata back into `main`.
+* Changes reach `main` through reviewed pull requests from feature and release branches.
 * Required status checks must pass before merge.
 * Only authorized maintainer workflows may merge changes.
 * Release artifacts are produced from verified commits.

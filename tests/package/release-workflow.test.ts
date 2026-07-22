@@ -42,27 +42,18 @@ describe('release workflow', () => {
         );
     });
 
-    it('checks npm for existing version before publishing', () => {
-        expect(workflow).toContain('npm view "@adzazueta/color-extractor@');
-    });
-
-    it('commits and publishes after validation', () => {
+    it('commits and pushes validated version before publishing', () => {
         expect(workflow).toContain(
-            'git commit -m "chore(release): v$' + '{VERSION}"',
+            'git commit -m "chore(release): v$' + '{{ env.version }}"',
         );
-        expect(workflow).toContain('pnpm release');
+        expect(workflow).toContain('git push');
     });
 
-    it('creates a git tag', () => {
-        expect(workflow).toContain('git tag');
-        expect(workflow).toContain(
-            'git push origin "v$' + '{{ env.version }}"',
-        );
-    });
-
-    it('creates a GitHub Release via gh', () => {
-        expect(workflow).toContain('gh release create');
-        expect(workflow).toContain('--prerelease');
+    it('uses changesets/action/publish@v2 for publish, tags and GitHub Release', () => {
+        expect(workflow).toContain('changesets/action/publish@v2');
+        expect(workflow).toContain('create-github-releases: true');
+        expect(workflow).toContain('push-git-tags: true');
+        expect(workflow).toContain('script: pnpm release');
     });
 
     it('creates a PR to main using RELEASE_TOKEN', () => {

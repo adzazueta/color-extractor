@@ -8,7 +8,7 @@ on:
         required: true
         type: string
       release_type:
-        description: 'Type of release — prerelease publishes to next, stable exits prerelease and publishes to latest'
+        description: 'prerelease or stable'
         required: true
         type: choice
         default: prerelease
@@ -27,25 +27,24 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Validate branch name
+        env:
+          RELEASE_BRANCH: ${{ inputs.release_branch }}
         run: |
-          BRANCH="${{ inputs.release_branch }}"
-          if ! echo "${BRANCH}" | grep -qE '^release/[0-9]+\.[0-9]+$'; then
+          if ! printf '%s' "$RELEASE_BRANCH" | grep -qE '^release/[0-9]+\.[0-9]+$'; then
             echo "error: branch name must match release/X.Y (e.g. release/0.3)"
             exit 1
           fi
-          echo "branch=${BRANCH}" >> $GITHUB_ENV
 
       - uses: actions/checkout@v4
         with:
-          ref: ${{ env.branch }}
+          ref: ${{ inputs.release_branch }}
           fetch-depth: 0
 
       - name: Validate branch is based on main
         run: |
-          git fetch origin main
+          git fetch origin main:refs/remotes/origin/main
           if ! git merge-base --is-ancestor origin/main HEAD; then
             echo "error: release branch must contain the current state of main"
-            echo "  Run: git merge origin/main"
             exit 1
           fi
 
@@ -60,127 +59,62 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      - name: Exit prerelease mode (stable only)
-        if: ${{ inputs.release_type == 'stable' }}
-        run: |
-          if [ -f .changeset/pre.json ]; then
-            pnpm changeset pre exit
-          else
-            echo "No pre.json found — skipping pre exit"
-          fi
-
       - name: Prepare release version
-        run: pnpm release:prepare
-
-      - name: Validate version suffix
         run: |
+          if [ '${{ inputs.release_type }}' = 'prerelease' ]; then
+            MODE=$(node -e "const fs = require('node:fs'); console.log(fs.existsSync('.changeset/pre.json') ? JSON.parse(fs.readFileSync('.changeset/pre.json', 'utf8')).mode : 'none')")
+            if [ "$MODE" = 'none' ]; then
+              pnpm changeset pre enter next
+            elif [ "$MODE" != 'pre' ]; then
+              echo "error: complete the pending prerelease exit before starting a new prerelease"
+              exit 1
+            fi
+          fi
+          if [ '${{ inputs.release_type }}' = 'stable' ] && [ -f .changeset/pre.json ]; then
+            pnpm changeset pre exit
+          fi
+          pnpm release:prepare
           VERSION=$(node -p "require('./package.json').version")
-          if [ "${{ inputs.release_type }}" = "prerelease" ]; then
+          if [ '${{ inputs.release_type }}' = 'prerelease' ]; then
             if ! echo "${VERSION}" | grep -qE '\-next\.'; then
               echo "error: prerelease version must contain -next.x suffix, got ${VERSION}"
               exit 1
             fi
-            echo "version=${VERSION}" >> $GITHUB_ENV
           else
             if echo "${VERSION}" | grep -q '\-'; then
               echo "error: stable version must not contain prerelease suffix, got ${VERSION}"
               exit 1
             fi
-            echo "version=${VERSION}" >> $GITHUB_ENV
           fi
+          echo "version=${VERSION}" >> $GITHUB_ENV
 
       - name: Run release checks
         run: pnpm release:check
 
-      - name: Check npm for existing version
-        env:
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: |
-          echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > ~/.npmrc
-          VERSION=$(node -p "require('./package.json').version")
-          if npm view "@adzazueta/color-extractor@${VERSION}" version &>/dev/null; then
-            echo "Version ${VERSION} already published — skipping publish"
-            echo "skip_publish=true" >> $GITHUB_ENV
-          else
-            echo "skip_publish=false" >> $GITHUB_ENV
-          fi
-
-      - name: Commit validated release state
+      - name: Commit and push validated version
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
-          VERSION=$(node -p "require('./package.json').version")
-          if git diff --cached --quiet; then
-            echo "Nothing to commit — version unchanged"
-            echo "skip_commit=true" >> $GITHUB_ENV
-          else
-            git commit -m "chore(release): v${VERSION}"
-            echo "skip_commit=false" >> $GITHUB_ENV
-          fi
+          git commit -m "chore(release): v${{ env.version }}"
+          git push
 
-      - name: Push to release branch
-        if: ${{ env.skip_commit == 'false' }}
-        run: git push
-
-      - name: Publish to npm
-        if: ${{ env.skip_publish == 'false' }}
-        run: pnpm release
+      - name: Publish, tag, and create GitHub Release
+        uses: changesets/action/publish@v2
+        with:
+          github-token: ${{ secrets.RELEASE_TOKEN }}
+          script: pnpm release
+          create-github-releases: true
+          push-git-tags: true
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-
-      - name: Check if tag already exists
-        id: check_tag
-        run: |
-          TAG="v${{ env.version }}"
-          if git fetch origin "refs/tags/${TAG}" 2>/dev/null; then
-            echo "Tag ${TAG} already exists"
-            EXISTING_SHA=$(git rev-parse "refs/tags/${TAG}")
-            EXPECTED_SHA=$(git rev-parse HEAD)
-            if [ "${EXISTING_SHA}" != "${EXPECTED_SHA}" ]; then
-              echo "error: tag ${TAG} points to ${EXISTING_SHA}, expected ${EXPECTED_SHA}"
-              exit 1
-            fi
-            echo "skip_tag=true" >> $GITHUB_ENV
-          else
-            echo "skip_tag=false" >> $GITHUB_ENV
-          fi
-
-      - name: Create git tag
-        if: ${{ env.skip_tag == 'false' }}
-        run: |
-          git tag "v${{ env.version }}"
-          git push origin "v${{ env.version }}"
-
-      - name: Create GitHub Release
-        env:
-          GH_TOKEN: ${{ secrets.RELEASE_TOKEN }}
-        run: |
-          TAG="v${{ env.version }}"
-          if gh release view "${TAG}" --json tagName --jq .tagName &>/dev/null; then
-            echo "GitHub Release ${TAG} already exists"
-          else
-            PRERELEASE_FLAG=""
-            if [ "${{ inputs.release_type }}" = "prerelease" ]; then
-              PRERELEASE_FLAG="--prerelease"
-            fi
-            gh release create "${TAG}" \
-              --title "${TAG}" \
-              ${PRERELEASE_FLAG} \
-              --notes "See [CHANGELOG.md](./CHANGELOG.md) for details."
-          fi
 
       - name: Create PR to main
         env:
           GH_TOKEN: ${{ secrets.RELEASE_TOKEN }}
         run: |
-          BRANCH="${{ inputs.release_branch }}"
-          if gh pr list --base main --head "${BRANCH}" --state open --json number --jq 'length > 0' | grep -qx true; then
-            echo "PR already exists"
-            exit 0
-          fi
           gh pr create \
             --base main \
-            --head "${BRANCH}" \
+            --head "${{ inputs.release_branch }}" \
             --title "chore: release v${{ env.version }}" \
-            --body "Validated release v${{ env.version }}. Merge with merge commit to publish stable."
+            --body "Published and tagged release v${{ env.version }}. Merge with a merge commit to synchronize release metadata into main."

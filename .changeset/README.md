@@ -19,7 +19,7 @@ Select the semver bump type and write a summary. Commit the generated `.md` file
 3. From the GitHub Actions UI, run the **Release** workflow manually:
    - Select `main` as the branch.
    - Enter the release branch name (e.g. `release/0.3`).
-   - Choose `prerelease` or `stable`.
+    - Choose `prerelease` or `stable`; selecting `prerelease` initializes the `next` Changesets channel when needed.
 4. The workflow:
    - Validates branch name and ancestry.
    - Consumes pending changesets with `pnpm changeset version`.
