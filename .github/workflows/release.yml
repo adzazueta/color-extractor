@@ -1,12 +1,22 @@
 name: Release
 
 on:
-  pull_request:
-    types: [closed]
-    branches:
-      - 'release/**'
+  workflow_dispatch:
+    inputs:
+      release_branch:
+        description: 'Branch to release from (e.g. release/0.3)'
+        required: true
+        type: string
+      release_type:
+        description: 'prerelease or stable'
+        required: true
+        type: choice
+        default: prerelease
+        options:
+          - prerelease
+          - stable
 
-concurrency: ${{ github.workflow }}-${{ github.event.pull_request.base.ref }}
+concurrency: release-${{ inputs.release_branch }}
 
 permissions:
   contents: write
@@ -14,20 +24,35 @@ permissions:
 
 jobs:
   release:
-    if: github.event.pull_request.merged == true && github.event.pull_request.head.ref == 'develop'
     runs-on: ubuntu-latest
     steps:
+      - name: Validate branch name
+        env:
+          RELEASE_BRANCH: ${{ inputs.release_branch }}
+        run: |
+          if ! printf '%s' "$RELEASE_BRANCH" | grep -qE '^release/[0-9]+\.[0-9]+$'; then
+            echo "error: branch name must match release/X.Y (e.g. release/0.3)"
+            exit 1
+          fi
+
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.pull_request.base.ref }}
+          ref: ${{ inputs.release_branch }}
           fetch-depth: 0
+
+      - name: Validate branch is based on main
+        run: |
+          git fetch origin main:refs/remotes/origin/main
+          if ! git merge-base --is-ancestor origin/main HEAD; then
+            echo "error: release branch must contain the current state of main"
+            exit 1
+          fi
 
       - uses: pnpm/action-setup@v4
         with:
           version: 10.7.0
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 22.12.0
           cache: pnpm
@@ -35,65 +60,61 @@ jobs:
       - run: pnpm install --frozen-lockfile
 
       - name: Prepare release version
-        run: pnpm release:prepare
+        run: |
+          if [ '${{ inputs.release_type }}' = 'prerelease' ]; then
+            MODE=$(node -e "const fs = require('node:fs'); console.log(fs.existsSync('.changeset/pre.json') ? JSON.parse(fs.readFileSync('.changeset/pre.json', 'utf8')).mode : 'none')")
+            if [ "$MODE" = 'none' ]; then
+              pnpm changeset pre enter next
+            elif [ "$MODE" != 'pre' ]; then
+              echo "error: complete the pending prerelease exit before starting a new prerelease"
+              exit 1
+            fi
+          fi
+          if [ '${{ inputs.release_type }}' = 'stable' ] && [ -f .changeset/pre.json ]; then
+            pnpm changeset pre exit
+          fi
+          pnpm release:prepare
+          VERSION=$(node -p "require('./package.json').version")
+          if [ '${{ inputs.release_type }}' = 'prerelease' ]; then
+            if ! echo "${VERSION}" | grep -qE '\-next\.'; then
+              echo "error: prerelease version must contain -next.x suffix, got ${VERSION}"
+              exit 1
+            fi
+          else
+            if echo "${VERSION}" | grep -q '\-'; then
+              echo "error: stable version must not contain prerelease suffix, got ${VERSION}"
+              exit 1
+            fi
+          fi
+          echo "version=${VERSION}" >> $GITHUB_ENV
 
       - name: Run release checks
         run: pnpm release:check
 
-      - name: Check if version already exists on npm
-        env:
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: |
-          echo "//registry.npmjs.org/:_authToken=${NPM_TOKEN}" > ~/.npmrc
-          VERSION=$(node -p "require('./package.json').version")
-          if npm view "@adzazueta/color-extractor@${VERSION}" version &>/dev/null; then
-            echo "Version ${VERSION} already published — skipping"
-            exit 1
-          fi
-
-      - name: Commit validated release state
+      - name: Commit and push validated version
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -A
-          VERSION=$(node -p "require('./package.json').version")
-          git commit -m "chore: release v${VERSION} [skip ci]"
+          git commit -m "chore(release): v${{ env.version }}"
+          git push
 
-      - name: Push to release branch
-        run: git push
-
-      - name: Publish to npm
-        run: pnpm release
+      - name: Publish, tag, and create GitHub Release
+        uses: changesets/action/publish@v2
+        with:
+          github-token: ${{ secrets.RELEASE_TOKEN }}
+          script: pnpm release
+          create-github-releases: true
+          push-git-tags: true
         env:
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
-
-      - name: Create git tag
-        run: |
-          VERSION=$(node -p "require('./package.json').version")
-          git tag "v${VERSION}"
-          git push origin "v${VERSION}"
-
-      - name: Create GitHub Release
-        env:
-          GH_TOKEN: ${{ secrets.RELEASE_TOKEN }}
-        run: |
-          VERSION=$(node -p "require('./package.json').version")
-          gh release create "v${VERSION}" \
-            --title "v${VERSION}" \
-            --notes "See [CHANGELOG.md](./CHANGELOG.md) for details."
 
       - name: Create PR to main
         env:
           GH_TOKEN: ${{ secrets.RELEASE_TOKEN }}
         run: |
-          BRANCH="${{ github.event.pull_request.base.ref }}"
-          if gh pr list --base main --head "${BRANCH}" --state open --json number --jq 'length > 0' | grep -qx true; then
-            echo "PR already exists"
-            exit 0
-          fi
-          VERSION=$(node -p "require('./package.json').version")
           gh pr create \
             --base main \
-            --head "${BRANCH}" \
-            --title "chore: release v${VERSION}" \
-            --body "Validated release v${VERSION}. Merge to publish stable."
+            --head "${{ inputs.release_branch }}" \
+            --title "chore: release v${{ env.version }}" \
+            --body "Published and tagged release v${{ env.version }}. Merge with a merge commit to synchronize release metadata into main."

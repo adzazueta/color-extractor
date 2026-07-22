@@ -75,7 +75,7 @@
         "changeset": "changeset",
         "release": "changeset publish",
         "release:prepare": "pnpm changeset version && pnpm sync-version",
-        "release:check": "pnpm lint && pnpm typecheck && pnpm build && pnpm test && pnpm test:smoke && pnpm verify-fixtures",
+        "release:check": "pnpm check-version && pnpm lint && pnpm typecheck && pnpm build && pnpm test && pnpm test:smoke && pnpm verify-fixtures",
         "sync-version": "node scripts/sync-version.mjs",
         "check-version": "pnpm sync-version && git diff --quiet src/generated/version.ts || (echo 'error: src/generated/version.ts is out of sync — run pnpm sync-version and commit the result'; exit 1)",
         "test": "vitest run",
