@@ -1,6 +1,7 @@
 import { labSquaredDistance, labToXyz } from '../../color/lab.js';
 import { linearToSrgbByte } from '../../color/srgb.js';
 import { xyzToLinearRgb } from '../../color/xyz.js';
+import { ColorExtractorError } from '../../errors.js';
 import type { LabColor, RgbColor } from '../../palette-types.js';
 import { assignToClusters } from './assign.js';
 import { initializeCentroids } from './initialize.js';
@@ -25,7 +26,15 @@ function centroidToRgb(lab: LabColor): RgbColor {
 export function kmeans(
     samples: LabSample[],
     options: { clusters: number; iterations: number },
+    signal?: AbortSignal,
 ): KMeansResult {
+    if (signal?.aborted) {
+        throw new ColorExtractorError(
+            'COLOR_EXTRACTOR_ABORTED',
+            'The operation was aborted.',
+            { cause: signal.reason },
+        );
+    }
     if (!Number.isInteger(options.clusters) || options.clusters <= 0) {
         throw new RangeError(
             `clusters must be a positive integer, got ${options.clusters}`,
@@ -48,6 +57,13 @@ export function kmeans(
     let assignments = assignToClusters(samples, centroids);
 
     for (let i = 0; i < options.iterations; i++) {
+        if (signal?.aborted) {
+            throw new ColorExtractorError(
+                'COLOR_EXTRACTOR_ABORTED',
+                'The operation was aborted.',
+                { cause: signal.reason },
+            );
+        }
         centroids = recomputeCentroids(
             samples,
             assignments,
