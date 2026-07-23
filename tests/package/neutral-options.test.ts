@@ -305,3 +305,35 @@ describe('dist output type isolation', () => {
         expect(core).not.toMatch(/\bImageData\b/);
     });
 });
+
+describe('null option value validation', () => {
+    it('rejects null values for numeric and boolean options', async () => {
+        const { resolveNeutralOptions } = await import(
+            '../../src/core/neutral-options.js'
+        );
+        const { ColorExtractorError } = await import(
+            '../../src/core/errors.js'
+        );
+
+        expect(() =>
+            resolveNeutralOptions(
+                { result: { maxColors: null as unknown as number } },
+                'core',
+            ),
+        ).toThrowError(ColorExtractorError);
+
+        expect(() =>
+            resolveNeutralOptions(
+                { result: { includeHsl: null as unknown as boolean } },
+                'core',
+            ),
+        ).toThrowError(ColorExtractorError);
+
+        expect(() =>
+            resolveNeutralOptions(
+                { sampling: { maxDimension: null as unknown as number } },
+                'core',
+            ),
+        ).toThrowError(ColorExtractorError);
+    });
+});

@@ -88,6 +88,7 @@
         "benchmark:run": "tsx scripts/benchmark.mjs run",
         "benchmark:baseline": "tsx scripts/benchmark.mjs baseline",
         "benchmark:compare": "tsx scripts/benchmark.mjs compare",
+        "benchmark:report": "tsx scripts/benchmark.mjs report",
         "typecheck": "tsc --noEmit",
         "prepublishOnly": "pnpm release:check",
         "lint": "biome check .",

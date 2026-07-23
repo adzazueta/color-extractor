@@ -471,6 +471,7 @@ describe('normalizePalette — metadata', () => {
             options: BASE_OPTIONS,
         });
         expect(result.metadata.algorithmDetails).toEqual({
+            algorithm: 'lab-kmeans',
             requestedClusters: 8,
             producedCandidates: 3,
             iterations: 5,
@@ -767,5 +768,50 @@ describe('normalizePalette — forbidden fields', () => {
         expect(serialized).not.toContain('role');
         expect(serialized).not.toContain('fallback');
         expect(serialized).not.toContain('sourceIndex');
+    });
+});
+
+describe('normalizePalette — MMCQ integration & equivalence', () => {
+    it('normalizes MMCQ algorithm candidate results with identical swatch and ranking contracts', () => {
+        const mmcqResult = normalizePalette({
+            candidateResult: {
+                algorithm: 'mmcq',
+                algorithmVersion: 'mmcq-v2',
+                candidates: [
+                    cand(200, 100, 50, 50, 30, 20, 600, 0),
+                    cand(50, 200, 100, 60, -20, 30, 400, 1),
+                ],
+                diagnostics: {
+                    requestedBoxes: 8,
+                    producedCandidates: 2,
+                    histogramBits: 5,
+                    occupiedBins: 2,
+                    splits: 1,
+                },
+            },
+            ...BASE_META,
+            options: {
+                ...BASE_OPTIONS,
+                algorithm: 'mmcq',
+            },
+        });
+
+        expect(mmcqResult.metadata.algorithm).toBe('mmcq');
+        expect(mmcqResult.metadata.algorithmVersion).toBe('mmcq-v2');
+        expect(mmcqResult.metadata.algorithmDetails).toEqual({
+            algorithm: 'mmcq',
+            requestedBoxes: 8,
+            producedCandidates: 2,
+            histogramBits: 5,
+            occupiedBins: 2,
+            splits: 1,
+        });
+        expect(mmcqResult.swatches).toHaveLength(2);
+        expect(mmcqResult.swatches.map((s) => s.hex)).toEqual([
+            '#32c864',
+            '#c86432',
+        ]);
+        expect(mmcqResult.metadata.returnedPopulation).toBe(1000);
+        expect(mmcqResult.metadata.coverage).toBe(1);
     });
 });

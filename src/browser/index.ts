@@ -424,6 +424,7 @@ export async function extractPaletteFromImageData(
     };
 }
 
+export { DEFAULT_NEUTRAL_OPTIONS } from '../core/neutral-options.js';
 export type { DecodedPixels } from './decode.js';
 export {
     decodeFileOrBlob,

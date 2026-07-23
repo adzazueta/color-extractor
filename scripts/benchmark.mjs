@@ -39,9 +39,16 @@ async function handleCorpus() {
     console.log(`  ${manifestPath}`);
 }
 
-async function handleRun(isSmoke = false, isBaseline = false) {
+async function handleRun(
+    isSmoke = false,
+    isBaseline = false,
+    algo = undefined,
+) {
     const mode = isSmoke ? 'smoke' : isBaseline ? 'baseline' : 'full';
-    console.log(`Running algorithm benchmark suite (${mode} mode)...`);
+    const algoName = algo || 'lab-kmeans';
+    console.log(
+        `Running algorithm benchmark suite (${mode} mode, algorithm: ${algoName})...`,
+    );
 
     const { generateCorpus, runBenchmarkSuite } = await loadHarness();
     const corpus = generateCorpus();
@@ -49,15 +56,15 @@ async function handleRun(isSmoke = false, isBaseline = false) {
     const runnerOptions = {
         warmupRuns: 10,
         measuredRuns: isSmoke ? 10 : 50,
+        options: algo ? { algorithm: algo } : {},
     };
 
     const report = await runBenchmarkSuite(corpus, runnerOptions);
 
     if (isBaseline) {
-        const baselinePath = resolve(
-            rootDir,
-            'benchmarks/baselines/lab-kmeans-v0.2.json',
-        );
+        const filename =
+            algo === 'mmcq' ? 'mmcq-v2.json' : 'lab-kmeans-v0.2.json';
+        const baselinePath = resolve(rootDir, 'benchmarks/baselines', filename);
         mkdirSync(dirname(baselinePath), { recursive: true });
         writeFileSync(baselinePath, JSON.stringify(report, null, 4), 'utf8');
         console.log(`✓ Checked-in baseline written to ${baselinePath}`);
@@ -65,8 +72,14 @@ async function handleRun(isSmoke = false, isBaseline = false) {
         const reportsDir = resolve(rootDir, 'benchmarks/reports');
         mkdirSync(reportsDir, { recursive: true });
         const timeStr = new Date().toISOString().replace(/[:.]/g, '-');
-        const reportPath = resolve(reportsDir, `report-${timeStr}.json`);
-        const latestPath = resolve(reportsDir, 'latest.json');
+        const reportPath = resolve(
+            reportsDir,
+            `report-${algoName}-${timeStr}.json`,
+        );
+        const latestPath = resolve(
+            reportsDir,
+            algo === 'mmcq' ? 'latest-mmcq.json' : 'latest.json',
+        );
         const reportJson = JSON.stringify(report, null, 2);
         writeFileSync(reportPath, reportJson, 'utf8');
         writeFileSync(latestPath, reportJson, 'utf8');
@@ -298,29 +311,180 @@ function handleCompare(reportPathArg, baselinePathArg) {
     }
 }
 
+async function handleReport() {
+    console.log(
+        'Generating comparative benchmark report: Lab K-means vs MMCQ...',
+    );
+    const { generateCorpus, runBenchmarkSuite } = await loadHarness();
+    const corpus = generateCorpus();
+
+    const runnerOptions = {
+        warmupRuns: 10,
+        measuredRuns: 50,
+    };
+
+    console.log('Running Lab K-means benchmark suite...');
+    const labKmeansReport = await runBenchmarkSuite(corpus, {
+        ...runnerOptions,
+        options: { algorithm: 'lab-kmeans' },
+    });
+
+    console.log('Running MMCQ benchmark suite...');
+    const mmcqReport = await runBenchmarkSuite(corpus, {
+        ...runnerOptions,
+        options: { algorithm: 'mmcq' },
+    });
+
+    const labMeanCoverage =
+        labKmeansReport.results.reduce(
+            (s, r) => s + (r.quality.coverage || 0),
+            0,
+        ) / labKmeansReport.results.length;
+    const mmcqMeanCoverage =
+        mmcqReport.results.reduce((s, r) => s + (r.quality.coverage || 0), 0) /
+        mmcqReport.results.length;
+
+    const comparativeReport = {
+        title: 'Lab K-means vs MMCQ Comparative Report (0.3)',
+        timestamp: new Date().toISOString(),
+        corpusChecksum: labKmeansReport.corpusChecksum,
+        runnerOptions: labKmeansReport.runnerOptions,
+        algorithms: {
+            'lab-kmeans': {
+                version: labKmeansReport.algorithmVersion,
+                medianMsAggregate: labKmeansReport.summary.medianMsAggregate,
+                p95MsAggregate: labKmeansReport.summary.p95MsAggregate,
+                reconstructionMeanAggregate:
+                    labKmeansReport.summary.reconstructionMeanAggregate,
+                populationFidelity: {
+                    meanCoverage: labMeanCoverage,
+                    totalValidPixels: labKmeansReport.results.reduce(
+                        (s, r) => s + r.validPixels,
+                        0,
+                    ),
+                    meanEntropy:
+                        labKmeansReport.results.reduce(
+                            (s, r) => s + r.quality.entropy,
+                            0,
+                        ) / labKmeansReport.results.length,
+                },
+                determinismAll: labKmeansReport.summary.determinismAll,
+            },
+            mmcq: {
+                version: mmcqReport.algorithmVersion,
+                medianMsAggregate: mmcqReport.summary.medianMsAggregate,
+                p95MsAggregate: mmcqReport.summary.p95MsAggregate,
+                reconstructionMeanAggregate:
+                    mmcqReport.summary.reconstructionMeanAggregate,
+                populationFidelity: {
+                    meanCoverage: mmcqMeanCoverage,
+                    totalValidPixels: mmcqReport.results.reduce(
+                        (s, r) => s + r.validPixels,
+                        0,
+                    ),
+                    meanEntropy:
+                        mmcqReport.results.reduce(
+                            (s, r) => s + r.quality.entropy,
+                            0,
+                        ) / mmcqReport.results.length,
+                },
+                determinismAll: mmcqReport.summary.determinismAll,
+            },
+        },
+        fixtures: corpus.map((fixture) => {
+            const labRes = labKmeansReport.results.find(
+                (r) => r.fixtureId === fixture.manifest.id,
+            );
+            const mmcqRes = mmcqReport.results.find(
+                (r) => r.fixtureId === fixture.manifest.id,
+            );
+
+            return {
+                fixtureId: fixture.manifest.id,
+                category: fixture.manifest.category,
+                labKmeans: {
+                    medianMs: labRes?.timing.medianMs,
+                    reconstructionMean: labRes?.quality.reconstructionMean,
+                    candidates: labRes?.candidateCount,
+                    returnedColors: labRes?.returnedColors,
+                    populationFidelity: {
+                        coverage: labRes?.quality.coverage,
+                        validPixels: labRes?.validPixels,
+                        entropy: labRes?.quality.entropy,
+                        maxProportion: labRes?.quality.maxProportion,
+                    },
+                },
+                mmcq: {
+                    medianMs: mmcqRes?.timing.medianMs,
+                    reconstructionMean: mmcqRes?.quality.reconstructionMean,
+                    candidates: mmcqRes?.candidateCount,
+                    returnedColors: mmcqRes?.returnedColors,
+                    populationFidelity: {
+                        coverage: mmcqRes?.quality.coverage,
+                        validPixels: mmcqRes?.validPixels,
+                        entropy: mmcqRes?.quality.entropy,
+                        maxProportion: mmcqRes?.quality.maxProportion,
+                    },
+                },
+            };
+        }),
+    };
+
+    const reportsDir = resolve(rootDir, 'benchmarks/reports');
+    mkdirSync(reportsDir, { recursive: true });
+    const reportPath = resolve(reportsDir, 'lab-kmeans-vs-mmcq.json');
+    writeFileSync(
+        reportPath,
+        JSON.stringify(comparativeReport, null, 4),
+        'utf8',
+    );
+
+    console.log('\n--- Comparative Benchmark Summary ---');
+    console.log(
+        `Corpus Checksum:              ${comparativeReport.corpusChecksum}`,
+    );
+    console.log(
+        `Lab K-means Median Runtime:   ${labKmeansReport.summary.medianMsAggregate.toFixed(3)} ms`,
+    );
+    console.log(
+        `MMCQ Median Runtime:          ${mmcqReport.summary.medianMsAggregate.toFixed(3)} ms`,
+    );
+    console.log(
+        `Lab K-means Reconstruction:   ${labKmeansReport.summary.reconstructionMeanAggregate.toFixed(3)} Lab`,
+    );
+    console.log(
+        `MMCQ Reconstruction:          ${mmcqReport.summary.reconstructionMeanAggregate.toFixed(3)} Lab`,
+    );
+    console.log(`\n✓ Comparative report written to ${reportPath}`);
+}
+
 async function main() {
     const command = process.argv[2] || 'run';
+    const algoArg = process.argv[3];
 
     switch (command) {
         case 'corpus':
             await handleCorpus();
             break;
         case 'smoke':
-            await handleRun(true, false);
+            await handleRun(true, false, algoArg);
             break;
         case 'run':
-            await handleRun(false, false);
+            await handleRun(false, false, algoArg);
             break;
         case 'baseline':
-            await handleRun(false, true);
+            await handleRun(false, true, algoArg);
             break;
         case 'compare':
             handleCompare(process.argv[3], process.argv[4]);
             break;
+        case 'report':
+            await handleReport();
+            break;
         default:
             console.error(`Unknown benchmark command: ${command}`);
             console.log(
-                'Usage: node scripts/benchmark.mjs [corpus|smoke|run|baseline|compare]',
+                'Usage: node scripts/benchmark.mjs [corpus|smoke|run|baseline|compare|report]',
             );
             process.exit(1);
     }

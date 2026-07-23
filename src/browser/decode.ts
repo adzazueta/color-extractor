@@ -523,6 +523,7 @@ export async function decodeRemoteUrl(
         }
 
         if (!response.ok) {
+            response.body?.cancel().catch(() => {});
             throw new ColorExtractorError(
                 'COLOR_EXTRACTOR_FETCH_FAILED',
                 `Remote fetch to ${url} failed with status ${response.status}.`,

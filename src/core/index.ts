@@ -34,6 +34,7 @@ export {
     passesFilter,
     validateFilterCriteria,
 } from './filter.js';
+
 export type {
     AdvancedExtractionOptions,
     BaseExtractPaletteOptions,
@@ -52,7 +53,11 @@ export type {
     ResolvedNodeExtractPaletteOptions,
     SamplingOptions,
 } from './neutral-options.js';
-export { resolveNeutralOptions } from './neutral-options.js';
+export {
+    DEFAULT_NEUTRAL_OPTIONS,
+    resolveNeutralOptions,
+} from './neutral-options.js';
+
 export type {
     AnimatedHandling,
     DecodeOptions,

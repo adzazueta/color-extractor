@@ -835,12 +835,13 @@ describe('decodeRemoteUrl (ADZ-50)', () => {
         ).rejects.toThrow(ColorExtractorError);
     });
 
-    it('throws on non-2xx status', async () => {
+    it('throws on non-2xx status and cancels response body', async () => {
+        const cancelSpy = vi.fn().mockResolvedValue(undefined);
         const mockResponse = {
             ok: false,
             status: 404,
             headers: { get: vi.fn().mockReturnValue(null) },
-            body: null,
+            body: { cancel: cancelSpy },
             blob: vi.fn(),
         };
         stubAbortableFetch(mockResponse);
@@ -854,6 +855,32 @@ describe('decodeRemoteUrl (ADZ-50)', () => {
                 MAX_BYTES,
             ),
         ).rejects.toThrow(ColorExtractorError);
+
+        expect(cancelSpy).toHaveBeenCalled();
+    });
+
+    it('cancels response body on 5xx server error', async () => {
+        const cancelSpy = vi.fn().mockResolvedValue(undefined);
+        const mockResponse = {
+            ok: false,
+            status: 500,
+            headers: { get: vi.fn().mockReturnValue(null) },
+            body: { cancel: cancelSpy },
+            blob: vi.fn(),
+        };
+        stubAbortableFetch(mockResponse);
+
+        await expect(
+            decodeRemoteUrl(
+                'https://example.com/image.png',
+                150,
+                MAX_PIXELS,
+                TIMEOUT_MS,
+                MAX_BYTES,
+            ),
+        ).rejects.toThrow(ColorExtractorError);
+
+        expect(cancelSpy).toHaveBeenCalled();
     });
 
     it('throws on Content-Length exceeding maxBytes', async () => {

@@ -124,6 +124,7 @@ export type {
 } from './core/index.js';
 export {
     ColorExtractorError,
+    DEFAULT_NEUTRAL_OPTIONS,
     DEFAULT_OPTIONS,
     type ResolvedOptions,
     resolveOptions,

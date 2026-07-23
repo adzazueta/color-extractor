@@ -1,0 +1,500 @@
+{
+    "suite": "core",
+    "environment": {
+        "nodeVersion": "v24.16.0",
+        "os": "Linux x64 6.6.114.1-microsoft-standard-WSL2",
+        "cpu": "AMD Ryzen 7 5800X 8-Core Processor",
+        "cores": 16,
+        "timestamp": "2026-07-23T20:03:30.944Z",
+        "packageVersion": "0.2.0-next.0",
+        "gitCommit": "9cb558c"
+    },
+    "algorithm": "mmcq",
+    "algorithmVersion": "mmcq-v2",
+    "options": {
+        "algorithm": "mmcq"
+    },
+    "runnerOptions": {
+        "warmupRuns": 10,
+        "measuredRuns": 50
+    },
+    "corpusChecksum": "1015577a260032d3",
+    "summary": {
+        "totalFixtures": 12,
+        "medianMsAggregate": 2.466000166666685,
+        "p95MsAggregate": 3.791330362500006,
+        "reconstructionMeanAggregate": 5.225380075358973,
+        "diversityMeanAggregate": 78.17238749872207,
+        "determinismAll": true
+    },
+    "results": [
+        {
+            "fixtureId": "synthetic-single",
+            "category": "synthetic single color",
+            "width": 100,
+            "height": 100,
+            "validPixels": 10000,
+            "algorithm": "mmcq",
+            "algorithmVersion": "mmcq-v2",
+            "timing": {
+                "minMs": 1.6022350000000074,
+                "medianMs": 1.7130355000000037,
+                "p95Ms": 3.626893049999998,
+                "maxMs": 5.619721999999996,
+                "meanMs": 2.0260720800000023,
+                "cv": 0.3943381000670421,
+                "warmupRuns": 10,
+                "measuredRuns": 50
+            },
+            "quality": {
+                "reconstructionMean": 0,
+                "reconstructionP95": 0,
+                "diversityMin": null,
+                "diversityMean": null,
+                "coverage": 1,
+                "maxProportion": 1,
+                "entropy": 0,
+                "determinism": true
+            },
+            "candidateCount": 1,
+            "returnedColors": 1,
+            "algorithmDetails": {
+                "algorithm": "mmcq",
+                "requestedBoxes": 8,
+                "producedCandidates": 1,
+                "histogramBits": 5,
+                "occupiedBins": 1,
+                "splits": 0
+            }
+        },
+        {
+            "fixtureId": "synthetic-blocks",
+            "category": "synthetic two/three-color blocks",
+            "width": 120,
+            "height": 120,
+            "validPixels": 14400,
+            "algorithm": "mmcq",
+            "algorithmVersion": "mmcq-v2",
+            "timing": {
+                "minMs": 2.2958169999999996,
+                "medianMs": 2.5735990000000015,
+                "p95Ms": 5.575756249999994,
+                "maxMs": 7.026825000000031,
+                "meanMs": 3.1020995200000026,
+                "cv": 0.3573225239116976,
+                "warmupRuns": 10,
+                "measuredRuns": 50
+            },
+            "quality": {
+                "reconstructionMean": 0,
+                "reconstructionP95": 0,
+                "diversityMin": 114.26689300319725,
+                "diversityMean": 135.65663725263653,
+                "coverage": 1,
+                "maxProportion": 0.3333333333333333,
+                "entropy": 1.584962500721156,
+                "determinism": true
+            },
+            "candidateCount": 3,
+            "returnedColors": 3,
+            "algorithmDetails": {
+                "algorithm": "mmcq",
+                "requestedBoxes": 8,
+                "producedCandidates": 3,
+                "histogramBits": 5,
+                "occupiedBins": 3,
+                "splits": 2
+            }
+        },
+        {
+            "fixtureId": "muted-vivid",
+            "category": "muted-majority plus vivid-minority",
+            "width": 150,
+            "height": 150,
+            "validPixels": 22500,
+            "algorithm": "mmcq",
+            "algorithmVersion": "mmcq-v2",
+            "timing": {
+                "minMs": 3.9550879999999893,
+                "medianMs": 4.3895255000000475,
+                "p95Ms": 8.308663000000042,
+                "maxMs": 8.435933999999975,
+                "meanMs": 5.333521600000011,
+                "cv": 0.3071961677163411,
+                "warmupRuns": 10,
+                "measuredRuns": 50
+            },
+            "quality": {
+                "reconstructionMean": 0,
+                "reconstructionP95": 0,
+                "diversityMin": 76.41012634430278,
+                "diversityMean": 76.41012634430278,
+                "coverage": 1,
+                "maxProportion": 0.9391555555555555,
+                "entropy": 0.3307879675796264,
+                "determinism": true
+            },
+            "candidateCount": 2,
+            "returnedColors": 2,
+            "algorithmDetails": {
+                "algorithm": "mmcq",
+                "requestedBoxes": 8,
+                "producedCandidates": 2,
+                "histogramBits": 5,
+                "occupiedBins": 2,
+                "splits": 1
+            }
+        },
+        {
+            "fixtureId": "near-gray",
+            "category": "near-gray/low-chroma",
+            "width": 120,
+            "height": 120,
+            "validPixels": 9600,
+            "algorithm": "mmcq",
+            "algorithmVersion": "mmcq-v2",
+            "timing": {
+                "minMs": 1.9491920000000391,
+                "medianMs": 2.0994460000000004,
+                "p95Ms": 2.4517993500000155,
+                "maxMs": 2.582106000000067,
+                "meanMs": 2.1330309999999963,
+                "cv": 0.062383348641607606,
+                "warmupRuns": 10,
+                "measuredRuns": 50
+            },
+            "quality": {
+                "reconstructionMean": 1.2177293279085761,
+                "reconstructionP95": 2.4354586558173006,
+                "diversityMin": null,
+                "diversityMean": null,
+                "coverage": 1,
+                "maxProportion": 1,
+                "entropy": 0,
+                "determinism": true
+            },
+            "candidateCount": 1,
+            "returnedColors": 1,
+            "algorithmDetails": {
+                "algorithm": "mmcq",
+                "requestedBoxes": 8,
+                "producedCandidates": 1,
+                "histogramBits": 5,
+                "occupiedBins": 1,
+                "splits": 0
+            }
+        },
+        {
+            "fixtureId": "rgb-gradient",
+            "category": "smooth RGB gradients",
+            "width": 150,
+            "height": 150,
+            "validPixels": 18640,
+            "algorithm": "mmcq",
+            "algorithmVersion": "mmcq-v2",
+            "timing": {
+                "minMs": 3.731851000000006,
+                "medianMs": 3.954236000000037,
+                "p95Ms": 5.560463450000064,
+                "maxMs": 6.037507000000005,
+                "meanMs": 4.201569120000008,
+                "cv": 0.134537558492718,
+                "warmupRuns": 10,
+                "measuredRuns": 50
+            },
+            "quality": {
+                "reconstructionMean": 13.137726149084445,
+                "reconstructionP95": 28.96900875803944,
+                "diversityMin": 15.860415842530251,
+                "diversityMean": 53.67647662038307,
+                "coverage": 0.6428111587982832,
+                "maxProportion": 0.21123351694207979,
+                "entropy": 2.3198263376365715,
+                "determinism": true
+            },
+            "candidateCount": 8,
+            "returnedColors": 5,
+            "algorithmDetails": {
+                "algorithm": "mmcq",
+                "requestedBoxes": 8,
+                "producedCandidates": 8,
+                "histogramBits": 5,
+                "occupiedBins": 539,
+                "splits": 7
+            }
+        },
+        {
+            "fixtureId": "photo-vibrant",
+            "category": "high-diversity photographic scenes",
+            "width": 160,
+            "height": 160,
+            "validPixels": 6400,
+            "algorithm": "mmcq",
+            "algorithmVersion": "mmcq-v2",
+            "timing": {
+                "minMs": 1.1347940000000563,
+                "medianMs": 1.326390500000116,
+                "p95Ms": 1.8861751000000706,
+                "maxMs": 3.8909580000001824,
+                "meanMs": 1.4245478800000047,
+                "cv": 0.31416969490098146,
+                "warmupRuns": 10,
+                "measuredRuns": 50
+            },
+            "quality": {
+                "reconstructionMean": 10.751147659835746,
+                "reconstructionP95": 68.80734502294844,
+                "diversityMin": 41.149017798932384,
+                "diversityMean": 115.30893162653277,
+                "coverage": 0.84375,
+                "maxProportion": 0.2222222222222222,
+                "entropy": 2.3184873629704748,
+                "determinism": true
+            },
+            "candidateCount": 6,
+            "returnedColors": 5,
+            "algorithmDetails": {
+                "algorithm": "mmcq",
+                "requestedBoxes": 8,
+                "producedCandidates": 6,
+                "histogramBits": 5,
+                "occupiedBins": 6,
+                "splits": 5
+            }
+        },
+        {
+            "fixtureId": "portrait-skin",
+            "category": "skin/portrait-like scenes",
+            "width": 120,
+            "height": 120,
+            "validPixels": 14400,
+            "algorithm": "mmcq",
+            "algorithmVersion": "mmcq-v2",
+            "timing": {
+                "minMs": 2.5223689999997987,
+                "medianMs": 2.7201165000000174,
+                "p95Ms": 3.452163999999959,
+                "maxMs": 3.623149000000012,
+                "meanMs": 2.7892201799999885,
+                "cv": 0.09837712775167617,
+                "warmupRuns": 10,
+                "measuredRuns": 50
+            },
+            "quality": {
+                "reconstructionMean": 0.25925120227640924,
+                "reconstructionP95": 0.6141344329397873,
+                "diversityMin": 0.9026043239205093,
+                "diversityMean": 23.837406986638896,
+                "coverage": 1,
+                "maxProportion": 0.40229166666666666,
+                "entropy": 1.9163802144496533,
+                "determinism": true
+            },
+            "candidateCount": 5,
+            "returnedColors": 5,
+            "algorithmDetails": {
+                "algorithm": "mmcq",
+                "requestedBoxes": 8,
+                "producedCandidates": 5,
+                "histogramBits": 5,
+                "occupiedBins": 5,
+                "splits": 4
+            }
+        },
+        {
+            "fixtureId": "nature-landscape",
+            "category": "landscape/nature-like scenes",
+            "width": 150,
+            "height": 150,
+            "validPixels": 22500,
+            "algorithm": "mmcq",
+            "algorithmVersion": "mmcq-v2",
+            "timing": {
+                "minMs": 3.7473210000000563,
+                "medianMs": 3.9800394999999753,
+                "p95Ms": 5.6647323000000025,
+                "maxMs": 7.287554999999884,
+                "meanMs": 4.267247019999996,
+                "cv": 0.17139999045813556,
+                "warmupRuns": 10,
+                "measuredRuns": 50
+            },
+            "quality": {
+                "reconstructionMean": 0,
+                "reconstructionP95": 0,
+                "diversityMin": 58.343545453160665,
+                "diversityMean": 71.50516011172736,
+                "coverage": 1,
+                "maxProportion": 0.4,
+                "entropy": 1.5571987281183353,
+                "determinism": true
+            },
+            "candidateCount": 3,
+            "returnedColors": 3,
+            "algorithmDetails": {
+                "algorithm": "mmcq",
+                "requestedBoxes": 8,
+                "producedCandidates": 3,
+                "histogramBits": 5,
+                "occupiedBins": 3,
+                "splits": 2
+            }
+        },
+        {
+            "fixtureId": "graphic-flat",
+            "category": "logos/illustrations with flat colors",
+            "width": 100,
+            "height": 100,
+            "validPixels": 10000,
+            "algorithm": "mmcq",
+            "algorithmVersion": "mmcq-v2",
+            "timing": {
+                "minMs": 1.6707420000000184,
+                "medianMs": 1.869177000000036,
+                "p95Ms": 2.402396249999957,
+                "maxMs": 2.911739000000125,
+                "meanMs": 1.9175838400000067,
+                "cv": 0.12361166119089854,
+                "warmupRuns": 10,
+                "measuredRuns": 50
+            },
+            "quality": {
+                "reconstructionMean": 0,
+                "reconstructionP95": 0,
+                "diversityMin": 62.472529663765606,
+                "diversityMean": 127.33741356944482,
+                "coverage": 1,
+                "maxProportion": 0.25,
+                "entropy": 2,
+                "determinism": true
+            },
+            "candidateCount": 4,
+            "returnedColors": 4,
+            "algorithmDetails": {
+                "algorithm": "mmcq",
+                "requestedBoxes": 8,
+                "producedCandidates": 4,
+                "histogramBits": 5,
+                "occupiedBins": 4,
+                "splits": 3
+            }
+        },
+        {
+            "fixtureId": "transparent-asset",
+            "category": "transparent-background assets",
+            "width": 100,
+            "height": 100,
+            "validPixels": 3853,
+            "algorithm": "mmcq",
+            "algorithmVersion": "mmcq-v2",
+            "timing": {
+                "minMs": 0.7940189999999347,
+                "medianMs": 0.9479659999999512,
+                "p95Ms": 1.0932894499999746,
+                "maxMs": 1.7940860000001067,
+                "meanMs": 0.9731494799999973,
+                "cv": 0.15524638732446555,
+                "warmupRuns": 10,
+                "measuredRuns": 50
+            },
+            "quality": {
+                "reconstructionMean": 0,
+                "reconstructionP95": 0,
+                "diversityMin": null,
+                "diversityMean": null,
+                "coverage": 1,
+                "maxProportion": 1,
+                "entropy": 0,
+                "determinism": true
+            },
+            "candidateCount": 1,
+            "returnedColors": 1,
+            "algorithmDetails": {
+                "algorithm": "mmcq",
+                "requestedBoxes": 8,
+                "producedCandidates": 1,
+                "histogramBits": 5,
+                "occupiedBins": 1,
+                "splits": 0
+            }
+        },
+        {
+            "fixtureId": "small-image",
+            "category": "small images",
+            "width": 16,
+            "height": 16,
+            "validPixels": 249,
+            "algorithm": "mmcq",
+            "algorithmVersion": "mmcq-v2",
+            "timing": {
+                "minMs": 0.1820390000000316,
+                "medianMs": 0.6292770000000019,
+                "p95Ms": 0.8029017499999893,
+                "maxMs": 2.216809000000012,
+                "meanMs": 0.6600218600000062,
+                "cv": 0.44059029727413407,
+                "warmupRuns": 10,
+                "measuredRuns": 50
+            },
+            "quality": {
+                "reconstructionMean": 19.27051202920469,
+                "reconstructionP95": 38.57114149759653,
+                "diversityMin": 10.670380874726138,
+                "diversityMean": 42.505532842494276,
+                "coverage": 0.642570281124498,
+                "maxProportion": 0.2,
+                "entropy": 2.321928094887362,
+                "determinism": true
+            },
+            "candidateCount": 8,
+            "returnedColors": 5,
+            "algorithmDetails": {
+                "algorithm": "mmcq",
+                "requestedBoxes": 8,
+                "producedCandidates": 8,
+                "histogramBits": 5,
+                "occupiedBins": 249,
+                "splits": 7
+            }
+        },
+        {
+            "fixtureId": "max-sample-limit",
+            "category": "images near configured sampling limit",
+            "width": 400,
+            "height": 400,
+            "validPixels": 17244,
+            "algorithm": "mmcq",
+            "algorithmVersion": "mmcq-v2",
+            "timing": {
+                "minMs": 3.2390439999999217,
+                "medianMs": 3.389193500000033,
+                "p95Ms": 4.670730400000002,
+                "maxMs": 5.0813459999999395,
+                "meanMs": 3.5802100200000133,
+                "cv": 0.1255024995942253,
+                "warmupRuns": 10,
+                "measuredRuns": 50
+            },
+            "quality": {
+                "reconstructionMean": 18.0681945359978,
+                "reconstructionP95": 36.377377429605204,
+                "diversityMin": 10.258432573299674,
+                "diversityMean": 57.31380213433822,
+                "coverage": 0.6419624217118998,
+                "maxProportion": 0.24209575429087624,
+                "entropy": 2.293492962802162,
+                "determinism": true
+            },
+            "candidateCount": 8,
+            "returnedColors": 5,
+            "algorithmDetails": {
+                "algorithm": "mmcq",
+                "requestedBoxes": 8,
+                "producedCandidates": 8,
+                "histogramBits": 5,
+                "occupiedBins": 431,
+                "splits": 7
+            }
+        }
+    ]
+}

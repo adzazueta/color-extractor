@@ -1,0 +1,367 @@
+import { describe, expect, it } from 'vitest';
+import type { ExtractionSampleSet } from '../../src/core/algorithms/contract.js';
+import { mmcqAlgorithm } from '../../src/core/algorithms/mmcq/algorithm.js';
+import { ColorExtractorError } from '../../src/core/errors.js';
+import type { RGB } from '../../src/core/types.js';
+
+function createSampleSet(colors: RGB[]): ExtractionSampleSet {
+    const samples = colors.map((rgb, index) => ({
+        rgb,
+        lab: { L: 50, a: 0, b: 0 },
+        index,
+    }));
+    return {
+        samples,
+        validPixels: samples.length,
+    };
+}
+
+describe('Deterministic MMCQ Core Algorithm', () => {
+    it('handles single color input returning 1 candidate with full population', () => {
+        const colors = Array.from({ length: 100 }, () => ({
+            r: 200,
+            g: 100,
+            b: 50,
+        }));
+        const input = createSampleSet(colors);
+        const result = mmcqAlgorithm.run(input, { boxes: 8 }, {});
+
+        expect(result.algorithm).toBe('mmcq');
+        expect(result.algorithmVersion).toBe('mmcq-v2');
+        expect(result.candidates).toHaveLength(1);
+        expect(result.candidates[0]?.population).toBe(100);
+        expect(result.candidates[0]?.rgb).toEqual({ r: 200, g: 100, b: 50 });
+        expect(result.diagnostics).toEqual({
+            requestedBoxes: 8,
+            producedCandidates: 1,
+            histogramBits: 5,
+            occupiedBins: 1,
+            splits: 0,
+        });
+    });
+
+    it('splits two separated colors into exact population-weighted candidates', () => {
+        const red = { r: 240, g: 20, b: 20 };
+        const blue = { r: 20, g: 20, b: 240 };
+        const colors = [
+            ...Array.from({ length: 60 }, () => red),
+            ...Array.from({ length: 40 }, () => blue),
+        ];
+        const input = createSampleSet(colors);
+        const result = mmcqAlgorithm.run(input, { boxes: 2 }, {});
+
+        expect(result.candidates).toHaveLength(2);
+        const totalPop = result.candidates.reduce(
+            (s, c) => s + c.population,
+            0,
+        );
+        expect(totalPop).toBe(100);
+
+        const redCand = result.candidates.find((c) => c.rgb.r > 200);
+        const blueCand = result.candidates.find((c) => c.rgb.b > 200);
+        expect(redCand?.population).toBe(60);
+        expect(blueCand?.population).toBe(40);
+        expect(result.diagnostics.splits).toBe(1);
+    });
+
+    it('resolves equal-population axis ties in order R -> G -> B', () => {
+        const colors = [
+            { r: 0, g: 0, b: 0 },
+            { r: 255, g: 255, b: 255 },
+        ];
+        const input = createSampleSet(colors);
+        const result = mmcqAlgorithm.run(input, { boxes: 2 }, {});
+
+        expect(result.candidates).toHaveLength(2);
+        expect(result.diagnostics.splits).toBe(1);
+    });
+
+    it('performs empty-child correction when median cut would leave a child empty', () => {
+        const colors = [
+            { r: 0, g: 0, b: 0 },
+            { r: 0, g: 0, b: 0 },
+            { r: 8, g: 0, b: 0 },
+        ];
+        const input = createSampleSet(colors);
+        const result = mmcqAlgorithm.run(input, { boxes: 2 }, {});
+
+        expect(result.candidates).toHaveLength(2);
+        const pops = result.candidates.map((c) => c.population).sort();
+        expect(pops).toEqual([1, 2]);
+    });
+
+    it('handles unsplittable low-diversity data returning available regions without error', () => {
+        const colors = [
+            { r: 10, g: 10, b: 10 },
+            { r: 10, g: 10, b: 10 },
+        ];
+        const input = createSampleSet(colors);
+        const result = mmcqAlgorithm.run(input, { boxes: 16 }, {});
+
+        expect(result.candidates).toHaveLength(1);
+        expect(result.diagnostics.requestedBoxes).toBe(16);
+        expect(result.diagnostics.producedCandidates).toBe(1);
+        expect(result.diagnostics.splits).toBe(0);
+    });
+
+    it('quantizes a high-diversity gradient into requested candidate count', () => {
+        const colors: RGB[] = [];
+        for (let i = 0; i < 256; i += 4) {
+            colors.push({ r: i, g: 255 - i, b: (i * 2) % 256 });
+        }
+        const input = createSampleSet(colors);
+        const result = mmcqAlgorithm.run(input, { boxes: 8 }, {});
+
+        expect(result.candidates).toHaveLength(8);
+        expect(result.diagnostics.producedCandidates).toBe(8);
+        expect(result.diagnostics.splits).toBe(7);
+        const totalPop = result.candidates.reduce(
+            (s, c) => s + c.population,
+            0,
+        );
+        expect(totalPop).toBe(colors.length);
+    });
+
+    it('handles requested boxes below, equal to, and above available occupied bins', () => {
+        const colors = [
+            { r: 10, g: 0, b: 0 },
+            { r: 100, g: 0, b: 0 },
+            { r: 200, g: 0, b: 0 },
+        ];
+        const input = createSampleSet(colors);
+
+        const r1 = mmcqAlgorithm.run(input, { boxes: 1 }, {});
+        expect(r1.candidates).toHaveLength(1);
+
+        const r3 = mmcqAlgorithm.run(input, { boxes: 3 }, {});
+        expect(r3.candidates).toHaveLength(3);
+
+        const r10 = mmcqAlgorithm.run(input, { boxes: 10 }, {});
+        expect(r10.candidates).toHaveLength(3);
+    });
+
+    it('respects AbortSignal cancellation before and during execution', () => {
+        const colors = Array.from({ length: 10000 }, (_, i) => ({
+            r: (i * 13) % 256,
+            g: (i * 37) % 256,
+            b: (i * 71) % 256,
+        }));
+        const input = createSampleSet(colors);
+
+        const acPre = new AbortController();
+        acPre.abort('canceled prior');
+        expect(() =>
+            mmcqAlgorithm.run(input, { boxes: 8 }, { signal: acPre.signal }),
+        ).toThrowError(ColorExtractorError);
+
+        const acInFlight = new AbortController();
+        let checkCount = 0;
+        const dynamicSignal = {
+            get aborted() {
+                checkCount++;
+                if (checkCount > 5) {
+                    acInFlight.abort('canceled in-flight');
+                }
+                return acInFlight.signal.aborted;
+            },
+            get reason() {
+                return acInFlight.signal.reason;
+            },
+            addEventListener: acInFlight.signal.addEventListener.bind(
+                acInFlight.signal,
+            ),
+            removeEventListener: acInFlight.signal.removeEventListener.bind(
+                acInFlight.signal,
+            ),
+            dispatchEvent: acInFlight.signal.dispatchEvent.bind(
+                acInFlight.signal,
+            ),
+        } as unknown as AbortSignal;
+
+        expect(() =>
+            mmcqAlgorithm.run(input, { boxes: 16 }, { signal: dynamicSignal }),
+        ).toThrowError(ColorExtractorError);
+        expect(checkCount).toBeGreaterThan(5);
+    });
+
+    it('defensively handles invalid boxes options when called directly', () => {
+        const colors = [{ r: 100, g: 100, b: 100 }];
+        const input = createSampleSet(colors);
+
+        const res1 = mmcqAlgorithm.run(input, { boxes: Number.NaN }, {});
+        expect(res1.diagnostics.requestedBoxes).toBe(8);
+
+        const res2 = mmcqAlgorithm.run(input, { boxes: -5 }, {});
+        expect(res2.diagnostics.requestedBoxes).toBe(8);
+    });
+
+    it('returns exact observed input colors and never synthetic averages', () => {
+        const colors = [
+            { r: 100, g: 100, b: 100 },
+            { r: 103, g: 103, b: 103 },
+        ];
+        const input = createSampleSet(colors);
+        const result = mmcqAlgorithm.run(input, { boxes: 1 }, {});
+        expect(result.candidates).toHaveLength(1);
+        const rgb = result.candidates[0]!.rgb;
+        expect(
+            (rgb.r === 100 && rgb.g === 100 && rgb.b === 100) ||
+                (rgb.r === 103 && rgb.g === 103 && rgb.b === 103),
+        ).toBe(true);
+    });
+
+    it('guarantees non-mutation of input and produces repeated deep equality', () => {
+        const colors = [
+            { r: 200, g: 50, b: 50 },
+            { r: 50, g: 200, b: 50 },
+            { r: 50, g: 50, b: 200 },
+        ];
+        const input = createSampleSet(colors);
+        const originalInputJSON = JSON.stringify(input);
+
+        const run1 = mmcqAlgorithm.run(input, { boxes: 4 }, {});
+        const run2 = mmcqAlgorithm.run(input, { boxes: 4 }, {});
+
+        expect(JSON.stringify(input)).toBe(originalInputJSON);
+        expect(run1).toEqual(run2);
+    });
+});
+
+describe('Public MMCQ Result Integration & Legacy Isolation', () => {
+    const mockPixels = {
+        data: new Uint8Array([
+            200, 50, 50, 255, 50, 200, 50, 255, 50, 50, 200, 255, 200, 200, 50,
+            255,
+        ]),
+        width: 2,
+        height: 2,
+        channels: 4 as const,
+    };
+
+    it('extractPaletteFromPixels returns valid neutral palette with algorithm: "mmcq"', async () => {
+        const { extractPaletteFromPixels } = await import(
+            '../../src/core/extract.js'
+        );
+        const palette = await extractPaletteFromPixels(mockPixels, {
+            algorithm: 'mmcq',
+            advanced: { mmcq: { boxes: 8 } },
+        });
+
+        expect(palette.metadata.algorithm).toBe('mmcq');
+        expect(palette.metadata.algorithmVersion).toBe('mmcq-v2');
+        expect(palette.metadata.algorithmDetails).toMatchObject({
+            requestedBoxes: expect.any(Number),
+            producedCandidates: expect.any(Number),
+            histogramBits: 5,
+            occupiedBins: expect.any(Number),
+            splits: expect.any(Number),
+        });
+        expect(palette.swatches.length).toBeGreaterThan(0);
+        expect(palette.rankings.perceptual).toHaveLength(
+            palette.swatches.length,
+        );
+    });
+
+    it('extractPalette from root entrypoint supports MMCQ algorithm option', async () => {
+        const { extractPalette } = await import('../../src/index.js');
+        const sharp = (await import('sharp')).default;
+        const pngBuffer = await sharp({
+            create: {
+                width: 2,
+                height: 2,
+                channels: 3,
+                background: { r: 200, g: 50, b: 50 },
+            },
+        })
+            .png()
+            .toBuffer();
+
+        const palette = await extractPalette(pngBuffer, {
+            algorithm: 'mmcq',
+        });
+        expect(palette.metadata.algorithm).toBe('mmcq');
+        expect(palette.metadata.algorithmVersion).toBe('mmcq-v2');
+    });
+
+    it('extractPalette from node entrypoint supports MMCQ algorithm option', async () => {
+        const { extractPalette } = await import('../../src/node/index.js');
+        const sharp = (await import('sharp')).default;
+        const pngBuffer = await sharp({
+            create: {
+                width: 2,
+                height: 2,
+                channels: 3,
+                background: { r: 200, g: 50, b: 50 },
+            },
+        })
+            .png()
+            .toBuffer();
+
+        const palette = await extractPalette(pngBuffer, {
+            algorithm: 'mmcq',
+        });
+        expect(palette.metadata.algorithm).toBe('mmcq');
+        expect(palette.metadata.algorithmVersion).toBe('mmcq-v2');
+    });
+
+    it('extractPalette from browser entrypoint supports MMCQ algorithm option', async () => {
+        const { extractPalette } = await import('../../src/browser/index.js');
+        class MockImageData {
+            data: Uint8ClampedArray;
+            width: number;
+            height: number;
+            colorSpace = 'srgb';
+            constructor(
+                data: Uint8ClampedArray,
+                width: number,
+                height: number,
+            ) {
+                this.data = data;
+                this.width = width;
+                this.height = height;
+            }
+        }
+        const origImageData = globalThis.ImageData;
+        try {
+            // @ts-expect-error Mock ImageData for browser detect
+            globalThis.ImageData = MockImageData;
+            const imgData = new MockImageData(
+                new Uint8ClampedArray([
+                    200, 50, 50, 255, 50, 200, 50, 255, 50, 50, 200, 255, 200,
+                    200, 50, 255,
+                ]),
+                2,
+                2,
+            ) as unknown as ImageData;
+
+            const palette = await extractPalette(imgData, {
+                algorithm: 'mmcq',
+            });
+            expect(palette.metadata.algorithm).toBe('mmcq');
+            expect(palette.metadata.algorithmVersion).toBe('mmcq-v2');
+        } finally {
+            globalThis.ImageData = origImageData;
+        }
+    });
+
+    it('extractPaletteFromPixels from core entrypoint supports MMCQ algorithm option', async () => {
+        const { extractPaletteFromPixels } = await import(
+            '../../src/core/index.js'
+        );
+        const palette = await extractPaletteFromPixels(mockPixels, {
+            algorithm: 'mmcq',
+        });
+        expect(palette.metadata.algorithm).toBe('mmcq');
+        expect(palette.metadata.algorithmVersion).toBe('mmcq-v2');
+    });
+
+    it('extractColors (legacy API) does not support MMCQ option', async () => {
+        const { extractColorsFromPixels } = await import(
+            '../../src/core/extract.js'
+        );
+        const colors = await extractColorsFromPixels(mockPixels, {
+            algorithm: 'mmcq',
+        } as unknown as Parameters<typeof extractColorsFromPixels>[1]);
+        expect(colors.primary).toBeDefined();
+    });
+});
