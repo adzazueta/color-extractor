@@ -11,6 +11,7 @@ import { linearRgbToXyz } from '../color/xyz.js';
 import { ColorExtractorError } from '../errors.js';
 import type { ResolvedCoreExtractPaletteOptions } from '../neutral-options.js';
 import type {
+    AlgorithmDetails,
     ExtractedSwatch,
     ExtractionAlgorithm,
     ExtractionDecoder,
@@ -434,7 +435,23 @@ export function normalizePalette(
         returnedColors: swatches.length,
         returnedPopulation,
         coverage,
-        algorithmDetails: Object.freeze({ ...diagnostics }),
+        algorithmDetails: Object.freeze(
+            algorithm === 'lab-kmeans'
+                ? ({
+                      algorithm,
+                      requestedClusters: diagnostics.requestedClusters,
+                      producedCandidates: diagnostics.producedCandidates,
+                      iterations: diagnostics.iterations,
+                  } as AlgorithmDetails)
+                : ({
+                      algorithm,
+                      requestedBoxes: diagnostics.requestedBoxes,
+                      producedCandidates: diagnostics.producedCandidates,
+                      histogramBits: diagnostics.histogramBits,
+                      occupiedBins: diagnostics.occupiedBins,
+                      splits: diagnostics.splits,
+                  } as AlgorithmDetails),
+        ),
     };
 
     return {

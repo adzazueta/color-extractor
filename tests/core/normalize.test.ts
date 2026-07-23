@@ -471,6 +471,7 @@ describe('normalizePalette — metadata', () => {
             options: BASE_OPTIONS,
         });
         expect(result.metadata.algorithmDetails).toEqual({
+            algorithm: 'lab-kmeans',
             requestedClusters: 8,
             producedCandidates: 3,
             iterations: 5,
@@ -775,7 +776,7 @@ describe('normalizePalette — MMCQ integration & equivalence', () => {
         const mmcqResult = normalizePalette({
             candidateResult: {
                 algorithm: 'mmcq',
-                algorithmVersion: 'mmcq-v1',
+                algorithmVersion: 'mmcq-v2',
                 candidates: [
                     cand(200, 100, 50, 50, 30, 20, 600, 0),
                     cand(50, 200, 100, 60, -20, 30, 400, 1),
@@ -796,8 +797,9 @@ describe('normalizePalette — MMCQ integration & equivalence', () => {
         });
 
         expect(mmcqResult.metadata.algorithm).toBe('mmcq');
-        expect(mmcqResult.metadata.algorithmVersion).toBe('mmcq-v1');
+        expect(mmcqResult.metadata.algorithmVersion).toBe('mmcq-v2');
         expect(mmcqResult.metadata.algorithmDetails).toEqual({
+            algorithm: 'mmcq',
             requestedBoxes: 8,
             producedCandidates: 2,
             histogramBits: 5,

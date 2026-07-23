@@ -131,6 +131,10 @@ async function main() {
         'root entry exports DEFAULT_OPTIONS',
     );
     assert(
+        typeof rootEntry.DEFAULT_NEUTRAL_OPTIONS === 'object',
+        'root entry exports DEFAULT_NEUTRAL_OPTIONS',
+    );
+    assert(
         typeof rootEntry.resolveOptions === 'function',
         'root entry exports resolveOptions',
     );

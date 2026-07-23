@@ -2,9 +2,11 @@
 
 Extract perceptually meaningful observed colors from images in browsers and Node.js.
 
-It uses CIELAB K-means with chroma-weighted scoring, favoring colors people perceive as visually dominant instead of only the most frequent pixels.
+The neutral palette API uses deterministic CIELAB K-means by default and also supports deterministic MMCQ quantization. Both algorithms return observed colors, population evidence, perceptual rankings, and algorithm diagnostics without assigning semantic roles.
 
 The `0.2` release introduces a neutral palette API that returns observed-color evidence without semantic role assignment. Legacy role-based extraction (`extractColors`) remains available through `0.3.x` and is deprecated for removal in `0.4.0`.
+
+This package is ESM-only. Use `import` with the documented package entrypoints.
 
 ```ts
 import { extractPalette } from '@adzazueta/color-extractor'
@@ -12,7 +14,7 @@ import { extractPalette } from '@adzazueta/color-extractor'
 const result = await extractPalette(image)
 const topId = result.rankings.perceptual[0]
 const top = result.swatches.find(swatch => swatch.id === topId)
-console.log(top.id, top.hex, top.score)
+console.log(top?.id, top?.hex, top?.score)
 ```
 
 ## Installation
@@ -59,7 +61,7 @@ console.log(perceptual[0]?.hex)
 ```ts
 import { extractPalette } from '@adzazueta/color-extractor'
 
-const fileInput = document.querySelector('input[type="file"]')
+const fileInput = document.querySelector<HTMLInputElement>('input[type="file"]')
 const file = fileInput?.files?.[0]
 if (file) {
   const result = await extractPalette(file)
@@ -107,7 +109,7 @@ console.log(result.metadata.validPixels)
 import { extractPaletteFromPixels } from '@adzazueta/color-extractor/core'
 
 const result = await extractPaletteFromPixels({
-  data: new Uint8Array([/* RGB or RGBA bytes */]),
+  data: new Uint8Array([/* RGBA bytes: width * height * 4 */]),
   width: 200,
   height: 150,
   channels: 4,
@@ -117,26 +119,45 @@ console.log(result.swatches.length)
 
 ## Public entrypoints
 
-| Import path | Functions | Runtime |
+| Import path | Primary functions | Runtime |
 | --- | --- | --- |
-| `@adzazueta/color-extractor` | `extractPalette` | Browser (default) or Node (conditional) |
-| `@adzazueta/color-extractor/browser` | `extractPalette`, `extractPaletteFromImageData` | Browser |
-| `@adzazueta/color-extractor/node` | `extractPalette` | Node.js |
-| `@adzazueta/color-extractor/core` | `extractPaletteFromPixels` | Any (no decoder dependencies) |
+| `@adzazueta/color-extractor` | `extractPalette`, deprecated `extractColors` | Browser or Node through package export conditions |
+| `@adzazueta/color-extractor/browser` | `extractPalette`, `extractPaletteFromImageData`, deprecated `extractColors` | Browser |
+| `@adzazueta/color-extractor/node` | `extractPalette`, deprecated `extractColors` | Node.js |
+| `@adzazueta/color-extractor/core` | `extractPaletteFromPixels`, `runNeutralPalettePipeline`, `extractColorsFromPixels`, `extractColorsFromImageData` | Any; no decoder dependencies |
 
-Use the root import in most applications. It resolves to browser or Node based on your runtime.
+The root import uses package export conditions: Node resolves the Node entrypoint, browser-oriented resolution uses the Browser entrypoint, and the default condition is Browser. Use an explicit subpath when you need deterministic runtime selection.
 
-Use explicit subpath imports when you need runtime-specific types or `extractPaletteFromImageData`.
+All entrypoints expose the relevant public types, `VERSION`, `ColorExtractorError`, `DEFAULT_NEUTRAL_OPTIONS`, `DEFAULT_OPTIONS`, and `resolveOptions`. Browser, Node, and Core entrypoints also expose `COLOR_EXTRACTOR_ERROR_CODES`. The Browser entrypoint additionally exposes `decodeFileOrBlob`, `decodeRemoteUrl`, the `sample*` helpers, and `detectBrowserInputKind`. The Core entrypoint additionally exposes color conversion, filtering, sampling, output, and legacy role helpers. Generated TypeScript declarations are the complete export reference.
+
+Use explicit subpath imports when you need runtime-specific types, browser decoding helpers, or the Core pixel API.
+
+### Primary signatures
+
+```ts
+extractPalette(input, options?): Promise<ExtractPaletteResult>
+extractPaletteFromImageData(imageData, options?): Promise<ExtractPaletteResult> // browser
+extractPaletteFromPixels(input, options?): Promise<ExtractPaletteResult> // core
+extractColors(input, options?): Promise<ExtractColorsResult> // deprecated
+```
+
+`extractPalette` is overloaded by the root entrypoint for Browser and Node inputs. `extractPaletteFromImageData` is available from `/browser`, and `extractPaletteFromPixels` is available from `/core`.
+
+The `/core` entrypoint also exports these low-level groups:
+
+- Color conversion: `rgbToHex`, `rgbToHsl`, `hslToRgb`, `xyzToLab`, `linearRgbToXyz`, `srgbByteToLinear`, `srgbToLinear`, `labDistance`, `labSquaredDistance`, `chromaFromLab`, `circularHueDistance`, `hueFromLab`, `normalizeHue`.
+- Pixel and filtering: `normalizePixels`, `filterPixels`, `passesFilter`, `validateFilterCriteria`, `sampleSquareGrid`, `convertRgbSamplesToLab`.
+- Legacy output and role helpers: `applyOutputFlags`, `buildPalette`, `buildPrimaryColor`, `findPrimaryIndex`, `selectSecondary`, `scorePrimary`, `scoreSecondary`, `buildHarmonyFallback`, `applyGrayPenalty`, `applyLightnessGap`, `contrastBoost`, and related helper types.
 
 ## Supported inputs by runtime
 
 | Runtime | Supported inputs |
 | --- | --- |
-| Browser | `File`, `Blob`, URL string, `HTMLImageElement`, `ImageBitmap`, `HTMLCanvasElement`, `ImageData` |
-| Node.js | `Buffer`, `Uint8Array`, `ArrayBuffer`, URL string (`http://`/`https://`), local path string |
+| Browser | `File`, `Blob`, `http://` or `https://` URL string, `HTMLImageElement`, `ImageBitmap`, `HTMLCanvasElement`, `ImageData` |
+| Node.js | `Buffer`, `Uint8Array`, `ArrayBuffer`, URL string (`http://`/`https://`), non-empty local path string |
 | Core | `{ data: Uint8Array \| Uint8ClampedArray, width: number, height: number, channels: 3 \| 4 }` |
 
-Browser URL requests must be allowed by CORS. Node URL strings are classified as remote when they start with `http://` or `https://`; all other strings are treated as local filesystem paths.
+Browser URL requests must be allowed by CORS. Browser strings other than `http://` and `https://` URLs are unsupported. Node URL strings are classified as remote when they start with `http://` or `https://`; non-empty other strings are treated as local filesystem paths. An empty Node string is unsupported.
 
 ## Neutral result model
 
@@ -159,14 +180,14 @@ type ExtractedSwatch = {
   rgb: RgbColor       // { r: number, g: number, b: number }
   lab: LabColor       // { L: number, a: number, b: number }
   chroma: number      // sqrt(a² + b²)
-  population: number  // pixel count
+  population: number  // count among sampled valid pixels
   proportion: number  // population / validPixels
   score: number       // normalized perceptual score (0–1)
   hsl?: HslColor      // only when result.includeHsl is true
 }
 ```
 
-Every swatch is an observed color from the supplied image. No swatch is generated, adjusted, or assigned a UI role.
+Every swatch is an observed color from the sampled valid pixels of the supplied image. No swatch is generated, adjusted, or assigned a UI role.
 
 The `score` is relative within a single extraction result — it is not globally comparable across different images or extractions.
 
@@ -200,8 +221,28 @@ This is consumer code — there is no dedicated ranking helper in `0.2`.
 ### Metadata
 
 ```ts
-type ExtractionMetadata = {
+type LabKmeansAlgorithmDetails = {
   algorithm: 'lab-kmeans'
+  requestedClusters: number
+  producedCandidates: number
+  iterations: number
+}
+
+type MmcqAlgorithmDetails = {
+  algorithm: 'mmcq'
+  requestedBoxes: number
+  producedCandidates: number
+  histogramBits: number
+  occupiedBins: number
+  splits: number
+}
+
+type AlgorithmDetails =
+  | LabKmeansAlgorithmDetails
+  | MmcqAlgorithmDetails
+
+type ExtractionMetadata = {
+  algorithm: 'lab-kmeans' | 'mmcq'
   algorithmVersion: string
   packageVersion: string
   runtime: 'browser' | 'node' | 'core'
@@ -214,38 +255,58 @@ type ExtractionMetadata = {
   returnedColors: number
   returnedPopulation: number
   coverage: number       // returnedPopulation / validPixels
-  algorithmDetails: {
-    requestedClusters: number
-    producedCandidates: number
-    iterations: number
-  }
+  algorithmDetails: AlgorithmDetails
 }
 ```
 
-`coverage` may be less than `1` when `maxColors` limits the result. `algorithmDetails` is frozen and treated as opaque.
+`metadata.algorithm` and `metadata.algorithmDetails.algorithm` always match. `coverage` may be less than `1` when `maxColors` limits the result. `validPixels` and populations refer to the sampled pixels that passed filtering, not necessarily every source pixel.
+
+### Neutral Palette Defaults
+
+The default options for neutral palette extraction (`extractPalette`) are exported as `DEFAULT_NEUTRAL_OPTIONS`:
+
+```ts
+import { DEFAULT_NEUTRAL_OPTIONS } from '@adzazueta/color-extractor'
+```
+
+`DEFAULT_NEUTRAL_OPTIONS` contains the common neutral palette defaults: `algorithm: 'lab-kmeans'`, `sampling.maxDimension: 150`, filtering values `alphaThreshold: 128`, `minBrightness: 10`, `maxBrightness: 245`, `minSaturation: 8`, result values `maxColors: 5`, `includeHsl: false`, Lab K-means values `clusters: 8`, `iterations: 7`, MMCQ `boxes: 8`, and perceptual ranking values `chromaFloor: 12`, `lowChromaPenalty: 0.1`. Runtime-specific decode options (`decode`) and Node remote options (`remote`) are resolved separately per runtime. Legacy `extractColors` defaults remain available via `DEFAULT_OPTIONS`.
 
 ## Configuration
 
 All options are optional. Defaults favor useful perceptual output and bounded resource use.
 
+### Algorithm selection
+
+| Option | Default | Version | Description |
+| --- | --- | --- | --- |
+| `algorithm` | `'lab-kmeans'` | `1.0.0` | Selects `'lab-kmeans'` or `'mmcq'`. Both algorithms use the same neutral normalization, scoring, rankings, and metadata contract. |
+| `algorithm: 'mmcq'` | - | `mmcq-v2` | Uses a 5-bit-per-channel RGB histogram and selects the nearest observed sample from each final box. |
+
+Lab K-means generates Lab-space candidates. MMCQ builds a 5-bit-per-channel RGB histogram, splits color boxes, and selects the nearest observed sample in each final box. The selected version is reported in `metadata.algorithmVersion`.
+
+The shared neutral ranking uses `chroma * log(population + 1)`. When a candidate's chroma is below `chromaFloor`, the score is multiplied by `lowChromaPenalty`. The normalized `score` is relative to the current extraction result.
+
 ### Common options (every runtime)
 
 | Group | Option | Default | Description |
 | --- | --- | --- | --- |
-| `sampling` | `maxDimension` | `150` | Constrain the longest image dimension to this size across browser, Node, and `/core` runtimes. In `/core`, downsamples grid sampling to this maximum dimension without modifying the source pixel buffer. |
-| `filtering` | `alphaThreshold` | `128` | Ignore pixels below this alpha value (0–255). |
-| `filtering` | `minBrightness` | `10` | Ignore near-black pixels below this sRGB brightness (0–255). |
-| `filtering` | `maxBrightness` | `245` | Ignore near-white pixels above this sRGB brightness (0–255). |
-| `filtering` | `minSaturation` | `8` | Ignore low-saturation pixels below this HSL percentage (0–100). |
-| `result` | `maxColors` | `5` | Maximum number of swatches in the returned result (1–64). |
+| `sampling` | `maxDimension` | `150` | Constrain the longest image dimension to this size across browser, Node, and `/core` runtimes. Integer range: 1–4096. In `/core`, downsamples grid sampling to this maximum dimension without modifying the source pixel buffer. |
+| `filtering` | `alphaThreshold` | `128` | Ignore pixels below this alpha value. Integer range: 0–255. |
+| `filtering` | `minBrightness` | `10` | Ignore near-black pixels below this sRGB brightness. Number range: 0–255. |
+| `filtering` | `maxBrightness` | `245` | Ignore near-white pixels above this sRGB brightness. Number range: 0–255. Must be >= `minBrightness`. |
+| `filtering` | `minSaturation` | `8` | Ignore low-saturation pixels below this HSL percentage. Number range: 0–100. |
+| `result` | `maxColors` | `5` | Maximum number of swatches in the returned result. Integer range: 1–64. |
 | `result` | `includeHsl` | `false` | Include HSL values in each swatch. |
-| `advanced.labKmeans` | `clusters` | `max(8, maxColors)` | Internal cluster count (1–64). Must be >= `maxColors`. |
-| `advanced.labKmeans` | `iterations` | `7` | K-means refinement passes (1–100). |
-| `advanced.perceptualRanking` | `chromaFloor` | `12` | Chroma below which the low-chroma penalty applies (0–150). |
-| `advanced.perceptualRanking` | `lowChromaPenalty` | `0.1` | Score multiplier for low-chroma candidates (0–1). |
+| `advanced.labKmeans` | `clusters` | `max(8, maxColors)` | Internal cluster count. Integer range: 1–64. Must be >= `maxColors`. |
+| `advanced.labKmeans` | `iterations` | `7` | K-means refinement passes. Integer range: 1–100. |
+| `advanced.mmcq` | `boxes` | `max(8, maxColors)` | Requested MMCQ color boxes. Integer range: 1–64. Must be >= `maxColors`. |
+| `advanced.perceptualRanking` | `chromaFloor` | `12` | Chroma below which the low-chroma penalty applies. Number range: 0–150. |
+| `advanced.perceptualRanking` | `lowChromaPenalty` | `0.1` | Score multiplier for low-chroma candidates. Number range: 0–1. |
 | `signal` | — | — | `AbortSignal` for cancellation. |
 
-> **Note:** `result.maxColors` caps the returned swatch count but is independent of the internal cluster count (`advanced.labKmeans.clusters`). The cluster count defaults to at least 8 and must be >= `maxColors`.
+> **Note:** `result.maxColors` caps the returned swatch count but is independent of the internal cluster/box count. The active algorithm's count defaults to at least 8 and must be >= `maxColors`.
+
+> **Note:** When `algorithm` is `'lab-kmeans'`, `advanced.mmcq` is rejected. When `algorithm` is `'mmcq'`, `advanced.labKmeans` is rejected. `advanced.perceptualRanking` is valid for both algorithms.
 
 > **Note:** There is no `ranking.strategy` option. All three rankings are always returned.
 
@@ -253,13 +314,13 @@ All options are optional. Defaults favor useful perceptual output and bounded re
 
 | Option | Default | Description |
 | --- | --- | --- |
-| `decode.maxPixels` | `25_000_000` | Maximum decoded image dimensions (width × height). |
+| `decode.maxPixels` | `25_000_000` | Maximum decoded image dimensions (width × height). Integer range: 1–100,000,000. |
 
 ### Node decode options
 
 | Option | Default | Description |
 | --- | --- | --- |
-| `decode.maxPixels` | `25_000_000` | Maximum decoded image dimensions (width × height). |
+| `decode.maxPixels` | `25_000_000` | Maximum decoded image dimensions (width × height). Integer range: 1–100,000,000. |
 | `decode.animated` | `'first-frame'` | `'first-frame'` extracts only the first frame. |
 | `decode.svg` | `'disabled'` | SVG decoding policy. Enable only for trusted sources. |
 | `decode.respectOrientation` | `true` | Apply EXIF orientation. |
@@ -269,16 +330,16 @@ All options are optional. Defaults favor useful perceptual output and bounded re
 
 | Option | Default | Description |
 | --- | --- | --- |
-| `remote.timeoutMs` | `10_000` | Request timeout in milliseconds. |
-| `remote.maxBytes` | `10_000_000` | Maximum remote response or local file input size in bytes. |
-| `remote.maxRedirects` | `3` | Maximum redirect hops. |
-| `remote.allowedProtocols` | `['http:', 'https:']` | URL protocols allowed for remote input. |
+| `remote.timeoutMs` | `10_000` | Request and body timeout in milliseconds. Integer range: 1–300,000. |
+| `remote.maxBytes` | `10_000_000` | Maximum remote response or local file input size in bytes. Integer range: 1–1,000,000,000. |
+| `remote.maxRedirects` | `3` | Maximum redirect hops. Integer range: 0–20. |
+| `remote.allowedProtocols` | `['http:', 'https:']` | Non-empty list of URL protocols allowed for remote input. Values may only be `'http:'` or `'https:'`. |
 | `remote.allowPrivateNetworks` | `false` | Permit private or reserved addresses. Do not enable for untrusted URLs. |
 | `remote.validateContentType` | `true` | Reject non-image response content types when available. |
 
 ### Option validation
 
-Unknown, legacy, invalid, or runtime-incompatible options fail with `COLOR_EXTRACTOR_INVALID_OPTIONS`. Valid zero values are preserved (e.g. `lowChromaPenalty: 0`).
+Unknown, legacy, invalid, `null`, or runtime-incompatible options fail with `COLOR_EXTRACTOR_INVALID_OPTIONS`. Only `undefined` means that an option was omitted and should receive its default. Valid zero values are preserved (e.g. `lowChromaPenalty: 0`).
 
 ### Full example
 
@@ -298,6 +359,19 @@ const result = await extractPalette(image, {
   advanced: {
     labKmeans: { clusters: 12, iterations: 10 },
     perceptualRanking: { chromaFloor: 10, lowChromaPenalty: 0.05 },
+  },
+})
+```
+
+For MMCQ, select the algorithm and configure its boxes instead:
+
+```ts
+const result = await extractPalette(image, {
+  algorithm: 'mmcq',
+  result: { maxColors: 6 },
+  advanced: {
+    mmcq: { boxes: 8 },
+    perceptualRanking: { chromaFloor: 12, lowChromaPenalty: 0.1 },
   },
 })
 ```
@@ -322,18 +396,13 @@ try {
 }
 ```
 
-Cancellation is checked at these pipeline stages:
-- Before option resolution
-- After pixel decoding and filtering
-- After K-means candidate generation
-
-Cancellation does not interrupt a single synchronous K-means iteration.
+Cancellation is checked before work, during supported asynchronous decoding/fetching, after filtering, and after candidate generation. MMCQ also checks during histogram construction, box splitting, and final candidate construction. K-means checks between synchronous refinement iterations; it does not interrupt an iteration that is already running.
 
 An already-aborted signal rejects immediately without decode, fetch, or sharp work.
 
 ## Error handling
 
-All failures throw `ColorExtractorError` with a stable `code` property:
+Library-generated validation, decoding, fetching, and extraction failures use `ColorExtractorError` with a stable `code` property. Platform exceptions that are not recognized by an adapter may propagate unchanged.
 
 ```ts
 import { ColorExtractorError, extractPalette } from '@adzazueta/color-extractor'
@@ -356,8 +425,8 @@ try {
 | `COLOR_EXTRACTOR_ABORTED` | Any | Operation cancelled via `AbortSignal`. |
 | `COLOR_EXTRACTOR_DECODE_FAILED` | Decode | Image bytes could not be decoded. |
 | `COLOR_EXTRACTOR_CORS_ERROR` | Decode (browser) | Canvas readback blocked by CORS. |
-| `COLOR_EXTRACTOR_FETCH_FAILED` | Fetch | URL request failed non-2xx response. |
-| `COLOR_EXTRACTOR_INPUT_TOO_LARGE` | Input | Remote response or local file exceeded `maxBytes`. |
+| `COLOR_EXTRACTOR_FETCH_FAILED` | Fetch | Non-2xx response, network failure, response-body read failure, or empty response. |
+| `COLOR_EXTRACTOR_INPUT_TOO_LARGE` | Input | Browser/Node remote response or Node local file exceeded `maxBytes`. |
 | `COLOR_EXTRACTOR_IMAGE_TOO_LARGE` | Decode | Image dimensions exceeded `maxPixels`. |
 | `COLOR_EXTRACTOR_TIMEOUT` | Fetch | URL request exceeded `timeoutMs`. |
 | `COLOR_EXTRACTOR_UNSAFE_URL` | Fetch (Node) | URL rejected by safety policy. |
@@ -369,16 +438,18 @@ The `code` field is the stable machine contract. Error message text may change b
 
 ## Browser notes
 
-- Supported inputs: `File`, `Blob`, URL string, `HTMLImageElement`, `ImageBitmap`, `HTMLCanvasElement`, `ImageData`.
+- Supported inputs: `File`, `Blob`, `http://` or `https://` URL string, `HTMLImageElement`, `ImageBitmap`, `HTMLCanvasElement`, `ImageData`.
 - URL strings are fetched via `fetch()` and subject to CORS.
+- Browser neutral extraction does not expose Node's `remote` options. Browser remote fetches use the built-in 10-second timeout and 10 MB response limit.
 - Decoded images are sampled via `OffscreenCanvas` when available, otherwise a DOM canvas fallback, to `sampling.maxDimension` while preserving aspect ratio. `ImageData` uses a software fallback only when no canvas API is available.
+- Browser `decode.maxPixels` is checked after platform image decoding because browser APIs do not provide portable pre-decode dimensions.
 - The browser bundle contains no Node.js dependencies.
 
 ## Node notes
 
-- Supported inputs: `Buffer`, `Uint8Array`, `ArrayBuffer`, URL string, local path string.
+- Supported inputs: `Buffer`, `Uint8Array`, `ArrayBuffer`, URL string, non-empty local path string.
 - Strings starting with `http://` or `https://` are fetched as remote URLs.
-- All other strings are treated as local filesystem paths.
+- Non-empty strings that are not HTTP(S) URLs are treated as local filesystem paths. An empty string is unsupported.
 - SVG decoding is disabled by default. Enable with `decode.svg: 'enabled'` for trusted sources.
 - Animated images return the first frame by default (`decode.animated: 'first-frame'`).
 - EXIF orientation is applied by default. Color profiles are normalized to sRGB.
@@ -412,13 +483,13 @@ The `0.1.x` role-based API (`extractColors`, `extractColorsFromPixels`, `extract
 
 See [MIGRATION.md](MIGRATION.md) for a complete migration guide.
 
-## Known limitations (0.2)
+## Known limitations
 
-- Lab K-means is the only clustering algorithm. MMCQ is not available.
+- Lab K-means (default) and MMCQ (`algorithm: 'mmcq'`) are the available neutral extraction algorithms.
 - No role assignment — every swatch is an observed color with no semantic label.
 - No generated or adjusted colors (harmony fallback, lightness adjustment).
 - No public ranking helper — use the `Map` pattern shown above.
-- Cancellation granularity is between synchronous pipeline stages, not inside K-means iterations.
+- Cancellation granularity is between synchronous pipeline stages and between K-means iterations, not inside one synchronous K-means iteration.
 - Browser and Node decoders may produce slightly different pixel values from the same image.
 
 ## color-engine boundary

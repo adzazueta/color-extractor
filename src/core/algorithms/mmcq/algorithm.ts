@@ -2,17 +2,18 @@ import { xyzToLab } from '../../color/lab.js';
 import { srgbByteToLinear } from '../../color/srgb.js';
 import { linearRgbToXyz } from '../../color/xyz.js';
 import { ColorExtractorError } from '../../errors.js';
-import type { RgbColor } from '../../palette-types.js';
+import type { LabColor, RgbColor } from '../../palette-types.js';
 import type {
     AlgorithmCandidateResult,
     AlgorithmContext,
     ExtractionCandidate,
+    ExtractionSample,
     ExtractionSampleSet,
     NeutralExtractionAlgorithm,
 } from '../contract.js';
 import type { MmcqBox, MmcqHistogram } from './types.js';
 
-export const MMCQ_ALGORITHM_VERSION = 'mmcq-v1';
+export const MMCQ_ALGORITHM_VERSION = 'mmcq-v2';
 
 export type MmcqAlgorithmOptions = {
     boxes?: number;
@@ -219,7 +220,9 @@ function splitBox(
     box: MmcqBox,
     count: Uint32Array,
     nextCreationIndex: { value: number },
+    signal?: AbortSignal,
 ): [MmcqBox, MmcqBox] | null {
+    checkAborted(signal);
     const axis = chooseSplitAxis(box);
     const minCoord =
         axis === 'R' ? box.rMin : axis === 'G' ? box.gMin : box.bMin;
@@ -383,7 +386,65 @@ function splitBox(
 
 interface FinalCandidateBox {
     box: MmcqBox;
-    rgb: RgbColor;
+    rgb: Readonly<RgbColor>;
+    lab: Readonly<LabColor>;
+}
+
+function findNearestObservedColor(
+    box: MmcqBox,
+    centroidRgb: { r: number; g: number; b: number },
+    samples: readonly ExtractionSample[],
+): { rgb: Readonly<RgbColor>; lab: Readonly<LabColor> } {
+    let minDistanceSq = Number.POSITIVE_INFINITY;
+    let bestSample: ExtractionSample | null = null;
+
+    for (const sample of samples) {
+        const qr = sample.rgb.r >> 3;
+        const qg = sample.rgb.g >> 3;
+        const qb = sample.rgb.b >> 3;
+
+        if (
+            qr >= box.rMin &&
+            qr <= box.rMax &&
+            qg >= box.gMin &&
+            qg <= box.gMax &&
+            qb >= box.bMin &&
+            qb <= box.bMax
+        ) {
+            const dr = sample.rgb.r - centroidRgb.r;
+            const dg = sample.rgb.g - centroidRgb.g;
+            const db = sample.rgb.b - centroidRgb.b;
+            const distSq = dr * dr + dg * dg + db * db;
+            if (distSq < minDistanceSq) {
+                minDistanceSq = distSq;
+                bestSample = sample;
+                if (distSq === 0) break;
+            }
+        }
+    }
+
+    if (!bestSample) {
+        for (const sample of samples) {
+            const dr = sample.rgb.r - centroidRgb.r;
+            const dg = sample.rgb.g - centroidRgb.g;
+            const db = sample.rgb.b - centroidRgb.b;
+            const distSq = dr * dr + dg * dg + db * db;
+            if (distSq < minDistanceSq) {
+                minDistanceSq = distSq;
+                bestSample = sample;
+            }
+        }
+    }
+
+    if (bestSample) {
+        return { rgb: bestSample.rgb, lab: bestSample.lab };
+    }
+
+    const lr = srgbByteToLinear(centroidRgb.r);
+    const lg = srgbByteToLinear(centroidRgb.g);
+    const lb = srgbByteToLinear(centroidRgb.b);
+    const { x, y, z } = linearRgbToXyz(lr, lg, lb);
+    return { rgb: centroidRgb, lab: xyzToLab(x, y, z) };
 }
 
 function compareFinalBoxes(a: FinalCandidateBox, b: FinalCandidateBox): number {
@@ -418,7 +479,15 @@ export const mmcqAlgorithm: NeutralExtractionAlgorithm<MmcqAlgorithmOptions> = {
         const signal = context.signal;
         checkAborted(signal);
 
-        const targetBoxes = options.boxes ?? 8;
+        let rawBoxes = options.boxes;
+        if (
+            typeof rawBoxes !== 'number' ||
+            !Number.isFinite(rawBoxes) ||
+            rawBoxes <= 0
+        ) {
+            rawBoxes = 8;
+        }
+        const targetBoxes = Math.floor(rawBoxes);
 
         if (targetBoxes <= 0 || input.samples.length === 0) {
             return {
@@ -508,6 +577,7 @@ export const mmcqAlgorithm: NeutralExtractionAlgorithm<MmcqAlgorithmOptions> = {
                 bestBox,
                 histogram.count,
                 nextCreationIndex,
+                signal,
             );
             if (!splitResult) {
                 bestBox.occupiedBins = 1;
@@ -523,6 +593,7 @@ export const mmcqAlgorithm: NeutralExtractionAlgorithm<MmcqAlgorithmOptions> = {
         const finalCandidateBoxes: FinalCandidateBox[] = [];
 
         for (const box of boxes) {
+            checkAborted(signal);
             let sumR = 0;
             let sumG = 0;
             let sumB = 0;
@@ -543,34 +614,41 @@ export const mmcqAlgorithm: NeutralExtractionAlgorithm<MmcqAlgorithmOptions> = {
             }
 
             const pop = box.population;
-            const r = Math.min(255, Math.max(0, Math.round(sumR / pop)));
-            const g = Math.min(255, Math.max(0, Math.round(sumG / pop)));
-            const b = Math.min(255, Math.max(0, Math.round(sumB / pop)));
+            const centroidR = Math.min(
+                255,
+                Math.max(0, Math.round(sumR / pop)),
+            );
+            const centroidG = Math.min(
+                255,
+                Math.max(0, Math.round(sumG / pop)),
+            );
+            const centroidB = Math.min(
+                255,
+                Math.max(0, Math.round(sumB / pop)),
+            );
+
+            const observed = findNearestObservedColor(
+                box,
+                { r: centroidR, g: centroidG, b: centroidB },
+                input.samples,
+            );
 
             finalCandidateBoxes.push({
                 box,
-                rgb: { r, g, b },
+                rgb: observed.rgb,
+                lab: observed.lab,
             });
         }
 
         finalCandidateBoxes.sort(compareFinalBoxes);
 
         const candidates: ExtractionCandidate[] = finalCandidateBoxes.map(
-            (c, sourceIndex) => {
-                const rgb = c.rgb;
-                const lr = srgbByteToLinear(rgb.r);
-                const lg = srgbByteToLinear(rgb.g);
-                const lb = srgbByteToLinear(rgb.b);
-                const { x, y, z } = linearRgbToXyz(lr, lg, lb);
-                const lab = xyzToLab(x, y, z);
-
-                return {
-                    rgb,
-                    lab,
-                    population: c.box.population,
-                    sourceIndex,
-                };
-            },
+            (c, sourceIndex) => ({
+                rgb: c.rgb,
+                lab: c.lab,
+                population: c.box.population,
+                sourceIndex,
+            }),
         );
 
         checkAborted(signal);

@@ -537,3 +537,5 @@ async function fetchRemoteWithPipeline(
         }
     }
 }
+
+export { DEFAULT_NEUTRAL_OPTIONS } from '../core/neutral-options.js';

@@ -42,6 +42,24 @@ export type ExtractionRuntime = 'browser' | 'node' | 'core';
 
 export type ExtractionDecoder = 'canvas' | 'sharp' | 'image-data' | 'pixels';
 
+export type LabKmeansAlgorithmDetails = {
+    readonly algorithm: 'lab-kmeans';
+    readonly requestedClusters: number;
+    readonly producedCandidates: number;
+    readonly iterations: number;
+};
+
+export type MmcqAlgorithmDetails = {
+    readonly algorithm: 'mmcq';
+    readonly requestedBoxes: number;
+    readonly producedCandidates: number;
+    readonly histogramBits: number;
+    readonly occupiedBins: number;
+    readonly splits: number;
+};
+
+export type AlgorithmDetails = LabKmeansAlgorithmDetails | MmcqAlgorithmDetails;
+
 export type ExtractionMetadata = {
     algorithm: ExtractionAlgorithm;
     algorithmVersion: string;
@@ -56,7 +74,7 @@ export type ExtractionMetadata = {
     returnedColors: number;
     returnedPopulation: number;
     coverage: number;
-    algorithmDetails?: Readonly<Record<string, unknown>>;
+    algorithmDetails: AlgorithmDetails;
 };
 
 export type ExtractPaletteResult = {

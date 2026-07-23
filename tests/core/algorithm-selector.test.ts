@@ -35,6 +35,7 @@ describe('Algorithm Selector and Metadata', () => {
         );
         expect(resultExplicit.swatches).toEqual(resultOmitted.swatches);
         expect(resultExplicit.metadata.algorithmDetails).toEqual({
+            algorithm: 'lab-kmeans',
             requestedClusters: 4,
             producedCandidates: 4,
             iterations: 7,
@@ -95,7 +96,7 @@ describe('Algorithm Selector and Metadata', () => {
             algorithm: 'mmcq',
         });
         expect(result.metadata.algorithm).toBe('mmcq');
-        expect(result.metadata.algorithmVersion).toBe('mmcq-v1');
+        expect(result.metadata.algorithmVersion).toBe('mmcq-v2');
         expect(result.metadata.algorithmDetails).toMatchObject({
             requestedBoxes: expect.any(Number),
             producedCandidates: expect.any(Number),

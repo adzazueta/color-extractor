@@ -131,7 +131,12 @@ describe('neutral types — root entrypoint', () => {
                 returnedColors: 3,
                 returnedPopulation: 6000,
                 coverage: 0.75,
-                algorithmDetails: {},
+                algorithmDetails: {
+                    algorithm: 'lab-kmeans',
+                    requestedClusters: 5,
+                    producedCandidates: 5,
+                    iterations: 7,
+                },
             },
         };
         const metadata: ExtractionMetadata = result.metadata;
@@ -307,7 +312,12 @@ describe('negative — forbidden fields', () => {
                 returnedColors: 3,
                 returnedPopulation: 6000,
                 coverage: 0.75,
-                algorithmDetails: {},
+                algorithmDetails: {
+                    algorithm: 'lab-kmeans',
+                    requestedClusters: 5,
+                    producedCandidates: 5,
+                    iterations: 7,
+                },
             },
             // @ts-expect-error — primary is not a neutral result field
             primary: {},
@@ -333,7 +343,12 @@ describe('negative — forbidden fields', () => {
                 returnedColors: 3,
                 returnedPopulation: 6000,
                 coverage: 0.75,
-                algorithmDetails: {},
+                algorithmDetails: {
+                    algorithm: 'lab-kmeans',
+                    requestedClusters: 5,
+                    producedCandidates: 5,
+                    iterations: 7,
+                },
             },
             // @ts-expect-error — secondary is not a neutral result field
             secondary: {},
@@ -359,7 +374,12 @@ describe('negative — forbidden fields', () => {
                 returnedColors: 3,
                 returnedPopulation: 6000,
                 coverage: 0.75,
-                algorithmDetails: {},
+                algorithmDetails: {
+                    algorithm: 'lab-kmeans',
+                    requestedClusters: 5,
+                    producedCandidates: 5,
+                    iterations: 7,
+                },
             },
             // @ts-expect-error — accents is not a neutral result field
             accents: [],

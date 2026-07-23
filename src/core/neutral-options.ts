@@ -167,22 +167,26 @@ type CommonDefaults = {
     advanced: ResolvedAdvancedExtractionOptions;
 };
 
-const COMMON_DEFAULTS: CommonDefaults = {
-    algorithm: 'lab-kmeans',
-    sampling: { maxDimension: 150 },
-    filtering: {
-        alphaThreshold: 128,
-        minBrightness: 10,
-        maxBrightness: 245,
-        minSaturation: 8,
-    },
-    result: { maxColors: 5, includeHsl: false },
-    advanced: {
-        labKmeans: { clusters: 8, iterations: 7 },
-        mmcq: { boxes: 8 },
-        perceptualRanking: { chromaFloor: 12, lowChromaPenalty: 0.1 },
-    },
-};
+export const DEFAULT_NEUTRAL_OPTIONS: Readonly<ResolvedCoreExtractPaletteOptions> =
+    Object.freeze({
+        algorithm: 'lab-kmeans',
+        sampling: Object.freeze({ maxDimension: 150 }),
+        filtering: Object.freeze({
+            alphaThreshold: 128,
+            minBrightness: 10,
+            maxBrightness: 245,
+            minSaturation: 8,
+        }),
+        result: Object.freeze({ maxColors: 5, includeHsl: false }),
+        advanced: Object.freeze({
+            labKmeans: Object.freeze({ clusters: 8, iterations: 7 }),
+            mmcq: Object.freeze({ boxes: 8 }),
+            perceptualRanking: Object.freeze({
+                chromaFloor: 12,
+                lowChromaPenalty: 0.1,
+            }),
+        }),
+    });
 
 const BROWSER_DECODE_DEFAULTS: ResolvedBrowserDecodeOptions = {
     maxPixels: 25_000_000,
@@ -315,7 +319,7 @@ function resolveNumber(
     min: number,
     max: number,
 ): number {
-    if (userValue === undefined || userValue === null) {
+    if (userValue === undefined) {
         return defaultValue;
     }
     return assertNumber(path, userValue, min, max);
@@ -328,7 +332,7 @@ function resolveInteger(
     min: number,
     max: number,
 ): number {
-    if (userValue === undefined || userValue === null) {
+    if (userValue === undefined) {
         return defaultValue;
     }
     return assertInteger(path, userValue, min, max);
@@ -339,7 +343,7 @@ function resolveBoolean(
     defaultValue: boolean,
     path: string,
 ): boolean {
-    if (userValue === undefined || userValue === null) {
+    if (userValue === undefined) {
         return defaultValue;
     }
     if (typeof userValue !== 'boolean') {
@@ -858,14 +862,14 @@ export function resolveNeutralOptions(
 
     const common: CommonDefaults = {
         algorithm: 'lab-kmeans',
-        sampling: { ...COMMON_DEFAULTS.sampling },
-        filtering: { ...COMMON_DEFAULTS.filtering },
-        result: { ...COMMON_DEFAULTS.result },
+        sampling: { ...DEFAULT_NEUTRAL_OPTIONS.sampling },
+        filtering: { ...DEFAULT_NEUTRAL_OPTIONS.filtering },
+        result: { ...DEFAULT_NEUTRAL_OPTIONS.result },
         advanced: {
-            labKmeans: { ...COMMON_DEFAULTS.advanced.labKmeans },
-            mmcq: { ...COMMON_DEFAULTS.advanced.mmcq },
+            labKmeans: { ...DEFAULT_NEUTRAL_OPTIONS.advanced.labKmeans },
+            mmcq: { ...DEFAULT_NEUTRAL_OPTIONS.advanced.mmcq },
             perceptualRanking: {
-                ...COMMON_DEFAULTS.advanced.perceptualRanking,
+                ...DEFAULT_NEUTRAL_OPTIONS.advanced.perceptualRanking,
             },
         },
     };

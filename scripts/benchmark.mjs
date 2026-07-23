@@ -63,7 +63,7 @@ async function handleRun(
 
     if (isBaseline) {
         const filename =
-            algo === 'mmcq' ? 'mmcq-v1.json' : 'lab-kmeans-v0.2.json';
+            algo === 'mmcq' ? 'mmcq-v2.json' : 'lab-kmeans-v0.2.json';
         const baselinePath = resolve(rootDir, 'benchmarks/baselines', filename);
         mkdirSync(dirname(baselinePath), { recursive: true });
         writeFileSync(baselinePath, JSON.stringify(report, null, 4), 'utf8');
@@ -335,6 +335,15 @@ async function handleReport() {
         options: { algorithm: 'mmcq' },
     });
 
+    const labMeanCoverage =
+        labKmeansReport.results.reduce(
+            (s, r) => s + (r.quality.coverage || 0),
+            0,
+        ) / labKmeansReport.results.length;
+    const mmcqMeanCoverage =
+        mmcqReport.results.reduce((s, r) => s + (r.quality.coverage || 0), 0) /
+        mmcqReport.results.length;
+
     const comparativeReport = {
         title: 'Lab K-means vs MMCQ Comparative Report (0.3)',
         timestamp: new Date().toISOString(),
@@ -347,6 +356,18 @@ async function handleReport() {
                 p95MsAggregate: labKmeansReport.summary.p95MsAggregate,
                 reconstructionMeanAggregate:
                     labKmeansReport.summary.reconstructionMeanAggregate,
+                populationFidelity: {
+                    meanCoverage: labMeanCoverage,
+                    totalValidPixels: labKmeansReport.results.reduce(
+                        (s, r) => s + r.validPixels,
+                        0,
+                    ),
+                    meanEntropy:
+                        labKmeansReport.results.reduce(
+                            (s, r) => s + r.quality.entropy,
+                            0,
+                        ) / labKmeansReport.results.length,
+                },
                 determinismAll: labKmeansReport.summary.determinismAll,
             },
             mmcq: {
@@ -355,6 +376,18 @@ async function handleReport() {
                 p95MsAggregate: mmcqReport.summary.p95MsAggregate,
                 reconstructionMeanAggregate:
                     mmcqReport.summary.reconstructionMeanAggregate,
+                populationFidelity: {
+                    meanCoverage: mmcqMeanCoverage,
+                    totalValidPixels: mmcqReport.results.reduce(
+                        (s, r) => s + r.validPixels,
+                        0,
+                    ),
+                    meanEntropy:
+                        mmcqReport.results.reduce(
+                            (s, r) => s + r.quality.entropy,
+                            0,
+                        ) / mmcqReport.results.length,
+                },
                 determinismAll: mmcqReport.summary.determinismAll,
             },
         },
@@ -373,11 +406,25 @@ async function handleReport() {
                     medianMs: labRes?.timing.medianMs,
                     reconstructionMean: labRes?.quality.reconstructionMean,
                     candidates: labRes?.candidateCount,
+                    returnedColors: labRes?.returnedColors,
+                    populationFidelity: {
+                        coverage: labRes?.quality.coverage,
+                        validPixels: labRes?.validPixels,
+                        entropy: labRes?.quality.entropy,
+                        maxProportion: labRes?.quality.maxProportion,
+                    },
                 },
                 mmcq: {
                     medianMs: mmcqRes?.timing.medianMs,
                     reconstructionMean: mmcqRes?.quality.reconstructionMean,
                     candidates: mmcqRes?.candidateCount,
+                    returnedColors: mmcqRes?.returnedColors,
+                    populationFidelity: {
+                        coverage: mmcqRes?.quality.coverage,
+                        validPixels: mmcqRes?.validPixels,
+                        entropy: mmcqRes?.quality.entropy,
+                        maxProportion: mmcqRes?.quality.maxProportion,
+                    },
                 },
             };
         }),
