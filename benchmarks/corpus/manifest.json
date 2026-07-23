@@ -1,0 +1,126 @@
+{
+    "version": "1.0.0",
+    "generatedAt": "2026-07-22T00:00:00.000Z",
+    "fixtures": [
+        {
+            "id": "synthetic-single",
+            "source": "generated",
+            "license": "CC0-1.0 (Programmatic Synthetic)",
+            "category": "synthetic single color",
+            "width": 100,
+            "height": 100,
+            "checksum": "0a518e97e4b516d8c0753bbf6a2ab3b52e2998e0b0461d8076f9345e85a51468",
+            "notes": "Solid blue image (40, 100, 200, 255)"
+        },
+        {
+            "id": "synthetic-blocks",
+            "source": "generated",
+            "license": "CC0-1.0 (Programmatic Synthetic)",
+            "category": "synthetic two/three-color blocks",
+            "width": 120,
+            "height": 120,
+            "checksum": "fb498cc5913db1e21160517779358e6d66999624a135057e8867ee5d8c73d3ba",
+            "notes": "3 equal horizontal color bands: red, green, blue"
+        },
+        {
+            "id": "muted-vivid",
+            "source": "generated",
+            "license": "CC0-1.0 (Programmatic Synthetic)",
+            "category": "muted-majority plus vivid-minority",
+            "width": 150,
+            "height": 150,
+            "checksum": "1b86337bd09fa83fd567de28418ebe258f1161abc9a3c4b3dcd9914979dfc28a",
+            "notes": "Muted majority canvas with a vivid magenta accent square"
+        },
+        {
+            "id": "near-gray",
+            "source": "generated",
+            "license": "CC0-1.0 (Programmatic Synthetic)",
+            "category": "near-gray/low-chroma",
+            "width": 120,
+            "height": 120,
+            "checksum": "ce26ccb21245fa22624e1241fa028ccf27f0e53d8610578a3a048e9858cf93af",
+            "notes": "Low-chroma pastel tones with ~11% saturation"
+        },
+        {
+            "id": "rgb-gradient",
+            "source": "generated",
+            "license": "CC0-1.0 (Programmatic Synthetic)",
+            "category": "smooth RGB gradients",
+            "width": 150,
+            "height": 150,
+            "checksum": "248abf355ebfb5662d9838f28ae858aac725ca8ec8d47f85977bc9051daa5bff",
+            "notes": "Continuous diagonal RGB color gradient"
+        },
+        {
+            "id": "photo-vibrant",
+            "source": "generated",
+            "license": "CC0-1.0 (Programmatic Synthetic)",
+            "category": "high-diversity photographic scenes",
+            "width": 160,
+            "height": 160,
+            "checksum": "f835b61b0a61700874ab6b77264896d3e62b1e13894f1c10efba4d99446025ee",
+            "notes": "Multi-hue checkerboard grid mimicking rich photography"
+        },
+        {
+            "id": "portrait-skin",
+            "source": "generated",
+            "license": "CC0-1.0 (Programmatic Synthetic)",
+            "category": "skin/portrait-like scenes",
+            "width": 120,
+            "height": 120,
+            "checksum": "4d13d0ff5a64d2cbd2cb69070313b9811acfda273960876e6c164f58895e3741",
+            "notes": "Warm skin tone gradients with dark hair background"
+        },
+        {
+            "id": "nature-landscape",
+            "source": "generated",
+            "license": "CC0-1.0 (Programmatic Synthetic)",
+            "category": "landscape/nature-like scenes",
+            "width": 150,
+            "height": 150,
+            "checksum": "00d2ff8dcd9be9b3c2f659b70a03cc7228c71c6834e9856aba0a26e7ab5e9b46",
+            "notes": "Sky blue top, green foliage center, brown earth bottom"
+        },
+        {
+            "id": "graphic-flat",
+            "source": "generated",
+            "license": "CC0-1.0 (Programmatic Synthetic)",
+            "category": "logos/illustrations with flat colors",
+            "width": 100,
+            "height": 100,
+            "checksum": "51afe324c35275a1051aa0a5c8aca3891338d80e3ba647f6b96923920cf37cfd",
+            "notes": "Flat vector logo with 4 distinct quadrant colors"
+        },
+        {
+            "id": "transparent-asset",
+            "source": "generated",
+            "license": "CC0-1.0 (Programmatic Synthetic)",
+            "category": "transparent-background assets",
+            "width": 100,
+            "height": 100,
+            "checksum": "554d1408c7f4403f9fffcd17a8af990dc01ec3a51664e7c0c0233a7322ae825b",
+            "notes": "Centered colored circle surrounded by transparent pixels"
+        },
+        {
+            "id": "small-image",
+            "source": "generated",
+            "license": "CC0-1.0 (Programmatic Synthetic)",
+            "category": "small images",
+            "width": 16,
+            "height": 16,
+            "checksum": "6ffd1e136892ccbb251c78a0444d29d7a8228c41a3360b259691ad651fb4e230",
+            "notes": "Small 16x16 icon image"
+        },
+        {
+            "id": "max-sample-limit",
+            "source": "generated",
+            "license": "CC0-1.0 (Programmatic Synthetic)",
+            "category": "images near configured sampling limit",
+            "width": 400,
+            "height": 400,
+            "checksum": "fb4eb09f6209db847a414552feb5dff9f8f0d686388d848ffdeec5817cd79b77",
+            "notes": "Large 400x400 image testing sampling grid step behavior"
+        }
+    ]
+}

@@ -56,7 +56,7 @@ export type ExtractionMetadata = {
     returnedColors: number;
     returnedPopulation: number;
     coverage: number;
-    algorithmDetails: Readonly<Record<string, unknown>>;
+    algorithmDetails?: Readonly<Record<string, unknown>>;
 };
 
 export type ExtractPaletteResult = {

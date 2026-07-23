@@ -214,10 +214,16 @@ export async function extractPalette(
     );
 
     const coreOptions: CoreExtractPaletteOptions = {
+        algorithm: resolved.algorithm,
         sampling: resolved.sampling,
         filtering: resolved.filtering,
         result: resolved.result,
-        advanced: resolved.advanced,
+        advanced: {
+            ...(resolved.algorithm === 'lab-kmeans'
+                ? { labKmeans: resolved.advanced.labKmeans }
+                : { mmcq: resolved.advanced.mmcq }),
+            perceptualRanking: resolved.advanced.perceptualRanking,
+        },
         signal,
     };
 
@@ -407,6 +413,11 @@ async function fetchRemoteForPalette(
         if (onExternalAbort) {
             signal?.removeEventListener('abort', onExternalAbort);
         }
+        try {
+            reader.releaseLock();
+        } catch {
+            // Reader lock may already be released if stream was cancelled
+        }
     }
 }
 
@@ -519,5 +530,10 @@ async function fetchRemoteWithPipeline(
         return merged;
     } finally {
         clearTimeout(bodyTimeout);
+        try {
+            reader.releaseLock();
+        } catch {
+            // Reader lock may already be released if stream was cancelled
+        }
     }
 }

@@ -27,8 +27,14 @@ async function main() {
     if (!result.metadata) throw new Error('metadata is undefined');
 
     const palette = await extractPalette(buffer, {
+        algorithm: 'lab-kmeans',
         result: { maxColors: 1 },
     });
+    if (palette.metadata.algorithm !== 'lab-kmeans') {
+        throw new Error(
+            `expected algorithm 'lab-kmeans', got '${palette.metadata.algorithm}'`,
+        );
+    }
     if (palette.metadata.runtime !== 'node') {
         throw new Error(
             `expected palette runtime 'node', got '${palette.metadata.runtime}'`,

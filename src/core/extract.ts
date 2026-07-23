@@ -1,5 +1,7 @@
 import { VERSION } from '../generated/version.js';
+import type { ExtractionSampleSet } from './algorithms/contract.js';
 import { runLabKmeans } from './algorithms/lab-kmeans/run.js';
+import { getAlgorithm } from './algorithms/registry.js';
 import { labSquaredDistance } from './color/lab.js';
 import { resolveOptions } from './defaults.js';
 import { ColorExtractorError } from './errors.js';
@@ -41,8 +43,6 @@ export type PalettePixelInput = {
     readonly height: number;
     readonly channels: 3 | 4;
 };
-
-const NEUTRAL_ALGORITHM_VERSION = '1.0.0';
 
 function validatePalettePixelInput(
     input: unknown,
@@ -138,10 +138,14 @@ export function runNeutralPalettePipeline(
         input.height,
         input.channels,
     );
-    const samples = sampleSquareGrid(
-        pixels,
-        Math.max(pixels.width, pixels.height),
+    const maxDim = options.sampling.maxDimension;
+    const step = Math.max(
+        1,
+        Math.ceil(Math.max(pixels.width, pixels.height) / maxDim),
     );
+    const sampledWidth = Math.ceil(pixels.width / step);
+    const sampledHeight = Math.ceil(pixels.height / step);
+    const samples = sampleSquareGrid(pixels, maxDim);
 
     const criteria = {
         alphaThreshold: options.filtering.alphaThreshold,
@@ -163,11 +167,30 @@ export function runNeutralPalettePipeline(
     checkAborted(signal);
 
     const labSamples = convertRgbSamplesToLab(validSamples);
-    const k = Math.min(options.advanced.labKmeans.clusters, labSamples.length);
-    const candidateResult = runLabKmeans(labSamples, {
-        clusters: k,
-        iterations: options.advanced.labKmeans.iterations,
-        useObservedRgb: true,
+    const sampleSet: ExtractionSampleSet = {
+        samples: labSamples,
+        validPixels: validSamples.length,
+    };
+
+    const algorithmImpl = getAlgorithm(options.algorithm);
+    const algoOptions =
+        options.algorithm === 'lab-kmeans'
+            ? {
+                  clusters: Math.min(
+                      options.advanced.labKmeans.clusters,
+                      labSamples.length,
+                  ),
+                  iterations: options.advanced.labKmeans.iterations,
+              }
+            : {
+                  boxes: Math.min(
+                      options.advanced.mmcq.boxes,
+                      labSamples.length,
+                  ),
+              };
+
+    const candidateResult = algorithmImpl.run(sampleSet, algoOptions, {
+        signal,
     });
 
     checkAborted(signal);
@@ -175,13 +198,13 @@ export function runNeutralPalettePipeline(
     return normalizePalette({
         candidateResult,
         validPixels: validSamples.length,
-        sampledWidth: pixels.width,
-        sampledHeight: pixels.height,
+        sampledWidth,
+        sampledHeight,
         sampledPixels: samples.length,
         runtime: 'core',
         decoder: 'pixels',
         packageVersion: PACKAGE_VERSION,
-        algorithmVersion: NEUTRAL_ALGORITHM_VERSION,
+        algorithmVersion: candidateResult.algorithmVersion,
         options,
         signal,
     });

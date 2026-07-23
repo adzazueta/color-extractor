@@ -31,8 +31,14 @@ async function main() {
     if (!result.metadata) throw new Error('metadata is undefined');
 
     const palette = await extractPalette(input, {
+        algorithm: 'lab-kmeans',
         result: { maxColors: 1 },
     });
+    if (palette.metadata.algorithm !== 'lab-kmeans') {
+        throw new Error(
+            `expected algorithm 'lab-kmeans', got '${palette.metadata.algorithm}'`,
+        );
+    }
     if (palette.metadata.decoder !== 'image-data') {
         throw new Error('expected image-data palette decoder');
     }

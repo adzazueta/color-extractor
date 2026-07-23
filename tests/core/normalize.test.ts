@@ -6,6 +6,7 @@ import { normalizePalette } from '../../src/core/neutral/normalize.js';
 import type { ResolvedCoreExtractPaletteOptions } from '../../src/core/neutral-options.js';
 
 const BASE_OPTIONS: ResolvedCoreExtractPaletteOptions = {
+    algorithm: 'lab-kmeans',
     sampling: { maxDimension: 150 },
     filtering: {
         alphaThreshold: 128,
@@ -16,6 +17,7 @@ const BASE_OPTIONS: ResolvedCoreExtractPaletteOptions = {
     result: { maxColors: 5, includeHsl: false },
     advanced: {
         labKmeans: { clusters: 5, iterations: 7 },
+        mmcq: { boxes: 8 },
         perceptualRanking: { chromaFloor: 12, lowChromaPenalty: 0.1 },
     },
 };
