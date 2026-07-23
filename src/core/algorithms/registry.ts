@@ -4,9 +4,11 @@ import type {
     NeutralExtractionAlgorithm,
 } from './contract.js';
 import { labKmeansAlgorithm } from './lab-kmeans/algorithm.js';
+import { mmcqAlgorithm } from './mmcq/algorithm.js';
 
 const registry: Record<string, NeutralExtractionAlgorithm<unknown>> = {
     'lab-kmeans': labKmeansAlgorithm,
+    mmcq: mmcqAlgorithm,
 };
 
 /**

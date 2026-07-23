@@ -87,28 +87,22 @@ describe('Algorithm Selector and Metadata', () => {
         }
     });
 
-    it('throws COLOR_EXTRACTOR_INVALID_OPTIONS when algorithm "mmcq" is requested before registration', () => {
-        expect(() =>
-            resolveNeutralOptions(
-                {
-                    algorithm: 'mmcq' as unknown as ExtractionAlgorithm,
-                },
-                'core',
-            ),
-        ).toThrowError(ColorExtractorError);
+    it('resolves and executes algorithm "mmcq" when requested', async () => {
+        const resolved = resolveNeutralOptions({ algorithm: 'mmcq' }, 'core');
+        expect(resolved.algorithm).toBe('mmcq');
 
-        try {
-            resolveNeutralOptions(
-                {
-                    algorithm: 'mmcq' as unknown as ExtractionAlgorithm,
-                },
-                'core',
-            );
-        } catch (err: unknown) {
-            const error = err as ColorExtractorError;
-            expect(error.code).toBe('COLOR_EXTRACTOR_INVALID_OPTIONS');
-            expect(error.message).toContain('algorithm');
-        }
+        const result = await extractPaletteFromPixels(mockPixels, {
+            algorithm: 'mmcq',
+        });
+        expect(result.metadata.algorithm).toBe('mmcq');
+        expect(result.metadata.algorithmVersion).toBe('mmcq-v1');
+        expect(result.metadata.algorithmDetails).toMatchObject({
+            requestedBoxes: expect.any(Number),
+            producedCandidates: expect.any(Number),
+            histogramBits: 5,
+            occupiedBins: expect.any(Number),
+            splits: expect.any(Number),
+        });
     });
 
     it('allows algorithm-independent option groups for both algorithms', () => {
