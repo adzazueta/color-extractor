@@ -8,6 +8,7 @@ import type {
     NeutralExtractionAlgorithm,
 } from '../../src/core/algorithms/contract.js';
 import { labKmeansAlgorithm } from '../../src/core/algorithms/lab-kmeans/algorithm.js';
+import { mmcqAlgorithm } from '../../src/core/algorithms/mmcq/algorithm.js';
 
 /**
  * Reusable contract test suite runner for 0.3 neutral extraction algorithms.
@@ -157,6 +158,7 @@ describe('Neutral Algorithm Contract (ADZ-116)', () => {
         });
     });
 
-    // Verify actual registered algorithm labKmeansAlgorithm satisfies contract
+    // Verify actual registered algorithms satisfy contract
     verifyAlgorithmContract(labKmeansAlgorithm, {});
+    verifyAlgorithmContract(mmcqAlgorithm, {});
 });

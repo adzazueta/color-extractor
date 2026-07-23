@@ -171,3 +171,49 @@ describe('Deterministic MMCQ Core Algorithm', () => {
         expect(run1).toEqual(run2);
     });
 });
+
+describe('Public MMCQ Result Integration & Legacy Isolation', () => {
+    const mockPixels = {
+        data: new Uint8Array([
+            200, 50, 50, 255, 50, 200, 50, 255, 50, 50, 200, 255, 200, 200, 50,
+            255,
+        ]),
+        width: 2,
+        height: 2,
+        channels: 4 as const,
+    };
+
+    it('extractPaletteFromPixels returns valid neutral palette with algorithm: "mmcq"', async () => {
+        const { extractPaletteFromPixels } = await import(
+            '../../src/core/extract.js'
+        );
+        const palette = await extractPaletteFromPixels(mockPixels, {
+            algorithm: 'mmcq',
+            advanced: { mmcq: { boxes: 8 } },
+        });
+
+        expect(palette.metadata.algorithm).toBe('mmcq');
+        expect(palette.metadata.algorithmVersion).toBe('mmcq-v1');
+        expect(palette.metadata.algorithmDetails).toMatchObject({
+            requestedBoxes: expect.any(Number),
+            producedCandidates: expect.any(Number),
+            histogramBits: 5,
+            occupiedBins: expect.any(Number),
+            splits: expect.any(Number),
+        });
+        expect(palette.swatches.length).toBeGreaterThan(0);
+        expect(palette.rankings.perceptual).toHaveLength(
+            palette.swatches.length,
+        );
+    });
+
+    it('extractColors (legacy API) does not support MMCQ option', async () => {
+        const { extractColorsFromPixels } = await import(
+            '../../src/core/extract.js'
+        );
+        const colors = await extractColorsFromPixels(mockPixels, {
+            algorithm: 'mmcq',
+        } as unknown as Parameters<typeof extractColorsFromPixels>[1]);
+        expect(colors.primary).toBeDefined();
+    });
+});
