@@ -1,22 +1,26 @@
 {
     "suite": "core",
     "environment": {
-        "nodeVersion": "v24.14.0",
-        "os": "Darwin arm64 25.3.0",
-        "cpu": "Apple M4",
-        "cores": 10,
-        "timestamp": "2026-07-22T05:43:17.351Z",
+        "nodeVersion": "v24.16.0",
+        "os": "Linux x64 6.6.114.1-microsoft-standard-WSL2",
+        "cpu": "AMD Ryzen 7 5800X 8-Core Processor",
+        "cores": 16,
+        "timestamp": "2026-07-23T00:56:57.952Z",
         "packageVersion": "0.2.0-next.0",
-        "gitCommit": "d89aefc"
+        "gitCommit": "46ea4dd"
     },
     "algorithm": "lab-kmeans",
     "algorithmVersion": "1.0.0",
     "options": {},
-    "corpusChecksum": "0a518e97e4b516d8",
+    "runnerOptions": {
+        "warmupRuns": 10,
+        "measuredRuns": 50
+    },
+    "corpusChecksum": "1015577a260032d3",
     "summary": {
         "totalFixtures": 12,
-        "medianMsAggregate": 15.243581458333347,
-        "p95MsAggregate": 17.08547916666672,
+        "medianMsAggregate": 16.758123083333185,
+        "p95MsAggregate": 19.517452958333177,
         "reconstructionMeanAggregate": 5.951545925460965,
         "diversityMeanAggregate": 69.54551314882787,
         "determinismAll": true
@@ -31,14 +35,14 @@
             "algorithm": "lab-kmeans",
             "algorithmVersion": "1.0.0",
             "timing": {
-                "minMs": 10.691500000000019,
-                "medianMs": 11.150249999999971,
-                "p95Ms": 18.991833999999983,
-                "maxMs": 18.991833999999983,
-                "meanMs": 12.157918800000003,
-                "cv": 0.21631830989293638,
-                "warmupRuns": 5,
-                "measuredRuns": 20
+                "minMs": 14.277156999999988,
+                "medianMs": 15.46649949999994,
+                "p95Ms": 19.543309050000005,
+                "maxMs": 33.373537999999996,
+                "meanMs": 16.437144339999985,
+                "cv": 0.18350806116336466,
+                "warmupRuns": 10,
+                "measuredRuns": 50
             },
             "quality": {
                 "reconstructionMean": 0,
@@ -67,14 +71,14 @@
             "algorithm": "lab-kmeans",
             "algorithmVersion": "1.0.0",
             "timing": {
-                "minMs": 14.603791999999999,
-                "medianMs": 14.896749999999997,
-                "p95Ms": 15.247833000000014,
-                "maxMs": 15.247833000000014,
-                "meanMs": 14.861322849999993,
-                "cv": 0.011569098943841226,
-                "warmupRuns": 5,
-                "measuredRuns": 20
+                "minMs": 19.39070000000015,
+                "medianMs": 20.631180499999914,
+                "p95Ms": 24.91296019999988,
+                "maxMs": 34.665355999999974,
+                "meanMs": 21.47005653999999,
+                "cv": 0.1182029745987984,
+                "warmupRuns": 10,
+                "measuredRuns": 50
             },
             "quality": {
                 "reconstructionMean": 0,
@@ -103,14 +107,14 @@
             "algorithm": "lab-kmeans",
             "algorithmVersion": "1.0.0",
             "timing": {
-                "minMs": 23.945375000000013,
-                "medianMs": 24.365770999999995,
-                "p95Ms": 26.6623340000001,
-                "maxMs": 26.6623340000001,
-                "meanMs": 24.501422999999996,
-                "cv": 0.02548343770241985,
-                "warmupRuns": 5,
-                "measuredRuns": 20
+                "minMs": 33.161863999999696,
+                "medianMs": 33.96048450000012,
+                "p95Ms": 37.674178749999854,
+                "maxMs": 42.028298999999606,
+                "meanMs": 34.64052434000001,
+                "cv": 0.04856868080573216,
+                "warmupRuns": 10,
+                "measuredRuns": 50
             },
             "quality": {
                 "reconstructionMean": 0,
@@ -139,14 +143,14 @@
             "algorithm": "lab-kmeans",
             "algorithmVersion": "1.0.0",
             "timing": {
-                "minMs": 9.940624999999955,
-                "medianMs": 10.216291500000011,
-                "p95Ms": 13.854332999999997,
-                "maxMs": 13.854332999999997,
-                "meanMs": 10.436695899999984,
-                "cv": 0.07702463861451436,
-                "warmupRuns": 5,
-                "measuredRuns": 20
+                "minMs": 13.854871000000458,
+                "medianMs": 14.195148999999674,
+                "p95Ms": 15.355084799999894,
+                "maxMs": 16.34145499999977,
+                "meanMs": 14.366090380000005,
+                "cv": 0.035000821186855775,
+                "warmupRuns": 10,
+                "measuredRuns": 50
             },
             "quality": {
                 "reconstructionMean": 0,
@@ -175,18 +179,18 @@
             "algorithm": "lab-kmeans",
             "algorithmVersion": "1.0.0",
             "timing": {
-                "minMs": 6.130959000000075,
-                "medianMs": 6.497583000000077,
-                "p95Ms": 7.936584000000039,
-                "maxMs": 7.936584000000039,
-                "meanMs": 6.6193334500000445,
-                "cv": 0.06515928034110251,
-                "warmupRuns": 5,
-                "measuredRuns": 20
+                "minMs": 10.225382999999965,
+                "medianMs": 10.563834500000212,
+                "p95Ms": 13.187840899999491,
+                "maxMs": 14.265315000000555,
+                "meanMs": 10.991751220000005,
+                "cv": 0.0909586066150089,
+                "warmupRuns": 10,
+                "measuredRuns": 50
             },
             "quality": {
                 "reconstructionMean": 12.523779386256756,
-                "reconstructionP95": 27.627239611883347,
+                "reconstructionP95": 27.6257934544418,
                 "diversityMin": 18.507539997658316,
                 "diversityMean": 52.59649784710206,
                 "coverage": 0.6899141630901288,
@@ -211,14 +215,14 @@
             "algorithm": "lab-kmeans",
             "algorithmVersion": "1.0.0",
             "timing": {
-                "minMs": 17.088459000000057,
-                "medianMs": 17.56468700000005,
-                "p95Ms": 19.176375000000007,
-                "maxMs": 19.176375000000007,
-                "meanMs": 17.75407495000004,
-                "cv": 0.029720974608011444,
-                "warmupRuns": 5,
-                "measuredRuns": 20
+                "minMs": 24.776857000000746,
+                "medianMs": 25.463060999999925,
+                "p95Ms": 29.102923299999475,
+                "maxMs": 29.557935000000725,
+                "meanMs": 26.123832220000004,
+                "cv": 0.05547959674462829,
+                "warmupRuns": 10,
+                "measuredRuns": 50
             },
             "quality": {
                 "reconstructionMean": 10.75114765983519,
@@ -247,14 +251,14 @@
             "algorithm": "lab-kmeans",
             "algorithmVersion": "1.0.0",
             "timing": {
-                "minMs": 4.790000000000418,
-                "medianMs": 4.871083499999941,
-                "p95Ms": 5.3582500000002256,
-                "maxMs": 5.3582500000002256,
-                "meanMs": 4.91498120000008,
-                "cv": 0.03051378302678886,
-                "warmupRuns": 5,
-                "measuredRuns": 20
+                "minMs": 7.241750000000138,
+                "medianMs": 7.407133499999418,
+                "p95Ms": 8.872208000000182,
+                "maxMs": 9.064799000000676,
+                "meanMs": 7.636742059999978,
+                "cv": 0.06359406695448287,
+                "warmupRuns": 10,
+                "measuredRuns": 50
             },
             "quality": {
                 "reconstructionMean": 16.99866457736546,
@@ -283,14 +287,14 @@
             "algorithm": "lab-kmeans",
             "algorithmVersion": "1.0.0",
             "timing": {
-                "minMs": 23.448875000000044,
-                "medianMs": 23.799770500000022,
-                "p95Ms": 25.555624999999964,
-                "maxMs": 25.555624999999964,
-                "meanMs": 23.96390415000003,
-                "cv": 0.020811357619907347,
-                "warmupRuns": 5,
-                "measuredRuns": 20
+                "minMs": 31.768275000000358,
+                "medianMs": 32.39355049999995,
+                "p95Ms": 38.46055119999991,
+                "maxMs": 43.7195159999992,
+                "meanMs": 33.55385481999994,
+                "cv": 0.07299357634259718,
+                "warmupRuns": 10,
+                "measuredRuns": 50
             },
             "quality": {
                 "reconstructionMean": 0,
@@ -319,14 +323,14 @@
             "algorithm": "lab-kmeans",
             "algorithmVersion": "1.0.0",
             "timing": {
-                "minMs": 9.309541000000081,
-                "medianMs": 9.385457999999971,
-                "p95Ms": 10.608042000000296,
-                "maxMs": 10.608042000000296,
-                "meanMs": 9.453195800000026,
-                "cv": 0.02914751609945691,
-                "warmupRuns": 5,
-                "measuredRuns": 20
+                "minMs": 12.34697899999992,
+                "medianMs": 12.495615999999245,
+                "p95Ms": 13.272574599999825,
+                "maxMs": 15.711951999999656,
+                "meanMs": 12.6939666200001,
+                "cv": 0.04078796534337036,
+                "warmupRuns": 10,
+                "measuredRuns": 50
             },
             "quality": {
                 "reconstructionMean": 0,
@@ -355,14 +359,14 @@
             "algorithm": "lab-kmeans",
             "algorithmVersion": "1.0.0",
             "timing": {
-                "minMs": 4.062459000000217,
-                "medianMs": 4.2237705000000005,
-                "p95Ms": 4.3900830000002316,
-                "maxMs": 4.3900830000002316,
-                "meanMs": 4.222537600000033,
-                "cv": 0.015204286304691414,
-                "warmupRuns": 5,
-                "measuredRuns": 20
+                "minMs": 5.8055030000014085,
+                "medianMs": 5.932205999999496,
+                "p95Ms": 7.382221399999523,
+                "maxMs": 8.723464000000604,
+                "meanMs": 6.140198579999996,
+                "cv": 0.09585568862630296,
+                "warmupRuns": 10,
+                "measuredRuns": 50
             },
             "quality": {
                 "reconstructionMean": 0,
@@ -391,18 +395,18 @@
             "algorithm": "lab-kmeans",
             "algorithmVersion": "1.0.0",
             "timing": {
-                "minMs": 0.08708300000034797,
-                "medianMs": 0.09143749999998363,
-                "p95Ms": 0.10966599999983373,
-                "maxMs": 0.10966599999983373,
-                "meanMs": 0.09276045000001432,
-                "cv": 0.04922349025165291,
-                "warmupRuns": 5,
-                "measuredRuns": 20
+                "minMs": 0.13859800000136602,
+                "medianMs": 0.14103799999975308,
+                "p95Ms": 0.16961820000014993,
+                "maxMs": 0.18133800000032352,
+                "meanMs": 0.14496144000015193,
+                "cv": 0.06540297531492241,
+                "warmupRuns": 10,
+                "measuredRuns": 50
             },
             "quality": {
                 "reconstructionMean": 15.015224887169257,
-                "reconstructionP95": 32.17155246946718,
+                "reconstructionP95": 32.033810755349215,
                 "diversityMin": 27.659903401725682,
                 "diversityMean": 53.531347542681274,
                 "coverage": 0.6666666666666666,
@@ -423,27 +427,27 @@
             "category": "images near configured sampling limit",
             "width": 400,
             "height": 400,
-            "validPixels": 153440,
+            "validPixels": 38360,
             "algorithm": "lab-kmeans",
             "algorithmVersion": "1.0.0",
             "timing": {
-                "minMs": 55.064415999999255,
-                "medianMs": 55.86012500000015,
-                "p95Ms": 57.13479099999995,
-                "maxMs": 57.13479099999995,
-                "meanMs": 55.95156234999986,
-                "cv": 0.008631319778686409,
-                "warmupRuns": 5,
-                "measuredRuns": 20
+                "minMs": 21.49499299999843,
+                "medianMs": 22.447724000000562,
+                "p95Ms": 26.275965099999933,
+                "maxMs": 27.992936999999074,
+                "meanMs": 22.99629716000003,
+                "cv": 0.06684350109327249,
+                "warmupRuns": 10,
+                "measuredRuns": 50
             },
             "quality": {
                 "reconstructionMean": 16.129734594904917,
                 "reconstructionP95": 35.66332165079674,
                 "diversityMin": 22.30821939327956,
                 "diversityMean": 59.36999000332587,
-                "coverage": 0.6402698123044839,
-                "maxProportion": 0.2494732449131236,
-                "entropy": 2.306512841569801,
+                "coverage": 0.640458811261731,
+                "maxProportion": 0.2489010094431781,
+                "entropy": 2.306833386212494,
                 "determinism": true
             },
             "candidateCount": 8,

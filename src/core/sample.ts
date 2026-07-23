@@ -30,12 +30,12 @@ export function convertRgbSamplesToLab(pixels: Pixel[]): LabSample[] {
 /**
  * Sample a square grid of pixels from the image.
  *
- * `sampleSize` is the side length of the grid in cells (not a sample cap).
- * The image is sampled at uniform step `max(1, floor(max(W,H) / sampleSize))`
- * along both axes, and every cell is visited. For a 300x300 image with
- * `sampleSize = 150` the step is 2 and the grid covers all 150x150 = 22,500
- * cells. For images smaller than `sampleSize`, step is 1 and every pixel
- * is sampled (no top-left bias).
+ * `sampleSize` is the maximum allowed side length of the grid in cells.
+ * The image is sampled at uniform step `max(1, ceil(max(W,H) / sampleSize))`
+ * along both axes, guaranteeing that the grid dimensions never exceed `sampleSize`.
+ * For a 300x300 image with `sampleSize = 150`, step is 2 and the grid covers
+ * 150x150 = 22,500 cells. For images smaller than `sampleSize`, step is 1 and
+ * every pixel is sampled (no top-left bias).
  */
 export function sampleSquareGrid(
     pixels: NormalizedPixels,
@@ -49,7 +49,7 @@ export function sampleSquareGrid(
     const { width, height, channels, data } = pixels;
     if (width === 0 || height === 0) return [];
 
-    const step = Math.max(1, Math.floor(Math.max(width, height) / sampleSize));
+    const step = Math.max(1, Math.ceil(Math.max(width, height) / sampleSize));
     const cols = Math.ceil(width / step);
     const rows = Math.ceil(height / step);
     const samples: Pixel[] = [];

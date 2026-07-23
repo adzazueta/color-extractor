@@ -1,13 +1,114 @@
 import { describe, expect, it } from 'vitest';
 import type {
     AlgorithmCandidateResult,
-    AlgorithmContext,
     AlgorithmDiagnostics,
     ExtractionCandidate,
     ExtractionSample,
     ExtractionSampleSet,
     NeutralExtractionAlgorithm,
 } from '../../src/core/algorithms/contract.js';
+import { labKmeansAlgorithm } from '../../src/core/algorithms/lab-kmeans/algorithm.js';
+
+/**
+ * Reusable contract test suite runner for 0.3 neutral extraction algorithms.
+ * Verifies that any algorithm implementation satisfies all contract invariants.
+ */
+function verifyAlgorithmContract<T = unknown>(
+    algorithm: NeutralExtractionAlgorithm<T>,
+    options: Readonly<T>,
+) {
+    describe(`Algorithm Contract Invariants: ${algorithm.id} v${algorithm.version}`, () => {
+        const createSampleSet = (): ExtractionSampleSet => ({
+            samples: [
+                {
+                    rgb: { r: 255, g: 0, b: 0 },
+                    lab: { L: 53.24, a: 80.09, b: 67.2 },
+                },
+                {
+                    rgb: { r: 0, g: 255, b: 0 },
+                    lab: { L: 87.73, a: -86.18, b: 83.18 },
+                },
+                {
+                    rgb: { r: 0, g: 0, b: 255 },
+                    lab: { L: 32.3, a: 79.19, b: -107.86 },
+                },
+                {
+                    rgb: { r: 255, g: 255, b: 0 },
+                    lab: { L: 97.14, a: -21.55, b: 94.48 },
+                },
+                {
+                    rgb: { r: 255, g: 0, b: 255 },
+                    lab: { L: 60.32, a: 98.23, b: -60.82 },
+                },
+            ],
+            validPixels: 1000,
+        });
+
+        it('preserves input sample objects without mutation', () => {
+            const input = createSampleSet();
+            const originalSamplesJson = JSON.stringify(input.samples);
+            algorithm.run(input, options, {});
+            expect(JSON.stringify(input.samples)).toBe(originalSamplesJson);
+        });
+
+        it('conserves population across candidates', () => {
+            const input = createSampleSet();
+            const result = algorithm.run(input, options, {});
+            const totalPop = result.candidates.reduce(
+                (sum, c) => sum + c.population,
+                0,
+            );
+            expect(totalPop).toBe(input.samples.length);
+        });
+
+        it('produces sequential 0-indexed sourceIndex values', () => {
+            const input = createSampleSet();
+            const result = algorithm.run(input, options, {});
+            result.candidates.forEach((cand, idx) => {
+                expect(cand.sourceIndex).toBe(idx);
+            });
+        });
+
+        it('ensures all candidate RGB and Lab values are finite numbers', () => {
+            const input = createSampleSet();
+            const result = algorithm.run(input, options, {});
+            result.candidates.forEach((cand) => {
+                expect(Number.isInteger(cand.rgb.r)).toBe(true);
+                expect(cand.rgb.r).toBeGreaterThanOrEqual(0);
+                expect(cand.rgb.r).toBeLessThanOrEqual(255);
+                expect(Number.isInteger(cand.rgb.g)).toBe(true);
+                expect(cand.rgb.g).toBeGreaterThanOrEqual(0);
+                expect(cand.rgb.g).toBeLessThanOrEqual(255);
+                expect(Number.isInteger(cand.rgb.b)).toBe(true);
+                expect(cand.rgb.b).toBeGreaterThanOrEqual(0);
+                expect(cand.rgb.b).toBeLessThanOrEqual(255);
+
+                expect(Number.isFinite(cand.lab.L)).toBe(true);
+                expect(Number.isFinite(cand.lab.a)).toBe(true);
+                expect(Number.isFinite(cand.lab.b)).toBe(true);
+            });
+        });
+
+        it('returns valid diagnostics metadata matching output', () => {
+            const input = createSampleSet();
+            const result = algorithm.run(input, options, {});
+            expect(result.diagnostics.producedCandidates).toBe(
+                result.candidates.length,
+            );
+            expect(result.diagnostics.producedCandidates).toBeGreaterThan(0);
+        });
+
+        it('handles AbortSignal cancellation before/during execution', () => {
+            const input = createSampleSet();
+            const controller = new AbortController();
+            controller.abort();
+
+            expect(() => {
+                algorithm.run(input, options, { signal: controller.signal });
+            }).toThrow();
+        });
+    });
+}
 
 describe('Neutral Algorithm Contract (ADZ-116)', () => {
     it('defines rigid structural invariants for ExtractionSampleSet', () => {
@@ -56,60 +157,6 @@ describe('Neutral Algorithm Contract (ADZ-116)', () => {
         });
     });
 
-    it('supports dummy implementation conforming to NeutralExtractionAlgorithm interface', () => {
-        class MockAlgorithm
-            implements NeutralExtractionAlgorithm<{ clusters?: number }>
-        {
-            readonly id = 'lab-kmeans' as const;
-            readonly version = '0.1.0';
-
-            run(
-                input: ExtractionSampleSet,
-                options: Readonly<{ clusters?: number }>,
-                context: Readonly<AlgorithmContext>,
-            ): AlgorithmCandidateResult {
-                if (context.signal?.aborted) {
-                    throw new Error('Aborted');
-                }
-                const first = input.samples[0];
-                return {
-                    algorithm: this.id,
-                    algorithmVersion: this.version,
-                    candidates: first
-                        ? [
-                              {
-                                  rgb: first.rgb,
-                                  lab: first.lab,
-                                  population: input.validPixels,
-                                  sourceIndex: 0,
-                              },
-                          ]
-                        : [],
-                    diagnostics: {
-                        requestedClusters: options.clusters ?? 4,
-                        producedCandidates: first ? 1 : 0,
-                    },
-                };
-            }
-        }
-
-        const algo = new MockAlgorithm();
-        expect(algo.id).toBe('lab-kmeans');
-        expect(algo.version).toBe('0.1.0');
-
-        const input: ExtractionSampleSet = {
-            samples: [
-                {
-                    rgb: { r: 0, g: 128, b: 255 },
-                    lab: { L: 50, a: 0, b: -50 },
-                },
-            ],
-            validPixels: 1,
-        };
-
-        const res = algo.run(input, { clusters: 8 }, {});
-        expect(res.algorithm).toBe('lab-kmeans');
-        expect(res.candidates).toHaveLength(1);
-        expect(res.candidates[0]?.rgb).toEqual({ r: 0, g: 128, b: 255 });
-    });
+    // Verify actual registered algorithm labKmeansAlgorithm satisfies contract
+    verifyAlgorithmContract(labKmeansAlgorithm, {});
 });

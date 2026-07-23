@@ -33,6 +33,27 @@ describe('neutral types — root entrypoint', () => {
         expect(assertRootOverload).toBeTypeOf('function');
     });
 
+    it('dispatches to Node entrypoint when globalThis.ImageData is defined in Node', async () => {
+        const originalImageData = (globalThis as Record<string, unknown>)
+            .ImageData;
+        try {
+            (globalThis as Record<string, unknown>).ImageData =
+                class DummyImageData {};
+            const { extractPalette } = await import('../../src/index.js');
+            const buf = new Uint8Array([255, 0, 0, 255]);
+            await expect(extractPalette(buf)).rejects.not.toMatchObject({
+                message: expect.stringContaining('Browser input kind'),
+            });
+        } finally {
+            if (originalImageData === undefined) {
+                delete (globalThis as Record<string, unknown>).ImageData;
+            } else {
+                (globalThis as Record<string, unknown>).ImageData =
+                    originalImageData;
+            }
+        }
+    });
+
     it('SwatchId is a branded string type', () => {
         const id: SwatchId = 'swatch-a85f46';
         expect(id).toBe('swatch-a85f46');
@@ -149,20 +170,41 @@ describe('neutral types — all entrypoints', () => {
         }
     }
 
+    const INTERNAL_ALGORITHM_TYPES = [
+        'AlgorithmCandidateResult',
+        'AlgorithmContext',
+        'AlgorithmDiagnostics',
+        'ExtractionCandidate',
+        'ExtractionSample',
+        'ExtractionSampleSet',
+        'NeutralExtractionAlgorithm',
+    ];
+
+    function assertNoInternalTypesExported(relPath: string) {
+        const dts = readFileSync(resolve(rootDir, relPath), 'utf-8');
+        for (const name of INTERNAL_ALGORITHM_TYPES) {
+            expect(dts).not.toMatch(new RegExp(`\\b${name}\\b`));
+        }
+    }
+
     it('exports from root declarations', () => {
         assertDtsExports('dist/index.d.ts');
+        assertNoInternalTypesExported('dist/index.d.ts');
     });
 
     it('exports from browser declarations', () => {
         assertDtsExports('dist/browser/index.d.ts');
+        assertNoInternalTypesExported('dist/browser/index.d.ts');
     });
 
     it('exports from node declarations', () => {
         assertDtsExports('dist/node/index.d.ts');
+        assertNoInternalTypesExported('dist/node/index.d.ts');
     });
 
     it('exports from core declarations', () => {
         assertDtsExports('dist/core/index.d.ts');
+        assertNoInternalTypesExported('dist/core/index.d.ts');
     });
 });
 

@@ -54,12 +54,18 @@ export type BenchmarkReportSummary = {
     readonly determinismAll: boolean;
 };
 
+export type BenchmarkRunnerOptionsSummary = {
+    readonly warmupRuns: number;
+    readonly measuredRuns: number;
+};
+
 export type BenchmarkReport = {
     readonly suite: 'core' | 'node-decode' | 'browser';
     readonly environment: BenchmarkEnvironment;
     readonly algorithm: string;
     readonly algorithmVersion: string;
     readonly options: Readonly<Record<string, unknown>>;
+    readonly runnerOptions: BenchmarkRunnerOptionsSummary;
     readonly corpusChecksum: string;
     readonly summary: BenchmarkReportSummary;
     readonly results: readonly BenchmarkFixtureResult[];

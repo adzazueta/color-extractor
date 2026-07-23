@@ -12,6 +12,7 @@ import { ColorExtractorError } from '../errors.js';
 import type { ResolvedCoreExtractPaletteOptions } from '../neutral-options.js';
 import type {
     ExtractedSwatch,
+    ExtractionAlgorithm,
     ExtractionDecoder,
     ExtractionMetadata,
     ExtractionRuntime,
@@ -420,7 +421,7 @@ export function normalizePalette(
             : input.algorithmVersion;
 
     const metadata: ExtractionMetadata = {
-        algorithm,
+        algorithm: algorithm as ExtractionAlgorithm,
         algorithmVersion,
         packageVersion: input.packageVersion,
         runtime: input.runtime,

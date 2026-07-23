@@ -21,20 +21,56 @@ export type RootExtractPaletteInput =
     | ArrayBuffer
     | string;
 
+function isNodeRuntime(): boolean {
+    return (
+        typeof process !== 'undefined' &&
+        process.versions !== undefined &&
+        typeof process.versions.node === 'string'
+    );
+}
+
 /** @deprecated Use `extractPalette` instead. Semantic role extraction moved out of the extractor in 0.2.0. See the migration guide in the README. Will be removed in 0.4.0. */
-export declare function extractColors(
+export async function extractColors(
     input: RootExtractColorsInput,
     options?: ExtractColorsOptions,
-): Promise<ExtractColorsResult>;
+): Promise<ExtractColorsResult> {
+    if (isNodeRuntime()) {
+        const { extractColors: extractNode } = await import('./node/index.js');
+        return extractNode(input as string | Uint8Array | ArrayBuffer, options);
+    }
+    const { extractColors: extractBrowser } = await import(
+        './browser/index.js'
+    );
+    return extractBrowser(input as BrowserExtractColorsInput, options);
+}
 
-export declare function extractPalette(
+export function extractPalette(
     input: BrowserExtractColorsInput,
     options?: BrowserExtractPaletteOptions,
 ): Promise<ExtractPaletteResult>;
-export declare function extractPalette(
+export function extractPalette(
     input: Uint8Array | ArrayBuffer | string,
     options?: NodeExtractPaletteOptions,
 ): Promise<ExtractPaletteResult>;
+export async function extractPalette(
+    input: RootExtractPaletteInput,
+    options?: BrowserExtractPaletteOptions | NodeExtractPaletteOptions,
+): Promise<ExtractPaletteResult> {
+    if (isNodeRuntime()) {
+        const { extractPalette: extractNode } = await import('./node/index.js');
+        return extractNode(
+            input as string | Uint8Array | ArrayBuffer,
+            options as NodeExtractPaletteOptions,
+        );
+    }
+    const { extractPalette: extractBrowser } = await import(
+        './browser/index.js'
+    );
+    return extractBrowser(
+        input as BrowserExtractColorsInput,
+        options as BrowserExtractPaletteOptions,
+    );
+}
 
 export type {
     AdvancedExtractionOptions,

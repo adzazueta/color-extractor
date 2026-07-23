@@ -111,8 +111,16 @@ async function main() {
         'core entry exports COLOR_EXTRACTOR_ERROR_CODES',
     );
 
-    // 5. Root entrypoint resolves with VERSION, ColorExtractorError
+    // 5. Root entrypoint resolves with VERSION, ColorExtractorError, extractColors, extractPalette
     const rootEntry = await import(resolve(ROOT, 'dist/index.js'));
+    assert(
+        typeof rootEntry.extractColors === 'function',
+        'root entry exports extractColors',
+    );
+    assert(
+        typeof rootEntry.extractPalette === 'function',
+        'root entry exports extractPalette',
+    );
     assert(typeof rootEntry.VERSION === 'string', 'root entry exports VERSION');
     assert(
         typeof rootEntry.ColorExtractorError === 'function',

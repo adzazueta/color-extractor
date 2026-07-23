@@ -232,7 +232,7 @@ All options are optional. Defaults favor useful perceptual output and bounded re
 
 | Group | Option | Default | Description |
 | --- | --- | --- | --- |
-| `sampling` | `maxDimension` | `150` | Constrain the longest image dimension to this size (browser/Node). `/core` does not resize; this option is accepted for shape compatibility but has no effect on already-normalized pixels. |
+| `sampling` | `maxDimension` | `150` | Constrain the longest image dimension to this size across browser, Node, and `/core` runtimes. In `/core`, downsamples grid sampling to this maximum dimension without modifying the source pixel buffer. |
 | `filtering` | `alphaThreshold` | `128` | Ignore pixels below this alpha value (0–255). |
 | `filtering` | `minBrightness` | `10` | Ignore near-black pixels below this sRGB brightness (0–255). |
 | `filtering` | `maxBrightness` | `245` | Ignore near-white pixels above this sRGB brightness (0–255). |
@@ -391,7 +391,7 @@ The `code` field is the stable machine contract. Error message text may change b
 - Input requires `{ data, width, height, channels }` with `channels: 3 | 4`.
 - Data length is strictly validated: `data.length === width * height * channels`.
 - The core entrypoint does not resize, decode, or fetch images.
-- `sampling.maxDimension` is accepted for API shape compatibility but has no effect.
+- `sampling.maxDimension` controls grid downsampling without modifying the source pixel buffer.
 - There is no DOM, filesystem, fetch, or sharp dependency.
 
 ## Format support

@@ -40,3 +40,10 @@ export function registerAlgorithm(
 export function getRegisteredAlgorithms(): readonly NeutralExtractionAlgorithm<unknown>[] {
     return Object.values(registry);
 }
+
+/**
+ * Checks if an algorithm ID is registered.
+ */
+export function isAlgorithmRegistered(id: string): boolean {
+    return Object.hasOwn(registry, id);
+}

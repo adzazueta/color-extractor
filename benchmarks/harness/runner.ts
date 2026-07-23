@@ -1,4 +1,5 @@
 import { execSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import os from 'node:os';
 import { performance } from 'node:perf_hooks';
 import { extractPaletteFromPixels } from '../../src/core/extract.js';
@@ -12,7 +13,7 @@ import {
 } from '../../src/core/sample.js';
 import { VERSION } from '../../src/generated/version.js';
 import type { BenchmarkFixtureData } from '../corpus/manifest.js';
-import { computeQualityMetrics } from './metrics.js';
+import { calculatePercentile, computeQualityMetrics } from './metrics.js';
 import type {
     BenchmarkEnvironment,
     BenchmarkFixtureResult,
@@ -42,6 +43,16 @@ export function getSystemEnvironment(): BenchmarkEnvironment {
     };
 }
 
+export function computeCorpusChecksum(
+    corpus: readonly BenchmarkFixtureData[],
+): string {
+    const hash = createHash('sha256');
+    for (const item of corpus) {
+        hash.update(`${item.manifest.id}:${item.manifest.checksum};`);
+    }
+    return hash.digest('hex').slice(0, 16);
+}
+
 export function computeTimingStats(
     durationsMs: readonly number[],
     warmupRuns: number,
@@ -58,8 +69,7 @@ export function computeTimingStats(
             ? ((sorted[n / 2 - 1] ?? 0) + (sorted[n / 2] ?? 0)) / 2
             : (sorted[Math.floor(n / 2)] ?? 0);
 
-    const p95Index = Math.min(n - 1, Math.floor(n * 0.95));
-    const p95Ms = sorted[p95Index] ?? 0;
+    const p95Ms = calculatePercentile(sorted, 0.95);
 
     const variance = sorted.reduce((acc, d) => acc + (d - meanMs) ** 2, 0) / n;
     const stdDev = Math.sqrt(variance);
@@ -198,10 +208,11 @@ export async function runBenchmarkSuite(
         algorithm: first?.algorithm ?? 'lab-kmeans',
         algorithmVersion: first?.algorithmVersion ?? '1.0.0',
         options: (runnerOptions.options ?? {}) as Record<string, unknown>,
-        corpusChecksum: corpus
-            .map((c) => c.manifest.checksum)
-            .join(',')
-            .slice(0, 16),
+        runnerOptions: {
+            warmupRuns: runnerOptions.warmupRuns ?? 5,
+            measuredRuns: runnerOptions.measuredRuns ?? 20,
+        },
+        corpusChecksum: computeCorpusChecksum(corpus),
         summary: {
             totalFixtures,
             medianMsAggregate,

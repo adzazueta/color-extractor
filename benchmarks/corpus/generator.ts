@@ -364,10 +364,11 @@ export function generateCorpus(): readonly BenchmarkFixtureData[] {
 
 export function generateManifest(
     fixtures: readonly BenchmarkFixtureData[],
+    generatedAt = '2026-07-22T00:00:00.000Z',
 ): BenchmarkCorpusManifest {
     return {
         version: '1.0.0',
-        generatedAt: new Date().toISOString(),
+        generatedAt,
         fixtures: fixtures.map((f) => f.manifest),
     };
 }

@@ -111,6 +111,43 @@ describe('extractPaletteFromPixels — observed RGB', () => {
         expect(chroma).toBeGreaterThan(30);
         expect(chroma).toBeLessThan(50);
     });
+
+    it('respects sampling.maxDimension for downsampling grid in core (400x400 to 10x10)', async () => {
+        const width = 400;
+        const height = 400;
+        const data = pixelData(width, height, [{ r: 200, g: 150, b: 100 }]);
+        const result = await extractPaletteFromPixels(
+            { data, width, height, channels: 4 },
+            {
+                sampling: { maxDimension: 10 },
+                filtering: PERMISSIVE_FILTER,
+            },
+        );
+
+        expect(result.metadata.sampledWidth).toBe(10);
+        expect(result.metadata.sampledHeight).toBe(10);
+        expect(result.metadata.sampledPixels).toBe(100);
+    });
+
+    it('ensures sampled grid dimensions never exceed maxDimension on non-multiples (151x151 to maxDimension 150)', async () => {
+        const width = 151;
+        const height = 151;
+        const data = pixelData(width, height, [{ r: 200, g: 150, b: 100 }]);
+        const result = await extractPaletteFromPixels(
+            { data, width, height, channels: 4 },
+            {
+                sampling: { maxDimension: 150 },
+                filtering: PERMISSIVE_FILTER,
+            },
+        );
+
+        expect(result.metadata.sampledWidth).toBeLessThanOrEqual(150);
+        expect(result.metadata.sampledHeight).toBeLessThanOrEqual(150);
+        expect(result.metadata.sampledPixels).toBeLessThanOrEqual(22500);
+        expect(result.metadata.sampledWidth).toBe(76);
+        expect(result.metadata.sampledHeight).toBe(76);
+        expect(result.metadata.sampledPixels).toBe(5776);
+    });
 });
 
 describe('extractPaletteFromPixels — abort with arbitrary reason', () => {

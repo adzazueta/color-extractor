@@ -111,11 +111,9 @@
             "optional": true
         }
     },
-    "pnpm": {
-        "onlyBuiltDependencies": [
-            "esbuild"
-        ]
-    },
+    "onlyBuiltDependencies": [
+        "esbuild"
+    ],
     "devDependencies": {
         "@biomejs/biome": "^2.5.4",
         "@changesets/cli": "^2.31.1",

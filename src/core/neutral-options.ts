@@ -1,3 +1,4 @@
+import { isAlgorithmRegistered } from './algorithms/registry.js';
 import { ColorExtractorError } from './errors.js';
 import type { ExtractionAlgorithm } from './palette-types.js';
 
@@ -540,7 +541,10 @@ function checkAdvancedBounds(
             "advanced.mmcq is not allowed when algorithm is 'lab-kmeans'",
         );
     }
-    if (activeAlgorithm === 'mmcq' && userAdvanced.labKmeans !== undefined) {
+    if (
+        (activeAlgorithm as string) === 'mmcq' &&
+        userAdvanced.labKmeans !== undefined
+    ) {
         invalidOpt(
             'advanced.labKmeans',
             "advanced.labKmeans is not allowed when algorithm is 'mmcq'",
@@ -891,13 +895,13 @@ export function resolveNeutralOptions(
                 `must be a string, got ${typeof picked.algorithm}`,
             );
         }
-        if (picked.algorithm !== 'lab-kmeans' && picked.algorithm !== 'mmcq') {
+        if (!isAlgorithmRegistered(picked.algorithm)) {
             invalidOpt(
                 'algorithm',
-                `must be 'lab-kmeans' or 'mmcq', got '${String(picked.algorithm)}'`,
+                `must be a registered algorithm ('lab-kmeans'), got '${String(picked.algorithm)}'`,
             );
         }
-        common.algorithm = picked.algorithm;
+        common.algorithm = picked.algorithm as ExtractionAlgorithm;
     }
 
     checkCommonGroupBounds(common, picked);

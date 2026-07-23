@@ -41,7 +41,7 @@ function isBitmap(value: unknown): value is ImageBitmap {
 }
 
 function isHttpUrl(value: string): boolean {
-    return value.startsWith('http://') || value.startsWith('https://');
+    return /^https?:\/\//i.test(value);
 }
 
 export function detectBrowserInputKind(input: unknown): BrowserInputKind {

@@ -37,6 +37,12 @@ describe('detectBrowserInputKind (ADZ-53)', () => {
             ).toBe('url');
         });
 
+        it('returns "url" for an uppercase HTTPS:// URL', () => {
+            expect(
+                detectBrowserInputKind('HTTPS://example.com/image.png'),
+            ).toBe('url');
+        });
+
         it('returns "unsupported" for a data URL', () => {
             expect(
                 detectBrowserInputKind('data:image/png;base64,iVBORw0KGgo='),

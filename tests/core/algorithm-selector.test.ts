@@ -87,12 +87,11 @@ describe('Algorithm Selector and Metadata', () => {
         }
     });
 
-    it('throws COLOR_EXTRACTOR_INVALID_OPTIONS when advanced.labKmeans is passed while algorithm is "mmcq"', () => {
+    it('throws COLOR_EXTRACTOR_INVALID_OPTIONS when algorithm "mmcq" is requested before registration', () => {
         expect(() =>
             resolveNeutralOptions(
                 {
-                    algorithm: 'mmcq',
-                    advanced: { labKmeans: { clusters: 10 } },
+                    algorithm: 'mmcq' as unknown as ExtractionAlgorithm,
                 },
                 'core',
             ),
@@ -101,15 +100,14 @@ describe('Algorithm Selector and Metadata', () => {
         try {
             resolveNeutralOptions(
                 {
-                    algorithm: 'mmcq',
-                    advanced: { labKmeans: { clusters: 10 } },
+                    algorithm: 'mmcq' as unknown as ExtractionAlgorithm,
                 },
                 'core',
             );
         } catch (err: unknown) {
             const error = err as ColorExtractorError;
             expect(error.code).toBe('COLOR_EXTRACTOR_INVALID_OPTIONS');
-            expect(error.message).toContain('advanced.labKmeans');
+            expect(error.message).toContain('algorithm');
         }
     });
 

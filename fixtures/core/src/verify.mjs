@@ -24,8 +24,13 @@ async function main() {
 
     const palette = await extractPaletteFromPixels(
         { data, width: 20, height: 20, channels: 4 },
-        { result: { maxColors: 1 } },
+        { algorithm: 'lab-kmeans', result: { maxColors: 1 } },
     );
+    if (palette.metadata.algorithm !== 'lab-kmeans') {
+        throw new Error(
+            `expected algorithm 'lab-kmeans', got '${palette.metadata.algorithm}'`,
+        );
+    }
     if (palette.metadata.decoder !== 'pixels') {
         throw new Error('expected pixels palette decoder');
     }

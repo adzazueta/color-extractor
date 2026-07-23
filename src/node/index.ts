@@ -413,6 +413,11 @@ async function fetchRemoteForPalette(
         if (onExternalAbort) {
             signal?.removeEventListener('abort', onExternalAbort);
         }
+        try {
+            reader.releaseLock();
+        } catch {
+            // Reader lock may already be released if stream was cancelled
+        }
     }
 }
 
@@ -525,5 +530,10 @@ async function fetchRemoteWithPipeline(
         return merged;
     } finally {
         clearTimeout(bodyTimeout);
+        try {
+            reader.releaseLock();
+        } catch {
+            // Reader lock may already be released if stream was cancelled
+        }
     }
 }

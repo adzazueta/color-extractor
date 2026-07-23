@@ -37,7 +37,7 @@ function isArrayBuffer(value: unknown): value is ArrayBuffer {
 }
 
 function isHttpUrl(value: string): boolean {
-    return value.startsWith('http://') || value.startsWith('https://');
+    return /^https?:\/\//i.test(value);
 }
 
 export function detectNodeInputKind(input: unknown): NodeInputKind {

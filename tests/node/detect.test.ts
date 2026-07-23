@@ -53,6 +53,15 @@ describe('detectNodeInputKind (ADZ-56)', () => {
                 'remoteUrl',
             );
         });
+
+        it('returns "remoteUrl" for uppercase HTTPS:// and HTTP://', () => {
+            expect(detectNodeInputKind('HTTPS://example.com/image.png')).toBe(
+                'remoteUrl',
+            );
+            expect(detectNodeInputKind('HTTP://example.com/image.png')).toBe(
+                'remoteUrl',
+            );
+        });
     });
 
     describe('AC: non-http strings are treated as local paths', () => {

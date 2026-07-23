@@ -36,7 +36,7 @@ export type PaletteRankings = {
     chroma: SwatchId[];
 };
 
-export type ExtractionAlgorithm = 'lab-kmeans' | 'mmcq';
+export type ExtractionAlgorithm = 'lab-kmeans';
 
 export type ExtractionRuntime = 'browser' | 'node' | 'core';
 
@@ -56,7 +56,7 @@ export type ExtractionMetadata = {
     returnedColors: number;
     returnedPopulation: number;
     coverage: number;
-    algorithmDetails: Readonly<Record<string, unknown>>;
+    algorithmDetails?: Readonly<Record<string, unknown>>;
 };
 
 export type ExtractPaletteResult = {

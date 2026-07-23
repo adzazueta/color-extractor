@@ -13,6 +13,22 @@ export function labDistance(
     return Math.sqrt(labSquaredDistance(a, b));
 }
 
+export function calculatePercentile(
+    sorted: readonly number[],
+    p: number,
+): number {
+    if (sorted.length === 0) return 0;
+    if (sorted.length === 1) return sorted[0]!;
+    const rank = p * (sorted.length - 1);
+    const lower = Math.floor(rank);
+    const upper = Math.ceil(rank);
+    const weight = rank - lower;
+    return (
+        sorted[lower]! * (1 - weight) +
+        (sorted[upper] ?? sorted[lower]!) * weight
+    );
+}
+
 export function calculateReconstructionError(
     samples: readonly LabSample[],
     swatches: readonly ExtractedSwatch[],
@@ -39,12 +55,7 @@ export function calculateReconstructionError(
 
     const sum = distances.reduce((acc, d) => acc + d, 0);
     const mean = sum / distances.length;
-
-    const p95Index = Math.min(
-        distances.length - 1,
-        Math.floor(distances.length * 0.95),
-    );
-    const p95 = distances[p95Index] ?? 0;
+    const p95 = calculatePercentile(distances, 0.95);
 
     return { mean, p95 };
 }

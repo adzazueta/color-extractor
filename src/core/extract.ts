@@ -138,10 +138,14 @@ export function runNeutralPalettePipeline(
         input.height,
         input.channels,
     );
-    const samples = sampleSquareGrid(
-        pixels,
-        Math.max(pixels.width, pixels.height),
+    const maxDim = options.sampling.maxDimension;
+    const step = Math.max(
+        1,
+        Math.ceil(Math.max(pixels.width, pixels.height) / maxDim),
     );
+    const sampledWidth = Math.ceil(pixels.width / step);
+    const sampledHeight = Math.ceil(pixels.height / step);
+    const samples = sampleSquareGrid(pixels, maxDim);
 
     const criteria = {
         alphaThreshold: options.filtering.alphaThreshold,
@@ -194,8 +198,8 @@ export function runNeutralPalettePipeline(
     return normalizePalette({
         candidateResult,
         validPixels: validSamples.length,
-        sampledWidth: pixels.width,
-        sampledHeight: pixels.height,
+        sampledWidth,
+        sampledHeight,
         sampledPixels: samples.length,
         runtime: 'core',
         decoder: 'pixels',
