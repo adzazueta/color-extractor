@@ -541,10 +541,7 @@ function checkAdvancedBounds(
             "advanced.mmcq is not allowed when algorithm is 'lab-kmeans'",
         );
     }
-    if (
-        (activeAlgorithm as string) === 'mmcq' &&
-        userAdvanced.labKmeans !== undefined
-    ) {
+    if (activeAlgorithm === 'mmcq' && userAdvanced.labKmeans !== undefined) {
         invalidOpt(
             'advanced.labKmeans',
             "advanced.labKmeans is not allowed when algorithm is 'mmcq'",
@@ -898,7 +895,7 @@ export function resolveNeutralOptions(
         if (!isAlgorithmRegistered(picked.algorithm)) {
             invalidOpt(
                 'algorithm',
-                `must be a registered algorithm ('lab-kmeans'), got '${String(picked.algorithm)}'`,
+                `must be a registered algorithm ('lab-kmeans' or 'mmcq'), got '${String(picked.algorithm)}'`,
             );
         }
         common.algorithm = picked.algorithm as ExtractionAlgorithm;

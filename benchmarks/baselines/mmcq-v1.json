@@ -1,0 +1,488 @@
+{
+    "suite": "core",
+    "environment": {
+        "nodeVersion": "v24.16.0",
+        "os": "Linux x64 6.6.114.1-microsoft-standard-WSL2",
+        "cpu": "AMD Ryzen 7 5800X 8-Core Processor",
+        "cores": 16,
+        "timestamp": "2026-07-23T18:54:01.799Z",
+        "packageVersion": "0.2.0-next.0",
+        "gitCommit": "6ac8bb4"
+    },
+    "algorithm": "mmcq",
+    "algorithmVersion": "mmcq-v1",
+    "options": {
+        "algorithm": "mmcq"
+    },
+    "runnerOptions": {
+        "warmupRuns": 10,
+        "measuredRuns": 50
+    },
+    "corpusChecksum": "1015577a260032d3",
+    "summary": {
+        "totalFixtures": 12,
+        "medianMsAggregate": 2.4250996250000063,
+        "p95MsAggregate": 3.6642170500000297,
+        "reconstructionMeanAggregate": 5.183182585903485,
+        "diversityMeanAggregate": 78.21248366315673,
+        "determinismAll": true
+    },
+    "results": [
+        {
+            "fixtureId": "synthetic-single",
+            "category": "synthetic single color",
+            "width": 100,
+            "height": 100,
+            "validPixels": 10000,
+            "algorithm": "mmcq",
+            "algorithmVersion": "mmcq-v1",
+            "timing": {
+                "minMs": 1.6058019999999829,
+                "medianMs": 1.740031000000016,
+                "p95Ms": 3.1837409499999945,
+                "maxMs": 5.3555299999999875,
+                "meanMs": 1.9997600600000016,
+                "cv": 0.3732855106600564,
+                "warmupRuns": 10,
+                "measuredRuns": 50
+            },
+            "quality": {
+                "reconstructionMean": 0,
+                "reconstructionP95": 0,
+                "diversityMin": null,
+                "diversityMean": null,
+                "coverage": 1,
+                "maxProportion": 1,
+                "entropy": 0,
+                "determinism": true
+            },
+            "candidateCount": 1,
+            "returnedColors": 1,
+            "algorithmDetails": {
+                "requestedBoxes": 8,
+                "producedCandidates": 1,
+                "histogramBits": 5,
+                "occupiedBins": 1,
+                "splits": 0
+            }
+        },
+        {
+            "fixtureId": "synthetic-blocks",
+            "category": "synthetic two/three-color blocks",
+            "width": 120,
+            "height": 120,
+            "validPixels": 14400,
+            "algorithm": "mmcq",
+            "algorithmVersion": "mmcq-v1",
+            "timing": {
+                "minMs": 2.3833589999999845,
+                "medianMs": 2.667965500000008,
+                "p95Ms": 4.797853100000017,
+                "maxMs": 5.762394000000029,
+                "meanMs": 3.0932162800000027,
+                "cv": 0.2853901742297008,
+                "warmupRuns": 10,
+                "measuredRuns": 50
+            },
+            "quality": {
+                "reconstructionMean": 0,
+                "reconstructionP95": 0,
+                "diversityMin": 114.26689300319725,
+                "diversityMean": 135.65663725263653,
+                "coverage": 1,
+                "maxProportion": 0.3333333333333333,
+                "entropy": 1.584962500721156,
+                "determinism": true
+            },
+            "candidateCount": 3,
+            "returnedColors": 3,
+            "algorithmDetails": {
+                "requestedBoxes": 8,
+                "producedCandidates": 3,
+                "histogramBits": 5,
+                "occupiedBins": 3,
+                "splits": 2
+            }
+        },
+        {
+            "fixtureId": "muted-vivid",
+            "category": "muted-majority plus vivid-minority",
+            "width": 150,
+            "height": 150,
+            "validPixels": 22500,
+            "algorithm": "mmcq",
+            "algorithmVersion": "mmcq-v1",
+            "timing": {
+                "minMs": 3.9840410000000475,
+                "medianMs": 4.426895999999999,
+                "p95Ms": 8.910409299999992,
+                "maxMs": 9.109347999999954,
+                "meanMs": 5.398479240000008,
+                "cv": 0.32382806716351464,
+                "warmupRuns": 10,
+                "measuredRuns": 50
+            },
+            "quality": {
+                "reconstructionMean": 0,
+                "reconstructionP95": 0,
+                "diversityMin": 76.41012634430278,
+                "diversityMean": 76.41012634430278,
+                "coverage": 1,
+                "maxProportion": 0.9391555555555555,
+                "entropy": 0.3307879675796264,
+                "determinism": true
+            },
+            "candidateCount": 2,
+            "returnedColors": 2,
+            "algorithmDetails": {
+                "requestedBoxes": 8,
+                "producedCandidates": 2,
+                "histogramBits": 5,
+                "occupiedBins": 2,
+                "splits": 1
+            }
+        },
+        {
+            "fixtureId": "near-gray",
+            "category": "near-gray/low-chroma",
+            "width": 120,
+            "height": 120,
+            "validPixels": 9600,
+            "algorithm": "mmcq",
+            "algorithmVersion": "mmcq-v1",
+            "timing": {
+                "minMs": 1.895399999999995,
+                "medianMs": 2.064711499999987,
+                "p95Ms": 2.3856099500000765,
+                "maxMs": 2.7076379999999745,
+                "meanMs": 2.0946438199999964,
+                "cv": 0.07879211281487482,
+                "warmupRuns": 10,
+                "measuredRuns": 50
+            },
+            "quality": {
+                "reconstructionMean": 1.2344970201292789,
+                "reconstructionP95": 1.295076570225552,
+                "diversityMin": null,
+                "diversityMean": null,
+                "coverage": 1,
+                "maxProportion": 1,
+                "entropy": 0,
+                "determinism": true
+            },
+            "candidateCount": 1,
+            "returnedColors": 1,
+            "algorithmDetails": {
+                "requestedBoxes": 8,
+                "producedCandidates": 1,
+                "histogramBits": 5,
+                "occupiedBins": 1,
+                "splits": 0
+            }
+        },
+        {
+            "fixtureId": "rgb-gradient",
+            "category": "smooth RGB gradients",
+            "width": 150,
+            "height": 150,
+            "validPixels": 18640,
+            "algorithm": "mmcq",
+            "algorithmVersion": "mmcq-v1",
+            "timing": {
+                "minMs": 3.5356950000000325,
+                "medianMs": 3.6929189999999608,
+                "p95Ms": 4.767448950000102,
+                "maxMs": 4.976566000000048,
+                "meanMs": 3.856029040000001,
+                "cv": 0.10201902475083251,
+                "warmupRuns": 10,
+                "measuredRuns": 50
+            },
+            "quality": {
+                "reconstructionMean": 13.129466789270369,
+                "reconstructionP95": 28.94464477585233,
+                "diversityMin": 15.860415842530251,
+                "diversityMean": 53.65794374956103,
+                "coverage": 0.6428111587982832,
+                "maxProportion": 0.21123351694207979,
+                "entropy": 2.3198263376365715,
+                "determinism": true
+            },
+            "candidateCount": 8,
+            "returnedColors": 5,
+            "algorithmDetails": {
+                "requestedBoxes": 8,
+                "producedCandidates": 8,
+                "histogramBits": 5,
+                "occupiedBins": 539,
+                "splits": 7
+            }
+        },
+        {
+            "fixtureId": "photo-vibrant",
+            "category": "high-diversity photographic scenes",
+            "width": 160,
+            "height": 160,
+            "validPixels": 6400,
+            "algorithm": "mmcq",
+            "algorithmVersion": "mmcq-v1",
+            "timing": {
+                "minMs": 1.1238740000001144,
+                "medianMs": 1.3091134999999667,
+                "p95Ms": 2.0127649999999653,
+                "maxMs": 3.1309319999998024,
+                "meanMs": 1.3787562200000094,
+                "cv": 0.2790230515101854,
+                "warmupRuns": 10,
+                "measuredRuns": 50
+            },
+            "quality": {
+                "reconstructionMean": 10.751147659835746,
+                "reconstructionP95": 68.80734502294844,
+                "diversityMin": 41.149017798932384,
+                "diversityMean": 115.30893162653277,
+                "coverage": 0.84375,
+                "maxProportion": 0.2222222222222222,
+                "entropy": 2.3184873629704748,
+                "determinism": true
+            },
+            "candidateCount": 6,
+            "returnedColors": 5,
+            "algorithmDetails": {
+                "requestedBoxes": 8,
+                "producedCandidates": 6,
+                "histogramBits": 5,
+                "occupiedBins": 6,
+                "splits": 5
+            }
+        },
+        {
+            "fixtureId": "portrait-skin",
+            "category": "skin/portrait-like scenes",
+            "width": 120,
+            "height": 120,
+            "validPixels": 14400,
+            "algorithm": "mmcq",
+            "algorithmVersion": "mmcq-v1",
+            "timing": {
+                "minMs": 2.4750319999998283,
+                "medianMs": 2.6600144999999884,
+                "p95Ms": 3.2303530000000356,
+                "maxMs": 4.666908000000149,
+                "meanMs": 2.7435210400000143,
+                "cv": 0.1289618202211971,
+                "warmupRuns": 10,
+                "measuredRuns": 50
+            },
+            "quality": {
+                "reconstructionMean": 0.25925120227640924,
+                "reconstructionP95": 0.6141344329397873,
+                "diversityMin": 0.9026043239205093,
+                "diversityMean": 23.837406986638896,
+                "coverage": 1,
+                "maxProportion": 0.40229166666666666,
+                "entropy": 1.9163802144496533,
+                "determinism": true
+            },
+            "candidateCount": 5,
+            "returnedColors": 5,
+            "algorithmDetails": {
+                "requestedBoxes": 8,
+                "producedCandidates": 5,
+                "histogramBits": 5,
+                "occupiedBins": 5,
+                "splits": 4
+            }
+        },
+        {
+            "fixtureId": "nature-landscape",
+            "category": "landscape/nature-like scenes",
+            "width": 150,
+            "height": 150,
+            "validPixels": 22500,
+            "algorithm": "mmcq",
+            "algorithmVersion": "mmcq-v1",
+            "timing": {
+                "minMs": 3.7010239999999612,
+                "medianMs": 3.9308375000000524,
+                "p95Ms": 5.710837949999904,
+                "maxMs": 6.4061320000000705,
+                "meanMs": 4.221893139999997,
+                "cv": 0.16431527926555697,
+                "warmupRuns": 10,
+                "measuredRuns": 50
+            },
+            "quality": {
+                "reconstructionMean": 0,
+                "reconstructionP95": 0,
+                "diversityMin": 58.343545453160665,
+                "diversityMean": 71.50516011172736,
+                "coverage": 1,
+                "maxProportion": 0.4,
+                "entropy": 1.5571987281183353,
+                "determinism": true
+            },
+            "candidateCount": 3,
+            "returnedColors": 3,
+            "algorithmDetails": {
+                "requestedBoxes": 8,
+                "producedCandidates": 3,
+                "histogramBits": 5,
+                "occupiedBins": 3,
+                "splits": 2
+            }
+        },
+        {
+            "fixtureId": "graphic-flat",
+            "category": "logos/illustrations with flat colors",
+            "width": 100,
+            "height": 100,
+            "validPixels": 10000,
+            "algorithm": "mmcq",
+            "algorithmVersion": "mmcq-v1",
+            "timing": {
+                "minMs": 1.6646809999999732,
+                "medianMs": 1.8510185000000092,
+                "p95Ms": 2.636755550000089,
+                "maxMs": 3.0876009999999496,
+                "meanMs": 1.8940667799999893,
+                "cv": 0.14919657390552646,
+                "warmupRuns": 10,
+                "measuredRuns": 50
+            },
+            "quality": {
+                "reconstructionMean": 0,
+                "reconstructionP95": 0,
+                "diversityMin": 62.472529663765606,
+                "diversityMean": 127.33741356944482,
+                "coverage": 1,
+                "maxProportion": 0.25,
+                "entropy": 2,
+                "determinism": true
+            },
+            "candidateCount": 4,
+            "returnedColors": 4,
+            "algorithmDetails": {
+                "requestedBoxes": 8,
+                "producedCandidates": 4,
+                "histogramBits": 5,
+                "occupiedBins": 4,
+                "splits": 3
+            }
+        },
+        {
+            "fixtureId": "transparent-asset",
+            "category": "transparent-background assets",
+            "width": 100,
+            "height": 100,
+            "validPixels": 3853,
+            "algorithm": "mmcq",
+            "algorithmVersion": "mmcq-v1",
+            "timing": {
+                "minMs": 0.8005809999999656,
+                "medianMs": 0.9269620000000032,
+                "p95Ms": 1.1366546500000252,
+                "maxMs": 1.6807300000000396,
+                "meanMs": 0.9487234400000125,
+                "cv": 0.15698130444784847,
+                "warmupRuns": 10,
+                "measuredRuns": 50
+            },
+            "quality": {
+                "reconstructionMean": 0,
+                "reconstructionP95": 0,
+                "diversityMin": null,
+                "diversityMean": null,
+                "coverage": 1,
+                "maxProportion": 1,
+                "entropy": 0,
+                "determinism": true
+            },
+            "candidateCount": 1,
+            "returnedColors": 1,
+            "algorithmDetails": {
+                "requestedBoxes": 8,
+                "producedCandidates": 1,
+                "histogramBits": 5,
+                "occupiedBins": 1,
+                "splits": 0
+            }
+        },
+        {
+            "fixtureId": "small-image",
+            "category": "small images",
+            "width": 16,
+            "height": 16,
+            "validPixels": 249,
+            "algorithm": "mmcq",
+            "algorithmVersion": "mmcq-v1",
+            "timing": {
+                "minMs": 0.49196600000004764,
+                "medianMs": 0.656428000000119,
+                "p95Ms": 0.7683893999999554,
+                "maxMs": 0.8280019999999695,
+                "meanMs": 0.6497308600000088,
+                "cv": 0.11498135177391963,
+                "warmupRuns": 10,
+                "measuredRuns": 50
+            },
+            "quality": {
+                "reconstructionMean": 18.80288173139432,
+                "reconstructionP95": 37.97755202273086,
+                "diversityMin": 11.254398236968584,
+                "diversityMean": 42.880109638285475,
+                "coverage": 0.642570281124498,
+                "maxProportion": 0.2,
+                "entropy": 2.321928094887362,
+                "determinism": true
+            },
+            "candidateCount": 8,
+            "returnedColors": 5,
+            "algorithmDetails": {
+                "requestedBoxes": 8,
+                "producedCandidates": 8,
+                "histogramBits": 5,
+                "occupiedBins": 249,
+                "splits": 7
+            }
+        },
+        {
+            "fixtureId": "max-sample-limit",
+            "category": "images near configured sampling limit",
+            "width": 400,
+            "height": 400,
+            "validPixels": 17244,
+            "algorithm": "mmcq",
+            "algorithmVersion": "mmcq-v1",
+            "timing": {
+                "minMs": 3.0361659999998665,
+                "medianMs": 3.1742984999999635,
+                "p95Ms": 4.429786800000203,
+                "maxMs": 4.775346000000127,
+                "meanMs": 3.3247784000000093,
+                "cv": 0.12113851377870234,
+                "warmupRuns": 10,
+                "measuredRuns": 50
+            },
+            "quality": {
+                "reconstructionMean": 18.020946627935704,
+                "reconstructionP95": 36.26738015877375,
+                "diversityMin": 10.582074567330189,
+                "diversityMean": 57.3186236892809,
+                "coverage": 0.6419624217118998,
+                "maxProportion": 0.24209575429087624,
+                "entropy": 2.293492962802162,
+                "determinism": true
+            },
+            "candidateCount": 8,
+            "returnedColors": 5,
+            "algorithmDetails": {
+                "requestedBoxes": 8,
+                "producedCandidates": 8,
+                "histogramBits": 5,
+                "occupiedBins": 431,
+                "splits": 7
+            }
+        }
+    ]
+}

@@ -23,6 +23,7 @@ describe('package scripts', () => {
             'benchmark:baseline',
             'benchmark:compare',
             'benchmark:corpus',
+            'benchmark:report',
             'benchmark:run',
             'benchmark:smoke',
             'build',

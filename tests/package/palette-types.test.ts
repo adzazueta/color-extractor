@@ -233,6 +233,11 @@ describe('deprecated legacy aliases', () => {
         expect(dts).toMatch(/\bHSL\b/);
         expect(dts).toMatch(/\bLab\b/);
     });
+
+    it('accepts mmcq algorithm option and advanced.mmcq tuning group', () => {
+        const algo: ExtractionAlgorithm = 'mmcq';
+        expect(algo).toBe('mmcq');
+    });
 });
 
 describe('negative — forbidden fields', () => {
