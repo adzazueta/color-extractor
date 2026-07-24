@@ -84,9 +84,6 @@ jobs:
           fi
           echo "version=${VERSION}" >> $GITHUB_ENV
 
-      - name: Run release checks
-        run: pnpm release:check
-
       - name: Commit and push validated version
         run: |
           git config user.name "github-actions[bot]"
@@ -94,6 +91,9 @@ jobs:
           git add -A
           git commit -m "chore(release): v${{ env.version }}"
           git push
+
+      - name: Run release checks
+        run: pnpm release:check
 
       - name: Publish, tag, and create GitHub Release
         uses: changesets/action@v1
