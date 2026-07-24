@@ -410,7 +410,7 @@ export function runExtractionPipeline(
     return applyOutputFlags(fullResult, resolved.output);
 }
 
-/** @deprecated Use `extractPaletteFromPixels` instead. Semantic role extraction moved out of the extractor in 0.2.0. See the migration guide in the README. Will be removed in 0.4.0. */
+/** @deprecated Use `extractPaletteFromPixels` instead. Semantic role extraction moved out of the extractor in 0.2.0. See the migration guide in the README. Will be removed in 0.3.0. */
 export async function extractColorsFromPixels(
     input: PixelInput,
     options?: ExtractColorsOptions,
@@ -418,7 +418,7 @@ export async function extractColorsFromPixels(
     return runExtractionPipeline(input, options);
 }
 
-/** @deprecated Use `extractPaletteFromImageData` (browser) or `extractPaletteFromPixels` (core) instead. Will be removed in 0.4.0. */
+/** @deprecated Use `extractPaletteFromImageData` (browser) or `extractPaletteFromPixels` (core) instead. Will be removed in 0.3.0. */
 export async function extractColorsFromImageData(
     imageData: ImageDataLike,
     options?: ExtractColorsOptions,

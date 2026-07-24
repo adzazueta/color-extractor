@@ -29,7 +29,7 @@ function isNodeRuntime(): boolean {
     );
 }
 
-/** @deprecated Use `extractPalette` instead. Semantic role extraction moved out of the extractor in 0.2.0. See the migration guide in the README. Will be removed in 0.4.0. */
+/** @deprecated Use `extractPalette` instead. Semantic role extraction moved out of the extractor in 0.2.0. See the migration guide in the README. Will be removed in 0.3.0. */
 export async function extractColors(
     input: RootExtractColorsInput,
     options?: ExtractColorsOptions,

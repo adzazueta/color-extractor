@@ -11,7 +11,7 @@ import { labKmeansAlgorithm } from '../../src/core/algorithms/lab-kmeans/algorit
 import { mmcqAlgorithm } from '../../src/core/algorithms/mmcq/algorithm.js';
 
 /**
- * Reusable contract test suite runner for 0.3 neutral extraction algorithms.
+ * Reusable contract test suite runner for 0.2 neutral extraction algorithms.
  * Verifies that any algorithm implementation satisfies all contract invariants.
  */
 function verifyAlgorithmContract<T = unknown>(
