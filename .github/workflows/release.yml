@@ -3,10 +3,6 @@ name: Release
 on:
   workflow_dispatch:
     inputs:
-      release_branch:
-        description: 'Branch to release from (e.g. release/0.3)'
-        required: true
-        type: string
       release_type:
         description: 'prerelease or stable'
         required: true
@@ -16,7 +12,7 @@ on:
           - prerelease
           - stable
 
-concurrency: release-${{ inputs.release_branch }}
+concurrency: release-${{ github.ref_name }}
 
 permissions:
   contents: write
@@ -28,16 +24,16 @@ jobs:
     steps:
       - name: Validate branch name
         env:
-          RELEASE_BRANCH: ${{ inputs.release_branch }}
+          RELEASE_BRANCH: ${{ github.ref_name }}
         run: |
-          if ! printf '%s' "$RELEASE_BRANCH" | grep -qE '^release/[0-9]+\.[0-9]+$'; then
-            echo "error: branch name must match release/X.Y (e.g. release/0.3)"
+          if ! printf '%s' "$RELEASE_BRANCH" | grep -qE '^release/v[0-9]+\.[0-9]+(\.[0-9]+)?(-[a-zA-Z0-9.]+)?$'; then
+            echo "error: branch name must match release/vX.Y or release/vX.Y.Z-prerelease (e.g. release/v0.3, release/v0.2.0-next.1)"
             exit 1
           fi
 
       - uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.release_branch }}
+          ref: ${{ github.ref_name }}
           fetch-depth: 0
 
       - name: Validate branch is based on main
@@ -100,10 +96,10 @@ jobs:
           git push
 
       - name: Publish, tag, and create GitHub Release
-        uses: changesets/action/publish@v2
+        uses: changesets/action@v1
         with:
           github-token: ${{ secrets.RELEASE_TOKEN }}
-          script: pnpm release
+          publish: pnpm release
           create-github-releases: true
           push-git-tags: true
         env:
@@ -115,6 +111,6 @@ jobs:
         run: |
           gh pr create \
             --base main \
-            --head "${{ inputs.release_branch }}" \
+            --head "${{ github.ref_name }}" \
             --title "chore: release v${{ env.version }}" \
             --body "Published and tagged release v${{ env.version }}. Merge with a merge commit to synchronize release metadata into main."

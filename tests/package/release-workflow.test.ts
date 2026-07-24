@@ -13,15 +13,18 @@ describe('release workflow', () => {
         expect(workflow).toMatch(/workflow_dispatch/);
     });
 
-    it('accepts release_branch and release_type inputs', () => {
-        expect(workflow).toContain('release_branch');
+    it('accepts release_type input and reads branch from github.ref_name', () => {
+        expect(workflow).not.toContain('release_branch');
         expect(workflow).toContain('release_type');
+        expect(workflow).toContain('github.ref_name');
         expect(workflow).toContain('prerelease');
         expect(workflow).toContain('stable');
     });
 
-    it('validates branch name matches release/X.Y', () => {
-        expect(workflow).toContain("grep -qE '^release/[0-9]+\\.[0-9]+$'");
+    it('validates branch name matches release/vX.Y or release/vX.Y.Z-prerelease', () => {
+        expect(workflow).toContain(
+            "grep -qE '^release/v[0-9]+\\.[0-9]+(\\.[0-9]+)?(-[a-zA-Z0-9.]+)?$'",
+        );
     });
 
     it('validates branch is based on main', () => {
@@ -49,11 +52,11 @@ describe('release workflow', () => {
         expect(workflow).toContain('git push');
     });
 
-    it('uses changesets/action/publish@v2 for publish, tags and GitHub Release', () => {
-        expect(workflow).toContain('changesets/action/publish@v2');
+    it('uses changesets/action@v1 for publish, tags and GitHub Release', () => {
+        expect(workflow).toContain('changesets/action@v1');
         expect(workflow).toContain('create-github-releases: true');
         expect(workflow).toContain('push-git-tags: true');
-        expect(workflow).toContain('script: pnpm release');
+        expect(workflow).toContain('publish: pnpm release');
     });
 
     it('creates a PR to main using RELEASE_TOKEN', () => {
