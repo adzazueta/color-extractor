@@ -1,0 +1,11 @@
+---
+"@adzazueta/color-extractor": minor
+---
+- Publish comparison report: Lab K-means versus MMCQ extraction
+- Register MMCQ in algorithm registry alongside Lab K-means
+- Normalize MMCQ output into neutral observed swatches
+- Add deterministic MMCQ (Median Cut Quantization) core algorithm
+- Build benchmark corpus and comparison harness for algorithm evaluation
+- Add algorithm selector with algorithm-aware metadata in extraction results
+- Refactor Lab K-means behind the new contract
+- Define internal neutral palette algorithm contract
