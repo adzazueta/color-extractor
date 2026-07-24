@@ -3,9 +3,9 @@ import type { LabKmeansCandidateResult } from '../../src/core/algorithms/lab-kme
 import { rgbToHsl } from '../../src/core/color/hsl.js';
 import type { ColorExtractorError } from '../../src/core/errors.js';
 import { normalizePalette } from '../../src/core/neutral/normalize.js';
-import type { ResolvedCoreExtractPaletteOptions } from '../../src/core/neutral-options.js';
+import type { ResolvedCoreExtractColorOptions } from '../../src/core/neutral-options.js';
 
-const BASE_OPTIONS: ResolvedCoreExtractPaletteOptions = {
+const BASE_OPTIONS: ResolvedCoreExtractColorOptions = {
     algorithm: 'lab-kmeans',
     sampling: { maxDimension: 150 },
     filtering: {
@@ -72,7 +72,7 @@ describe('normalizePalette — valid input', () => {
             ...BASE_META,
             options: BASE_OPTIONS,
         });
-        expect(result.swatches).toHaveLength(2);
+        expect(result.colors).toHaveLength(2);
         expect(result.rankings.perceptual).toHaveLength(2);
         expect(result.rankings.population).toHaveLength(2);
         expect(result.rankings.chroma).toHaveLength(2);
@@ -89,10 +89,8 @@ describe('normalizePalette — valid input', () => {
             ...BASE_META,
             options: BASE_OPTIONS,
         });
-        for (let i = 1; i < result.swatches.length; i++) {
-            expect(result.swatches[i]!.id > result.swatches[i - 1]!.id).toBe(
-                true,
-            );
+        for (let i = 1; i < result.colors.length; i++) {
+            expect(result.colors[i]!.id > result.colors[i - 1]!.id).toBe(true);
         }
     });
 
@@ -105,7 +103,7 @@ describe('normalizePalette — valid input', () => {
             ...BASE_META,
             options: BASE_OPTIONS,
         });
-        for (const s of result.swatches) {
+        for (const s of result.colors) {
             expect(Number.isInteger(s.population)).toBe(true);
             expect(s.population).toBeGreaterThan(0);
         }
@@ -120,7 +118,7 @@ describe('normalizePalette — valid input', () => {
             ...BASE_META,
             options: BASE_OPTIONS,
         });
-        for (const s of result.swatches) {
+        for (const s of result.colors) {
             expect(s.proportion).toBeCloseTo(s.population / 1000, 10);
         }
     });
@@ -134,7 +132,7 @@ describe('normalizePalette — valid input', () => {
             ...BASE_META,
             options: BASE_OPTIONS,
         });
-        for (const s of result.swatches) {
+        for (const s of result.colors) {
             expect(Number.isFinite(s.score)).toBe(true);
             expect(s.score).toBeGreaterThanOrEqual(0);
             expect(s.score).toBeLessThanOrEqual(1);
@@ -150,7 +148,7 @@ describe('normalizePalette — valid input', () => {
             ...BASE_META,
             options: BASE_OPTIONS,
         });
-        const maxScore = Math.max(...result.swatches.map((s) => s.score));
+        const maxScore = Math.max(...result.colors.map((s) => s.score));
         expect(maxScore).toBeCloseTo(1, 10);
     });
 
@@ -162,8 +160,8 @@ describe('normalizePalette — valid input', () => {
             ...BASE_META,
             options: BASE_OPTIONS,
         });
-        expect(result.swatches[0]!.hex).toBe('#a85f46');
-        expect(result.swatches[0]!.id).toBe('swatch-a85f46');
+        expect(result.colors[0]!.hex).toBe('#a85f46');
+        expect(result.colors[0]!.id).toBe('color-a85f46');
     });
 
     it('every ranking is a permutation of swatch IDs', () => {
@@ -177,7 +175,7 @@ describe('normalizePalette — valid input', () => {
             ...BASE_META,
             options: BASE_OPTIONS,
         });
-        const ids = result.swatches.map((s) => s.id).sort();
+        const ids = result.colors.map((s) => s.id).sort();
         for (const key of ['perceptual', 'population', 'chroma'] as const) {
             expect(result.rankings[key].slice().sort()).toEqual(ids);
         }
@@ -192,10 +190,7 @@ describe('normalizePalette — valid input', () => {
             ...BASE_META,
             options: BASE_OPTIONS,
         });
-        const returnedPop = result.swatches.reduce(
-            (a, s) => a + s.population,
-            0,
-        );
+        const returnedPop = result.colors.reduce((a, s) => a + s.population, 0);
         expect(result.metadata.returnedPopulation).toBe(returnedPop);
         expect(result.metadata.coverage).toBeCloseTo(returnedPop / 1000, 10);
     });
@@ -212,8 +207,8 @@ describe('normalizePalette — RGB deduplication', () => {
             ...BASE_META,
             options: BASE_OPTIONS,
         });
-        expect(result.swatches).toHaveLength(2);
-        const merged = result.swatches.find((s) => s.hex === '#c86432')!;
+        expect(result.colors).toHaveLength(2);
+        const merged = result.colors.find((s) => s.hex === '#c86432')!;
         expect(merged).toBeDefined();
         expect(merged.population).toBe(500);
         // Lab is recalculated from canonical RGB, not weighted mean
@@ -244,7 +239,7 @@ describe('normalizePalette — RGB deduplication', () => {
             ...BASE_META,
             options: BASE_OPTIONS,
         });
-        expect(result.swatches[0]!.rgb).toEqual({ r: 200, g: 101, b: 50 });
+        expect(result.colors[0]!.rgb).toEqual({ r: 200, g: 101, b: 50 });
     });
 
     it('identical candidates after canonicalization are deduped', () => {
@@ -257,8 +252,8 @@ describe('normalizePalette — RGB deduplication', () => {
             validPixels: 700,
             options: BASE_OPTIONS,
         });
-        expect(result.swatches).toHaveLength(1);
-        expect(result.swatches[0]!.population).toBe(700);
+        expect(result.colors).toHaveLength(1);
+        expect(result.colors[0]!.population).toBe(700);
     });
 });
 
@@ -271,10 +266,10 @@ describe('normalizePalette — single candidate', () => {
             ...BASE_META,
             options: BASE_OPTIONS,
         });
-        expect(result.swatches).toHaveLength(1);
-        expect(result.swatches[0]!.score).toBeCloseTo(1, 10);
+        expect(result.colors).toHaveLength(1);
+        expect(result.colors[0]!.score).toBeCloseTo(1, 10);
         for (const key of ['perceptual', 'population', 'chroma'] as const) {
-            expect(result.rankings[key]).toEqual([result.swatches[0]!.id]);
+            expect(result.rankings[key]).toEqual([result.colors[0]!.id]);
         }
         expect(result.metadata.coverage).toBeCloseTo(1, 10);
     });
@@ -296,7 +291,7 @@ describe('normalizePalette — single candidate', () => {
                 },
             },
         });
-        expect(result.swatches[0]!.score).toBe(0);
+        expect(result.colors[0]!.score).toBe(0);
     });
 });
 
@@ -319,8 +314,8 @@ describe('normalizePalette — perceptual score and low-chroma penalty', () => {
                 },
             },
         });
-        const gray = result.swatches.find((s) => s.hex === '#87827d')!;
-        const vivid = result.swatches.find((s) => s.hex === '#c86432')!;
+        const gray = result.colors.find((s) => s.hex === '#87827d')!;
+        const vivid = result.colors.find((s) => s.hex === '#c86432')!;
         // Vivid: chroma ≈ 58.1 from recalculated Lab of (200, 100, 50)
         // Gray: chroma ≈ 3.50 from recalculated Lab of (135, 130, 125) — below floor
         const vividRaw = 58.1155 * Math.log(501);
@@ -349,11 +344,11 @@ describe('normalizePalette — perceptual score and low-chroma penalty', () => {
             },
         });
         // Both swatches have chroma >= 10 from recalculated Lab
-        for (const s of result.swatches) {
+        for (const s of result.colors) {
             expect(s.chroma).toBeGreaterThanOrEqual(10);
         }
         // Highest-scoring swatch gets score 1
-        const best = result.swatches.reduce((a, b) =>
+        const best = result.colors.reduce((a, b) =>
             a.score >= b.score ? a : b,
         );
         expect(best.score).toBeCloseTo(1, 5);
@@ -375,7 +370,7 @@ describe('normalizePalette — maxColors selection', () => {
                 result: { ...BASE_OPTIONS.result, maxColors: 2 },
             },
         });
-        expect(result.swatches).toHaveLength(2);
+        expect(result.colors).toHaveLength(2);
         expect(result.metadata.returnedColors).toBe(2);
     });
 
@@ -390,7 +385,7 @@ describe('normalizePalette — maxColors selection', () => {
                 result: { ...BASE_OPTIONS.result, maxColors: 10 },
             },
         });
-        expect(result.swatches).toHaveLength(1);
+        expect(result.colors).toHaveLength(1);
     });
 });
 
@@ -406,8 +401,8 @@ describe('normalizePalette — optional HSL', () => {
                 result: { ...BASE_OPTIONS.result, includeHsl: true },
             },
         });
-        expect(result.swatches[0]!.hsl).toBeDefined();
-        expect(result.swatches[0]!.hsl).toEqual(rgbToHsl(200, 100, 50));
+        expect(result.colors[0]!.hsl).toBeDefined();
+        expect(result.colors[0]!.hsl).toEqual(rgbToHsl(200, 100, 50));
     });
 
     it('omits HSL entirely when includeHsl is false', () => {
@@ -418,7 +413,7 @@ describe('normalizePalette — optional HSL', () => {
             ...BASE_META,
             options: BASE_OPTIONS,
         });
-        expect(result.swatches[0]!.hsl).toBeUndefined();
+        expect(result.colors[0]!.hsl).toBeUndefined();
     });
 
     it('does not set hsl to undefined, omits the key', () => {
@@ -429,7 +424,7 @@ describe('normalizePalette — optional HSL', () => {
             ...BASE_META,
             options: BASE_OPTIONS,
         });
-        expect('hsl' in result.swatches[0]!).toBe(false);
+        expect('hsl' in result.colors[0]!).toBe(false);
     });
 });
 
@@ -497,8 +492,8 @@ describe('normalizePalette — comparators', () => {
         });
         const ranked = result.rankings.perceptual;
         for (let i = 1; i < ranked.length; i++) {
-            const a = result.swatches.find((s) => s.id === ranked[i - 1])!;
-            const b = result.swatches.find((s) => s.id === ranked[i])!;
+            const a = result.colors.find((s) => s.id === ranked[i - 1])!;
+            const b = result.colors.find((s) => s.id === ranked[i])!;
             const aRaw = a.chroma * Math.log(a.population + 1);
             const bRaw = b.chroma * Math.log(b.population + 1);
             if (bRaw !== aRaw) {
@@ -516,8 +511,8 @@ describe('normalizePalette — comparators', () => {
         });
         const ranked = result.rankings.population;
         for (let i = 1; i < ranked.length; i++) {
-            const a = result.swatches.find((s) => s.id === ranked[i - 1])!;
-            const b = result.swatches.find((s) => s.id === ranked[i])!;
+            const a = result.colors.find((s) => s.id === ranked[i - 1])!;
+            const b = result.colors.find((s) => s.id === ranked[i])!;
             expect(b.population).toBeLessThanOrEqual(a.population);
         }
     });
@@ -531,8 +526,8 @@ describe('normalizePalette — comparators', () => {
         });
         const ranked = result.rankings.chroma;
         for (let i = 1; i < ranked.length; i++) {
-            const a = result.swatches.find((s) => s.id === ranked[i - 1])!;
-            const b = result.swatches.find((s) => s.id === ranked[i])!;
+            const a = result.colors.find((s) => s.id === ranked[i - 1])!;
+            const b = result.colors.find((s) => s.id === ranked[i])!;
             expect(b.chroma).toBeLessThanOrEqual(a.chroma);
         }
     });
@@ -547,8 +542,8 @@ describe('normalizePalette — comparators', () => {
             options: BASE_OPTIONS,
         });
         const ranked = result.rankings.perceptual;
-        const a = result.swatches.find((s) => s.id === ranked[0]!)!;
-        const b = result.swatches.find((s) => s.id === ranked[1]!)!;
+        const a = result.colors.find((s) => s.id === ranked[0]!)!;
+        const b = result.colors.find((s) => s.id === ranked[1]!)!;
         const aRaw = a.chroma * Math.log(a.population + 1);
         const bRaw = b.chroma * Math.log(b.population + 1);
         expect(aRaw).toBeGreaterThanOrEqual(bRaw);
@@ -565,7 +560,7 @@ describe('normalizePalette — all scores equal or zero', () => {
             ...BASE_META,
             options: BASE_OPTIONS,
         });
-        for (const s of result.swatches) {
+        for (const s of result.colors) {
             expect(s.score).toBe(0);
         }
     });
@@ -710,7 +705,7 @@ describe('normalizePalette — cancellation', () => {
             options: BASE_OPTIONS,
             signal: ac.signal,
         });
-        expect(result.swatches).toHaveLength(1);
+        expect(result.colors).toHaveLength(1);
     });
 });
 
@@ -729,9 +724,9 @@ describe('normalizePalette — invariant tests', () => {
         options: BASE_OPTIONS,
     });
 
-    it('all IDs match swatch-[0-9a-f]{6}', () => {
-        const pattern = /^swatch-[0-9a-f]{6}$/;
-        for (const s of result.swatches) {
+    it('all IDs match color-[0-9a-f]{6}', () => {
+        const pattern = /^color-[0-9a-f]{6}$/;
+        for (const s of result.colors) {
             expect(s.id).toMatch(pattern);
         }
         for (const key of ['perceptual', 'population', 'chroma'] as const) {
@@ -742,7 +737,7 @@ describe('normalizePalette — invariant tests', () => {
     });
 
     it('no duplicate IDs', () => {
-        const ids = result.swatches.map((s) => s.id);
+        const ids = result.colors.map((s) => s.id);
         expect(new Set(ids).size).toBe(ids.length);
     });
 
@@ -806,8 +801,8 @@ describe('normalizePalette — MMCQ integration & equivalence', () => {
             occupiedBins: 2,
             splits: 1,
         });
-        expect(mmcqResult.swatches).toHaveLength(2);
-        expect(mmcqResult.swatches.map((s) => s.hex)).toEqual([
+        expect(mmcqResult.colors).toHaveLength(2);
+        expect(mmcqResult.colors.map((s) => s.hex)).toEqual([
             '#32c864',
             '#c86432',
         ]);

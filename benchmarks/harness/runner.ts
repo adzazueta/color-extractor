@@ -2,10 +2,10 @@ import { execSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import os from 'node:os';
 import { performance } from 'node:perf_hooks';
-import { extractPaletteFromPixels } from '../../src/core/extract.js';
+import { extractColorFromPixels } from '../../src/core/extract.js';
 import { passesFilter } from '../../src/core/filter.js';
-import type { BaseExtractPaletteOptions } from '../../src/core/neutral-options.js';
-import type { ExtractPaletteResult } from '../../src/core/palette-types.js';
+import type { CoreExtractColorOptions } from '../../src/core/neutral-options.js';
+import type { ExtractColorResult } from '../../src/core/palette-types.js';
 import { normalizePixels } from '../../src/core/pixels.js';
 import {
     convertRgbSamplesToLab,
@@ -90,7 +90,7 @@ export function computeTimingStats(
 export type RunnerOptions = {
     warmupRuns?: number;
     measuredRuns?: number;
-    options?: BaseExtractPaletteOptions;
+    options?: CoreExtractColorOptions;
 };
 
 export async function runFixtureBenchmark(
@@ -103,16 +103,16 @@ export async function runFixtureBenchmark(
 
     // 1. Warmup runs (excluded from timing stats)
     for (let i = 0; i < warmupRuns; i++) {
-        await extractPaletteFromPixels(fixture.pixels, options);
+        await extractColorFromPixels(fixture.pixels, options);
     }
 
     // 2. Measured timing runs (timed strictly around extraction)
     const durationsMs: number[] = [];
-    const results: ExtractPaletteResult[] = [];
+    const results: ExtractColorResult[] = [];
 
     for (let i = 0; i < measuredRuns; i++) {
         const start = performance.now();
-        const res = await extractPaletteFromPixels(fixture.pixels, options);
+        const res = await extractColorFromPixels(fixture.pixels, options);
         const end = performance.now();
         durationsMs.push(end - start);
         results.push(res);

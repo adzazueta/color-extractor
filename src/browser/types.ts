@@ -1,4 +1,4 @@
-export type BrowserExtractColorsInput =
+export type BrowserExtractColorInput =
     | File
     | Blob
     | string

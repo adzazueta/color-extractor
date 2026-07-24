@@ -4,18 +4,17 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import type { ExtractionMetadata } from '../../src/core/index.js';
 import type {
-    ExtractedSwatch,
+    ColorId,
+    ExtractColorResult,
     ExtractionAlgorithm,
     ExtractionDecoder,
     ExtractionRuntime,
-    ExtractPaletteResult,
     HslColor,
     LabColor,
+    ObservedColor,
     PaletteRankings,
     RgbColor,
-    SwatchId,
 } from '../../src/core/palette-types.js';
-import type { HSL, Lab, RGB } from '../../src/core/types.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const rootDir = resolve(here, '../..');
@@ -23,7 +22,7 @@ const rootDir = resolve(here, '../..');
 describe('neutral types — root entrypoint', () => {
     it('does not accept Node-only options for browser inputs', () => {
         const assertRootOverload = (
-            extract: typeof import('../../src/index.js').extractPalette,
+            extract: typeof import('../../src/index.js').extractColor,
             input: Blob,
         ) => {
             void extract(input, { sampling: { maxDimension: 100 } });
@@ -39,9 +38,9 @@ describe('neutral types — root entrypoint', () => {
         try {
             (globalThis as Record<string, unknown>).ImageData =
                 class DummyImageData {};
-            const { extractPalette } = await import('../../src/index.js');
+            const { extractColor } = await import('../../src/index.js');
             const buf = new Uint8Array([255, 0, 0, 255]);
-            await expect(extractPalette(buf)).rejects.not.toMatchObject({
+            await expect(extractColor(buf)).rejects.not.toMatchObject({
                 message: expect.stringContaining('Browser input kind'),
             });
         } finally {
@@ -54,9 +53,9 @@ describe('neutral types — root entrypoint', () => {
         }
     });
 
-    it('SwatchId is a branded string type', () => {
-        const id: SwatchId = 'swatch-a85f46';
-        expect(id).toBe('swatch-a85f46');
+    it('ColorId is a branded string type', () => {
+        const id: ColorId = 'color-a85f46';
+        expect(id).toBe('color-a85f46');
     });
 
     it('RgbColor requires r, g, b', () => {
@@ -74,9 +73,9 @@ describe('neutral types — root entrypoint', () => {
         expect(c).toEqual({ L: 0, a: 0, b: 0 });
     });
 
-    it('ExtractedSwatch requires all evidence fields except HSL', () => {
-        const s: ExtractedSwatch = {
-            id: 'swatch-a85f46',
+    it('ObservedColor requires all evidence fields except HSL', () => {
+        const s: ObservedColor = {
+            id: 'color-a85f46',
             hex: '#a85f46',
             rgb: { r: 168, g: 95, b: 70 },
             lab: { L: 45, a: 25, b: 30 },
@@ -89,9 +88,9 @@ describe('neutral types — root entrypoint', () => {
         expect(s.hsl).toBeUndefined();
     });
 
-    it('ExtractedSwatch makes hsl optional', () => {
-        const withHsl: ExtractedSwatch = {
-            id: 'swatch-a85f46',
+    it('ObservedColor makes hsl optional', () => {
+        const withHsl: ObservedColor = {
+            id: 'color-a85f46',
             hex: '#a85f46',
             rgb: { r: 168, g: 95, b: 70 },
             lab: { L: 45, a: 25, b: 30 },
@@ -104,18 +103,18 @@ describe('neutral types — root entrypoint', () => {
         expect(withHsl.hsl).toBeDefined();
     });
 
-    it('PaletteRankings uses SwatchId arrays', () => {
+    it('PaletteRankings uses ColorId arrays', () => {
         const r: PaletteRankings = {
-            perceptual: ['swatch-a85f46'],
-            population: ['swatch-a85f46'],
-            chroma: ['swatch-a85f46'],
+            perceptual: ['color-a85f46'],
+            population: ['color-a85f46'],
+            chroma: ['color-a85f46'],
         };
-        expect(r.perceptual[0]).toBe('swatch-a85f46');
+        expect(r.perceptual[0]).toBe('color-a85f46');
     });
 
-    it('ExtractPaletteResult requires metadata', () => {
-        const result: ExtractPaletteResult = {
-            swatches: [],
+    it('ExtractColorResult requires metadata', () => {
+        const result: ExtractColorResult = {
+            colors: [],
             rankings: { perceptual: [], population: [], chroma: [] },
             metadata: {
                 algorithm: 'lab-kmeans',
@@ -156,9 +155,9 @@ describe('neutral types — root entrypoint', () => {
 
 describe('neutral types — all entrypoints', () => {
     const NEUTRAL_TYPES = [
-        'ExtractPaletteResult',
-        'ExtractedSwatch',
-        'SwatchId',
+        'ExtractColorResult',
+        'ObservedColor',
+        'ColorId',
         'RgbColor',
         'HslColor',
         'LabColor',
@@ -213,29 +212,11 @@ describe('neutral types — all entrypoints', () => {
 });
 
 describe('deprecated legacy aliases', () => {
-    it('RGB is assignable to RgbColor', () => {
-        const rgb: RGB = { r: 1, g: 2, b: 3 };
-        const _canonical: RgbColor = rgb;
-        expect(_canonical).toEqual(rgb);
-    });
-
-    it('HSL is assignable to HslColor', () => {
-        const hsl: HSL = { h: 0, s: 0, l: 0 };
-        const _canonical: HslColor = hsl;
-        expect(_canonical).toEqual(hsl);
-    });
-
-    it('Lab is assignable to LabColor', () => {
-        const lab: Lab = { L: 0, a: 0, b: 0 };
-        const _canonical: LabColor = lab;
-        expect(_canonical).toEqual(lab);
-    });
-
-    it('deprecated aliases are exported from root declarations', () => {
+    it('RGB, HSL, Lab are no longer exported from root declarations', () => {
         const dts = readFileSync(resolve(rootDir, 'dist/index.d.ts'), 'utf-8');
-        expect(dts).toMatch(/\bRGB\b/);
-        expect(dts).toMatch(/\bHSL\b/);
-        expect(dts).toMatch(/\bLab\b/);
+        expect(dts).not.toMatch(/\bRGB\b/);
+        expect(dts).not.toMatch(/\bHSL\b/);
+        expect(dts).not.toMatch(/\bLab\b/);
     });
 
     it('accepts mmcq algorithm option and advanced.mmcq tuning group', () => {
@@ -245,9 +226,9 @@ describe('deprecated legacy aliases', () => {
 });
 
 describe('negative — forbidden fields', () => {
-    it('clusterIndex is not on ExtractedSwatch', () => {
-        const swatch: ExtractedSwatch = {
-            id: 'swatch-a85f46',
+    it('clusterIndex is not on ObservedColor', () => {
+        const swatch: ObservedColor = {
+            id: 'color-a85f46',
             hex: '#a85f46',
             rgb: { r: 168, g: 95, b: 70 },
             lab: { L: 45, a: 25, b: 30 },
@@ -255,15 +236,15 @@ describe('negative — forbidden fields', () => {
             population: 100,
             proportion: 0.5,
             score: 1,
-            // @ts-expect-error — clusterIndex is not a neutral swatch field
+            // @ts-expect-error — clusterIndex is not a neutral color field
             clusterIndex: 0,
         };
         expect(swatch).toBeDefined();
     });
 
-    it('role is not on ExtractedSwatch', () => {
-        const swatch: ExtractedSwatch = {
-            id: 'swatch-a85f46',
+    it('role is not on ObservedColor', () => {
+        const swatch: ObservedColor = {
+            id: 'color-a85f46',
             hex: '#a85f46',
             rgb: { r: 168, g: 95, b: 70 },
             lab: { L: 45, a: 25, b: 30 },
@@ -271,15 +252,15 @@ describe('negative — forbidden fields', () => {
             population: 100,
             proportion: 0.5,
             score: 1,
-            // @ts-expect-error — role is not a neutral swatch field
+            // @ts-expect-error — role is not a neutral color field
             role: 'primary',
         };
         expect(swatch).toBeDefined();
     });
 
-    it('source is not on ExtractedSwatch', () => {
-        const swatch: ExtractedSwatch = {
-            id: 'swatch-a85f46',
+    it('source is not on ObservedColor', () => {
+        const swatch: ObservedColor = {
+            id: 'color-a85f46',
             hex: '#a85f46',
             rgb: { r: 168, g: 95, b: 70 },
             lab: { L: 45, a: 25, b: 30 },
@@ -287,15 +268,15 @@ describe('negative — forbidden fields', () => {
             population: 100,
             proportion: 0.5,
             score: 1,
-            // @ts-expect-error — source is not a neutral swatch field
+            // @ts-expect-error — source is not a neutral color field
             source: 'cluster',
         };
         expect(swatch).toBeDefined();
     });
 
-    it('primary is not on ExtractPaletteResult', () => {
-        const result: ExtractPaletteResult = {
-            swatches: [],
+    it('primary is not on ExtractColorResult', () => {
+        const result: ExtractColorResult = {
+            colors: [],
             rankings: { perceptual: [], population: [], chroma: [] },
             metadata: {
                 algorithm: 'lab-kmeans',
@@ -324,9 +305,9 @@ describe('negative — forbidden fields', () => {
         expect(result).toBeDefined();
     });
 
-    it('secondary is not on ExtractPaletteResult', () => {
-        const result: ExtractPaletteResult = {
-            swatches: [],
+    it('secondary is not on ExtractColorResult', () => {
+        const result: ExtractColorResult = {
+            colors: [],
             rankings: { perceptual: [], population: [], chroma: [] },
             metadata: {
                 algorithm: 'lab-kmeans',
@@ -355,9 +336,9 @@ describe('negative — forbidden fields', () => {
         expect(result).toBeDefined();
     });
 
-    it('accents is not on ExtractPaletteResult', () => {
-        const result: ExtractPaletteResult = {
-            swatches: [],
+    it('accents is not on ExtractColorResult', () => {
+        const result: ExtractColorResult = {
+            colors: [],
             rankings: { perceptual: [], population: [], chroma: [] },
             metadata: {
                 algorithm: 'lab-kmeans',

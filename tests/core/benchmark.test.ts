@@ -43,9 +43,9 @@ describe('Benchmark Corpus and Harness (ADZ-118)', () => {
                 index: 1,
             },
         ];
-        const swatches = [
+        const colors = [
             {
-                id: 'swatch-1' as const,
+                id: 'color-1' as const,
                 hex: '#c83232',
                 rgb: { r: 200, g: 50, b: 50 },
                 lab: { L: 50, a: 60, b: 40 },
@@ -55,7 +55,7 @@ describe('Benchmark Corpus and Harness (ADZ-118)', () => {
                 score: 0.9,
             },
             {
-                id: 'swatch-2' as const,
+                id: 'color-2' as const,
                 hex: '#32c832',
                 rgb: { r: 50, g: 200, b: 50 },
                 lab: { L: 70, a: -60, b: 50 },
@@ -66,7 +66,7 @@ describe('Benchmark Corpus and Harness (ADZ-118)', () => {
             },
         ];
 
-        const err = calculateReconstructionError(samples, swatches);
+        const err = calculateReconstructionError(samples, colors);
         expect(err.mean).toBe(0);
         expect(err.p95).toBe(0);
     });
@@ -74,7 +74,7 @@ describe('Benchmark Corpus and Harness (ADZ-118)', () => {
     it('calculates palette diversity correctly and handles < 2 swatches with null', () => {
         const singleSwatch = [
             {
-                id: 'swatch-1' as const,
+                id: 'color-1' as const,
                 hex: '#c83232',
                 rgb: { r: 200, g: 50, b: 50 },
                 lab: { L: 50, a: 60, b: 40 },
@@ -91,7 +91,7 @@ describe('Benchmark Corpus and Harness (ADZ-118)', () => {
         const multiSwatches = [
             ...singleSwatch,
             {
-                id: 'swatch-2' as const,
+                id: 'color-2' as const,
                 hex: '#32c832',
                 rgb: { r: 50, g: 200, b: 50 },
                 lab: { L: 50, a: 60, b: 40 },

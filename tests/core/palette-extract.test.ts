@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { ColorExtractorError } from '../../src/core/errors.js';
-import { extractPaletteFromPixels } from '../../src/core/extract.js';
-import type { CoreExtractPaletteOptions } from '../../src/core/neutral-options.js';
+import { extractColorFromPixels } from '../../src/core/extract.js';
+import type { CoreExtractColorOptions } from '../../src/core/neutral-options.js';
 
 function rgbSet(pixels: { r: number; g: number; b: number }[]): string[] {
     return pixels.map((p) => `${p.r},${p.g},${p.b}`);
@@ -25,15 +25,15 @@ function pixelData(
     return data;
 }
 
-const PERMISSIVE_FILTER: CoreExtractPaletteOptions['filtering'] = {
+const PERMISSIVE_FILTER: CoreExtractColorOptions['filtering'] = {
     minBrightness: 0,
     maxBrightness: 255,
     minSaturation: 0,
 };
 
-describe('extractPaletteFromPixels — observed RGB', () => {
+describe('extractColorFromPixels — observed RGB', () => {
     it('returns swatches whose RGB exists in the input pixels (solid color)', async () => {
-        const result = await extractPaletteFromPixels(
+        const result = await extractColorFromPixels(
             {
                 data: pixelData(2, 2, [{ r: 200, g: 150, b: 100 }]),
                 width: 2,
@@ -47,10 +47,10 @@ describe('extractPaletteFromPixels — observed RGB', () => {
             },
         );
 
-        expect(result.swatches).toHaveLength(1);
-        expect(result.swatches[0]!.rgb).toEqual({ r: 200, g: 150, b: 100 });
-        expect(result.swatches[0]!.hex).toBe('#c89664');
-        expect(result.swatches[0]!.lab).toBeDefined();
+        expect(result.colors).toHaveLength(1);
+        expect(result.colors[0]!.rgb).toEqual({ r: 200, g: 150, b: 100 });
+        expect(result.colors[0]!.hex).toBe('#c89664');
+        expect(result.colors[0]!.lab).toBeDefined();
     });
 
     it('returns swatches whose RGB exists in the input (more pixels than clusters, intermediate centroid)', async () => {
@@ -64,7 +64,7 @@ describe('extractPaletteFromPixels — observed RGB', () => {
             { r: 50, g: 150, b: 200 },
             { r: 55, g: 140, b: 210 },
         ];
-        const result = await extractPaletteFromPixels(
+        const result = await extractColorFromPixels(
             {
                 data: pixelData(8, 1, colors),
                 width: 8,
@@ -79,15 +79,15 @@ describe('extractPaletteFromPixels — observed RGB', () => {
         );
 
         const inputKeys = rgbSet(colors);
-        for (const swatch of result.swatches) {
+        for (const color of result.colors) {
             expect(inputKeys).toContain(
-                `${swatch.rgb.r},${swatch.rgb.g},${swatch.rgb.b}`,
+                `${color.rgb.r},${color.rgb.g},${color.rgb.b}`,
             );
         }
     });
 
     it('Lab and chroma are recalculated from canonical RGB', async () => {
-        const result = await extractPaletteFromPixels(
+        const result = await extractColorFromPixels(
             {
                 data: pixelData(2, 2, [{ r: 200, g: 150, b: 100 }]),
                 width: 2,
@@ -101,8 +101,8 @@ describe('extractPaletteFromPixels — observed RGB', () => {
             },
         );
 
-        const swatch = result.swatches[0]!;
-        const lab = swatch.lab;
+        const color = result.colors[0]!;
+        const lab = color.lab;
 
         expect(lab.L).toBeGreaterThan(50);
         expect(lab.L).toBeLessThan(70);
@@ -116,7 +116,7 @@ describe('extractPaletteFromPixels — observed RGB', () => {
         const width = 400;
         const height = 400;
         const data = pixelData(width, height, [{ r: 200, g: 150, b: 100 }]);
-        const result = await extractPaletteFromPixels(
+        const result = await extractColorFromPixels(
             { data, width, height, channels: 4 },
             {
                 sampling: { maxDimension: 10 },
@@ -133,7 +133,7 @@ describe('extractPaletteFromPixels — observed RGB', () => {
         const width = 151;
         const height = 151;
         const data = pixelData(width, height, [{ r: 200, g: 150, b: 100 }]);
-        const result = await extractPaletteFromPixels(
+        const result = await extractColorFromPixels(
             { data, width, height, channels: 4 },
             {
                 sampling: { maxDimension: 150 },
@@ -150,13 +150,13 @@ describe('extractPaletteFromPixels — observed RGB', () => {
     });
 });
 
-describe('extractPaletteFromPixels — abort with arbitrary reason', () => {
+describe('extractColorFromPixels — abort with arbitrary reason', () => {
     it('rejects with COLOR_EXTRACTOR_ABORTED when abort reason is a string', async () => {
         const ac = new AbortController();
         ac.abort('user cancelled');
 
         await expect(
-            extractPaletteFromPixels(
+            extractColorFromPixels(
                 {
                     data: pixelData(2, 2, [{ r: 200, g: 150, b: 100 }]),
                     width: 2,
@@ -183,7 +183,7 @@ describe('extractPaletteFromPixels — abort with arbitrary reason', () => {
         );
 
         await expect(
-            extractPaletteFromPixels(
+            extractColorFromPixels(
                 {
                     data: pixelData(2, 2, [{ r: 200, g: 150, b: 100 }]),
                     width: 2,
@@ -201,7 +201,7 @@ describe('extractPaletteFromPixels — abort with arbitrary reason', () => {
     });
 });
 
-describe('extractPaletteFromPixels — Object.prototype pollution regression', () => {
+describe('extractColorFromPixels — Object.prototype pollution regression', () => {
     afterEach(() => {
         delete (Object.prototype as Record<string, unknown>).remote;
         delete (Object.prototype as Record<string, unknown>)
@@ -223,7 +223,7 @@ describe('extractPaletteFromPixels — Object.prototype pollution regression', (
             allowPrivateNetworks: true,
         };
 
-        const result = await extractPaletteFromPixels(
+        const result = await extractColorFromPixels(
             {
                 data: pixelData(2, 2, [{ r: 200, g: 150, b: 100 }]),
                 width: 2,
@@ -237,7 +237,7 @@ describe('extractPaletteFromPixels — Object.prototype pollution regression', (
             },
         );
 
-        expect(result.swatches).toHaveLength(1);
+        expect(result.colors).toHaveLength(1);
     });
 
     it('ignores Object.prototype.allowPrivateNetworks inside remote: {}', async () => {

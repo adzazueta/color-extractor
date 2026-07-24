@@ -2,10 +2,10 @@ import { describe, expect, it } from 'vitest';
 import { runLabKmeans } from '../../src/core/algorithms/lab-kmeans/run.js';
 import { resolveOptions } from '../../src/core/defaults.js';
 import { passesFilter } from '../../src/core/filter.js';
-import { findPrimaryIndex, scorePrimary } from '../../src/core/index.js';
 import { candidatesToClusters } from '../../src/core/legacy/adapter.js';
 import type { Cluster } from '../../src/core/legacy/cluster.js';
 import { normalizePixels } from '../../src/core/pixels.js';
+import { findPrimaryIndex, scorePrimary } from '../../src/core/role.js';
 import {
     convertRgbSamplesToLab,
     sampleSquareGrid,

@@ -62,25 +62,24 @@ describe('Node URL extraction with local server (ADZ-81)', () => {
     });
 
     describe('AC: mock successful image responses', () => {
-        it('extractColors with a local URL returns a valid result', async () => {
-            const { extractColors } = await import('../../src/node/index.js');
-            const result = await extractColors(
+        it('extractColor with a local URL returns a valid result', async () => {
+            const { extractColor } = await import('../../src/node/index.js');
+            const result = await extractColor(
                 `http://127.0.0.1:${port}/test.png`,
                 {
                     remote: { allowPrivateNetworks: true },
                 },
             );
-            expect(result.primary).toBeDefined();
-            expect(result.primary.role).toBe('primary');
+            expect(result.colors[0]).toBeDefined();
+            expect(result.colors[0]!.hex).toBeTruthy();
         });
 
-        it('extractColors returns metadata with runtime=node', async () => {
-            const { extractColors } = await import('../../src/node/index.js');
-            const result = await extractColors(
+        it('extractColor returns metadata with runtime=node', async () => {
+            const { extractColor } = await import('../../src/node/index.js');
+            const result = await extractColor(
                 `http://127.0.0.1:${port}/test.png`,
                 {
                     remote: { allowPrivateNetworks: true },
-                    output: { includeMetadata: true },
                 },
             );
             expect(result.metadata?.runtime).toBe('node');
@@ -89,11 +88,11 @@ describe('Node URL extraction with local server (ADZ-81)', () => {
 
     describe('AC: mock oversized responses', () => {
         it('throws COLOR_EXTRACTOR_INPUT_TOO_LARGE when payload exceeds maxBytes', async () => {
-            const { extractColors, ColorExtractorError } = await import(
+            const { extractColor, ColorExtractorError } = await import(
                 '../../src/node/index.js'
             );
             try {
-                await extractColors(`http://127.0.0.1:${port}/big.png`, {
+                await extractColor(`http://127.0.0.1:${port}/big.png`, {
                     remote: { allowPrivateNetworks: true, maxBytes: 1024 },
                 });
                 expect.fail('Expected error');
@@ -108,9 +107,9 @@ describe('Node URL extraction with local server (ADZ-81)', () => {
 
     describe('AC: mock timeouts or aborted requests', () => {
         it('throws COLOR_EXTRACTOR_TIMEOUT for a hanging server', async () => {
-            const { extractColors } = await import('../../src/node/index.js');
+            const { extractColor } = await import('../../src/node/index.js');
             try {
-                await extractColors(`http://127.0.0.1:${port}/hang.png`, {
+                await extractColor(`http://127.0.0.1:${port}/hang.png`, {
                     remote: { allowPrivateNetworks: true, timeoutMs: 100 },
                 });
                 expect.fail('Expected error');
@@ -125,9 +124,9 @@ describe('Node URL extraction with local server (ADZ-81)', () => {
 
     describe('AC: fetch failures map to typed errors', () => {
         it('404 response maps to COLOR_EXTRACTOR_FETCH_FAILED', async () => {
-            const { extractColors } = await import('../../src/node/index.js');
+            const { extractColor } = await import('../../src/node/index.js');
             try {
-                await extractColors(`http://127.0.0.1:${port}/404.png`, {
+                await extractColor(`http://127.0.0.1:${port}/404.png`, {
                     remote: { allowPrivateNetworks: true },
                 });
                 expect.fail('Expected error');

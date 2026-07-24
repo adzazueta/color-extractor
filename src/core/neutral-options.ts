@@ -13,7 +13,7 @@ export type FilteringOptions = {
     minSaturation?: number;
 };
 
-export type PaletteResultOptions = {
+export type ResultOptions = {
     maxColors?: number;
     includeHsl?: boolean;
 };
@@ -38,11 +38,11 @@ export type AdvancedExtractionOptions = {
     perceptualRanking?: PerceptualRankingOptions;
 };
 
-export type BaseExtractPaletteOptions = {
+export type BaseExtractColorOptions = {
     algorithm?: ExtractionAlgorithm;
     sampling?: SamplingOptions;
     filtering?: FilteringOptions;
-    result?: PaletteResultOptions;
+    result?: ResultOptions;
     advanced?: AdvancedExtractionOptions;
     signal?: AbortSignal;
 };
@@ -51,7 +51,7 @@ export type BrowserDecodeOptions = {
     maxPixels?: number;
 };
 
-export type BrowserExtractPaletteOptions = BaseExtractPaletteOptions & {
+export type BrowserExtractColorOptions = BaseExtractColorOptions & {
     decode?: BrowserDecodeOptions;
 };
 
@@ -72,16 +72,16 @@ export type NodeDecodeOptions = {
     normalizeColorProfile?: boolean;
 };
 
-export type NodeExtractPaletteOptions = BaseExtractPaletteOptions & {
+export type NodeExtractColorOptions = BaseExtractColorOptions & {
     remote?: NodeRemoteOptions;
     decode?: NodeDecodeOptions;
 };
 
-export type CoreExtractPaletteOptions = BaseExtractPaletteOptions;
+export type CoreExtractColorOptions = BaseExtractColorOptions;
 
-export type ExtractPaletteOptions =
-    | BrowserExtractPaletteOptions
-    | NodeExtractPaletteOptions;
+export type ExtractColorOptions =
+    | BrowserExtractColorOptions
+    | NodeExtractColorOptions;
 
 export type ResolvedSamplingOptions = {
     maxDimension: number;
@@ -94,7 +94,7 @@ export type ResolvedFilteringOptions = {
     minSaturation: number;
 };
 
-export type ResolvedPaletteResultOptions = {
+export type ResolvedResultOptions = {
     maxColors: number;
     includeHsl: boolean;
 };
@@ -144,30 +144,30 @@ type ResolvedBaseOptions = {
     algorithm: ExtractionAlgorithm;
     sampling: ResolvedSamplingOptions;
     filtering: ResolvedFilteringOptions;
-    result: ResolvedPaletteResultOptions;
+    result: ResolvedResultOptions;
     advanced: ResolvedAdvancedExtractionOptions;
 };
 
-export type ResolvedBrowserExtractPaletteOptions = ResolvedBaseOptions & {
+export type ResolvedBrowserExtractColorOptions = ResolvedBaseOptions & {
     decode: ResolvedBrowserDecodeOptions;
 };
 
-export type ResolvedNodeExtractPaletteOptions = ResolvedBaseOptions & {
+export type ResolvedNodeExtractColorOptions = ResolvedBaseOptions & {
     remote: ResolvedNodeRemoteOptions;
     decode: ResolvedNodeDecodeOptions;
 };
 
-export type ResolvedCoreExtractPaletteOptions = ResolvedBaseOptions;
+export type ResolvedCoreExtractColorOptions = ResolvedBaseOptions;
 
 type CommonDefaults = {
     algorithm: ExtractionAlgorithm;
     sampling: ResolvedSamplingOptions;
     filtering: ResolvedFilteringOptions;
-    result: ResolvedPaletteResultOptions;
+    result: ResolvedResultOptions;
     advanced: ResolvedAdvancedExtractionOptions;
 };
 
-export const DEFAULT_NEUTRAL_OPTIONS: Readonly<ResolvedCoreExtractPaletteOptions> =
+export const DEFAULT_NEUTRAL_OPTIONS: Readonly<ResolvedCoreExtractColorOptions> =
     Object.freeze({
         algorithm: 'lab-kmeans',
         sampling: Object.freeze({ maxDimension: 150 }),
@@ -836,17 +836,17 @@ function pickRuntimeGroups(
 export function resolveNeutralOptions(
     options: unknown,
     runtime: 'browser',
-): ResolvedBrowserExtractPaletteOptions;
+): ResolvedBrowserExtractColorOptions;
 
 export function resolveNeutralOptions(
     options: unknown,
     runtime: 'node',
-): ResolvedNodeExtractPaletteOptions;
+): ResolvedNodeExtractColorOptions;
 
 export function resolveNeutralOptions(
     options: unknown,
     runtime: 'core',
-): ResolvedCoreExtractPaletteOptions;
+): ResolvedCoreExtractColorOptions;
 
 export function resolveNeutralOptions(
     options: unknown,

@@ -21,12 +21,14 @@ export {
     type ColorExtractorErrorCode,
 } from './errors.js';
 export {
+    type ColorPixelInput,
+    extractColorFromPixels,
+    /** @deprecated Use extractColorFromPixels instead */
     extractColorsFromImageData,
+    /** @deprecated Use extractColorFromPixels instead */
     extractColorsFromPixels,
-    extractPaletteFromPixels,
     type ImageDataLike,
-    type PalettePixelInput,
-    runNeutralPalettePipeline,
+    runNeutralColorPipeline,
 } from './extract.js';
 export {
     type FilterCriteria,
@@ -37,20 +39,20 @@ export {
 
 export type {
     AdvancedExtractionOptions,
-    BaseExtractPaletteOptions,
+    BaseExtractColorOptions,
     BrowserDecodeOptions,
-    BrowserExtractPaletteOptions,
-    CoreExtractPaletteOptions,
-    ExtractPaletteOptions,
+    BrowserExtractColorOptions,
+    CoreExtractColorOptions,
+    ExtractColorOptions,
     LabKmeansOptions,
     NodeDecodeOptions,
-    NodeExtractPaletteOptions,
+    NodeExtractColorOptions,
     NodeRemoteOptions,
-    PaletteResultOptions,
     PerceptualRankingOptions,
-    ResolvedBrowserExtractPaletteOptions,
-    ResolvedCoreExtractPaletteOptions,
-    ResolvedNodeExtractPaletteOptions,
+    ResolvedBrowserExtractColorOptions,
+    ResolvedCoreExtractColorOptions,
+    ResolvedNodeExtractColorOptions,
+    ResultOptions,
     SamplingOptions,
 } from './neutral-options.js';
 export {
@@ -59,75 +61,26 @@ export {
 } from './neutral-options.js';
 
 export type {
-    AnimatedHandling,
-    DecodeOptions,
-    ExtractColorsOptions,
-    FilteringOptions,
-    KmeansOptions,
-    LightnessOptions,
-    OutputOptions,
-    PrimaryOptions,
-    PrimaryPreset,
-    RemoteOptions,
-    ScoringOptions,
-    SecondaryFallbackMode,
-    SecondaryOptions,
-    SvgHandling,
-} from './options.js';
-export { applyOutputFlags, type FullExtractionResult } from './output.js';
-export type {
-    ExtractedSwatch,
+    ColorId,
+    ExtractColorResult,
     ExtractionAlgorithm,
     ExtractionDecoder,
     ExtractionMetadata,
     ExtractionRuntime,
-    ExtractPaletteResult,
     HslColor,
     LabColor,
+    ObservedColor,
     PaletteRankings,
     RgbColor,
-    SwatchId,
 } from './palette-types.js';
 export {
     type NormalizedPixels,
     normalizePixels,
     type Pixel,
 } from './pixels.js';
-export type {
-    ExtractColorsResult,
-    ExtractionMetadata as LegacyExtractionMetadata,
-    MinimalExtractColorsResult,
-} from './result.js';
-export {
-    applyGrayPenalty,
-    applyLightnessGap,
-    type BuildPaletteOptions,
-    buildHarmonyFallback,
-    buildPalette,
-    buildPrimaryColor,
-    type ContrastFilterResult,
-    contrastBoost,
-    filterByContrastThreshold,
-    findPrimaryIndex,
-    hueWeight,
-    isLowChromaCandidate,
-    type RoleAssignment,
-    type SelectSecondaryResult,
-    scorePrimary,
-    scoreSecondary,
-    selectSecondary,
-} from './role.js';
 export {
     convertRgbSamplesToLab,
     type LabSample,
     sampleSquareGrid,
 } from './sample.js';
-export type {
-    ColorRole,
-    ColorSource,
-    ExtractedColor,
-    HSL,
-    Lab,
-    RGB,
-} from './types.js';
 export type { PixelData, PixelInput } from './validation.js';

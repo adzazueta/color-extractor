@@ -9,18 +9,18 @@ import { xyzToLab } from '../color/lab.js';
 import { srgbByteToLinear } from '../color/srgb.js';
 import { linearRgbToXyz } from '../color/xyz.js';
 import { ColorExtractorError } from '../errors.js';
-import type { ResolvedCoreExtractPaletteOptions } from '../neutral-options.js';
+import type { ResolvedCoreExtractColorOptions } from '../neutral-options.js';
 import type {
     AlgorithmDetails,
-    ExtractedSwatch,
+    ColorId,
+    ExtractColorResult,
     ExtractionAlgorithm,
     ExtractionDecoder,
     ExtractionMetadata,
     ExtractionRuntime,
-    ExtractPaletteResult,
     HslColor,
     LabColor,
-    SwatchId,
+    ObservedColor,
 } from '../palette-types.js';
 
 export type NormalizePaletteInput = {
@@ -33,7 +33,7 @@ export type NormalizePaletteInput = {
     decoder: ExtractionDecoder;
     packageVersion: string;
     algorithmVersion: string;
-    options: ResolvedCoreExtractPaletteOptions;
+    options: ResolvedCoreExtractColorOptions;
     signal?: AbortSignal;
 };
 
@@ -46,7 +46,7 @@ type MergedCandidate = {
 
 type ScoredCandidate = MergedCandidate & {
     hex: string;
-    id: SwatchId;
+    id: ColorId;
     chroma: number;
     proportion: number;
     rawScore: number;
@@ -194,8 +194,8 @@ function rgbToLab(r: number, g: number, b: number): LabColor {
     };
 }
 
-function swatchIdFromHex(hex: string): SwatchId {
-    return `swatch-${hex.slice(1)}` as SwatchId;
+function swatchIdFromHex(hex: string): ColorId {
+    return `color-${hex.slice(1)}` as ColorId;
 }
 
 function mergeByRgb(
@@ -297,7 +297,7 @@ function compareChroma(a: ScoredCandidate, b: ScoredCandidate): number {
 
 export function normalizePalette(
     input: NormalizePaletteInput,
-): ExtractPaletteResult {
+): ExtractColorResult {
     checkAborted(input.signal);
 
     const { candidateResult, validPixels } = input;
@@ -357,8 +357,8 @@ export function normalizePalette(
 
     selected.sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
 
-    const swatches: ExtractedSwatch[] = selected.map((s) => {
-        const swatch: ExtractedSwatch = {
+    const colors: ObservedColor[] = selected.map((s) => {
+        const color: ObservedColor = {
             id: s.id,
             hex: s.hex,
             rgb: { r: s.rgb.r, g: s.rgb.g, b: s.rgb.b },
@@ -369,12 +369,12 @@ export function normalizePalette(
             score: s.score,
         };
         if (includeHsl && s.hsl) {
-            swatch.hsl = s.hsl;
+            color.hsl = s.hsl;
         }
-        return swatch;
+        return color;
     });
 
-    const ids = swatches.map((s) => s.id);
+    const ids = colors.map((s) => s.id);
 
     const perceptualRanking = [...ids].sort((a, b) => {
         const sa = selected.find((s) => s.id === a)!;
@@ -394,10 +394,7 @@ export function normalizePalette(
         return compareChroma(sa, sb);
     });
 
-    const returnedPopulation = swatches.reduce(
-        (sum, s) => sum + s.population,
-        0,
-    );
+    const returnedPopulation = colors.reduce((sum, s) => sum + s.population, 0);
     const coverage =
         validPixels > 0 ? clamp(returnedPopulation / validPixels, 0, 1) : 0;
 
@@ -432,7 +429,7 @@ export function normalizePalette(
         sampledPixels: input.sampledPixels,
         validPixels,
         candidateCount: preDedupCount,
-        returnedColors: swatches.length,
+        returnedColors: colors.length,
         returnedPopulation,
         coverage,
         algorithmDetails: Object.freeze(
@@ -455,7 +452,7 @@ export function normalizePalette(
     };
 
     return {
-        swatches,
+        colors,
         rankings: {
             perceptual: perceptualRanking,
             population: populationRanking,

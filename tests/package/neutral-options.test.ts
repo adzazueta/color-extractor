@@ -4,18 +4,18 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import type {
     AdvancedExtractionOptions,
-    BaseExtractPaletteOptions,
+    BaseExtractColorOptions,
     BrowserDecodeOptions,
-    BrowserExtractPaletteOptions,
-    CoreExtractPaletteOptions,
-    ExtractPaletteOptions,
+    BrowserExtractColorOptions,
+    CoreExtractColorOptions,
+    ExtractColorOptions,
     FilteringOptions,
     LabKmeansOptions,
     NodeDecodeOptions,
-    NodeExtractPaletteOptions,
+    NodeExtractColorOptions,
     NodeRemoteOptions,
-    PaletteResultOptions,
     PerceptualRankingOptions,
+    ResultOptions,
     SamplingOptions,
 } from '../../src/core/neutral-options.js';
 
@@ -46,14 +46,14 @@ describe('neutral option types', () => {
         expect(opts).toEqual({});
     });
 
-    it('PaletteResultOptions accepts maxColors and includeHsl', () => {
-        const opts: PaletteResultOptions = { maxColors: 8, includeHsl: true };
+    it('ResultOptions accepts maxColors and includeHsl', () => {
+        const opts: ResultOptions = { maxColors: 8, includeHsl: true };
         expect(opts.maxColors).toBe(8);
         expect(opts.includeHsl).toBe(true);
     });
 
-    it('PaletteResultOptions partial', () => {
-        const opts: PaletteResultOptions = { maxColors: 5 };
+    it('ResultOptions partial', () => {
+        const opts: ResultOptions = { maxColors: 5 };
         expect(opts.maxColors).toBe(5);
     });
 
@@ -88,8 +88,8 @@ describe('neutral option types', () => {
         expect(opts.labKmeans?.clusters).toBe(12);
     });
 
-    it('BaseExtractPaletteOptions accepts grouped options', () => {
-        const opts: BaseExtractPaletteOptions = {
+    it('BaseExtractColorOptions accepts grouped options', () => {
+        const opts: BaseExtractColorOptions = {
             sampling: { maxDimension: 300 },
             filtering: { alphaThreshold: 10 },
             result: { maxColors: 6, includeHsl: false },
@@ -98,14 +98,14 @@ describe('neutral option types', () => {
         expect(opts.result?.maxColors).toBe(6);
     });
 
-    it('BaseExtractPaletteOptions accepts signal', () => {
+    it('BaseExtractColorOptions accepts signal', () => {
         const ac = new AbortController();
-        const opts: BaseExtractPaletteOptions = { signal: ac.signal };
+        const opts: BaseExtractColorOptions = { signal: ac.signal };
         expect(opts.signal).toBe(ac.signal);
     });
 
-    it('CoreExtractPaletteOptions is the same as BaseExtractPaletteOptions', () => {
-        const opts: CoreExtractPaletteOptions = {
+    it('CoreExtractColorOptions is the same as BaseExtractColorOptions', () => {
+        const opts: CoreExtractColorOptions = {
             sampling: { maxDimension: 100 },
             advanced: { labKmeans: { clusters: 8 } },
         };
@@ -117,8 +117,8 @@ describe('neutral option types', () => {
         expect(opts.maxPixels).toBe(50_000_000);
     });
 
-    it('BrowserExtractPaletteOptions combines core and browser decode', () => {
-        const opts: BrowserExtractPaletteOptions = {
+    it('BrowserExtractColorOptions combines core and browser decode', () => {
+        const opts: BrowserExtractColorOptions = {
             result: { maxColors: 5 },
             decode: { maxPixels: 20_000_000 },
         };
@@ -148,8 +148,8 @@ describe('neutral option types', () => {
         expect(opts.timeoutMs).toBe(10_000);
     });
 
-    it('NodeExtractPaletteOptions combines base, node decode, node remote', () => {
-        const opts: NodeExtractPaletteOptions = {
+    it('NodeExtractColorOptions combines base, node decode, node remote', () => {
+        const opts: NodeExtractColorOptions = {
             result: { maxColors: 10 },
             decode: { maxPixels: 50_000_000, animated: 'first-frame' },
             remote: { timeoutMs: 5_000, maxBytes: 10_000_000 },
@@ -158,28 +158,28 @@ describe('neutral option types', () => {
         expect(opts.remote?.timeoutMs).toBe(5_000);
     });
 
-    it('ExtractPaletteOptions union accepts browser shape', () => {
-        const opts: ExtractPaletteOptions = {
+    it('ExtractColorOptions union accepts browser shape', () => {
+        const opts: ExtractColorOptions = {
             result: { maxColors: 3 },
             decode: { maxPixels: 10_000_000 },
-        } satisfies BrowserExtractPaletteOptions;
+        } satisfies BrowserExtractColorOptions;
         expect(opts).toBeDefined();
     });
 
-    it('ExtractPaletteOptions union accepts node shape', () => {
-        const opts: ExtractPaletteOptions = {
+    it('ExtractColorOptions union accepts node shape', () => {
+        const opts: ExtractColorOptions = {
             result: { maxColors: 8 },
             decode: { maxPixels: 100_000_000, animated: 'first-frame' },
             remote: { timeoutMs: 10_000, maxBytes: 50_000_000 },
-        } satisfies NodeExtractPaletteOptions;
+        } satisfies NodeExtractColorOptions;
         expect(opts).toBeDefined();
     });
 
-    it('ExtractPaletteOptions union accepts core shape', () => {
-        const opts: ExtractPaletteOptions = {
+    it('ExtractColorOptions union accepts core shape', () => {
+        const opts: ExtractColorOptions = {
             sampling: { maxDimension: 200 },
             advanced: { labKmeans: { clusters: 10 } },
-        } satisfies CoreExtractPaletteOptions;
+        } satisfies CoreExtractColorOptions;
         expect(opts).toBeDefined();
     });
 });
@@ -187,16 +187,16 @@ describe('neutral option types', () => {
 describe('neutral option types — root and core entrypoints', () => {
     const ROOT_OPTION_TYPES = [
         'AdvancedExtractionOptions',
-        'BaseExtractPaletteOptions',
+        'BaseExtractColorOptions',
         'BrowserDecodeOptions',
-        'BrowserExtractPaletteOptions',
-        'CoreExtractPaletteOptions',
-        'ExtractPaletteOptions',
+        'BrowserExtractColorOptions',
+        'CoreExtractColorOptions',
+        'ExtractColorOptions',
         'LabKmeansOptions',
         'NodeDecodeOptions',
-        'NodeExtractPaletteOptions',
+        'NodeExtractColorOptions',
         'NodeRemoteOptions',
-        'PaletteResultOptions',
+        'ResultOptions',
         'PerceptualRankingOptions',
         'SamplingOptions',
     ];
@@ -220,12 +220,12 @@ describe('neutral option types — root and core entrypoints', () => {
 describe('neutral option types — browser entrypoint', () => {
     const BROWSER_OPTION_TYPES = [
         'AdvancedExtractionOptions',
-        'BaseExtractPaletteOptions',
+        'BaseExtractColorOptions',
         'BrowserDecodeOptions',
-        'BrowserExtractPaletteOptions',
-        'ExtractPaletteOptions',
+        'BrowserExtractColorOptions',
+        'ExtractColorOptions',
         'LabKmeansOptions',
-        'PaletteResultOptions',
+        'ResultOptions',
         'PerceptualRankingOptions',
         'SamplingOptions',
     ];
@@ -239,22 +239,22 @@ describe('neutral option types — browser entrypoint', () => {
             expect(dts).toMatch(new RegExp(`\\b${name}\\b`));
         }
         expect(dts).not.toMatch(/\bNodeDecodeOptions\b/);
-        expect(dts).not.toMatch(/\bNodeExtractPaletteOptions\b/);
+        expect(dts).not.toMatch(/\bNodeExtractColorOptions\b/);
         expect(dts).not.toMatch(/\bNodeRemoteOptions\b/);
-        expect(dts).not.toMatch(/\bCoreExtractPaletteOptions\b/);
+        expect(dts).not.toMatch(/\bCoreExtractColorOptions\b/);
     });
 });
 
 describe('neutral option types — node entrypoint', () => {
     const NODE_OPTION_TYPES = [
         'AdvancedExtractionOptions',
-        'BaseExtractPaletteOptions',
-        'ExtractPaletteOptions',
+        'BaseExtractColorOptions',
+        'ExtractColorOptions',
         'LabKmeansOptions',
         'NodeDecodeOptions',
-        'NodeExtractPaletteOptions',
+        'NodeExtractColorOptions',
         'NodeRemoteOptions',
-        'PaletteResultOptions',
+        'ResultOptions',
         'PerceptualRankingOptions',
         'SamplingOptions',
     ];
@@ -268,8 +268,8 @@ describe('neutral option types — node entrypoint', () => {
             expect(dts).toMatch(new RegExp(`\\b${name}\\b`));
         }
         expect(dts).not.toMatch(/\bBrowserDecodeOptions\b/);
-        expect(dts).not.toMatch(/\bBrowserExtractPaletteOptions\b/);
-        expect(dts).not.toMatch(/\bCoreExtractPaletteOptions\b/);
+        expect(dts).not.toMatch(/\bBrowserExtractColorOptions\b/);
+        expect(dts).not.toMatch(/\bCoreExtractColorOptions\b/);
     });
 });
 

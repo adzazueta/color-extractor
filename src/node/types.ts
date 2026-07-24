@@ -1,1 +1,1 @@
-export type NodeExtractColorsInput = Buffer | Uint8Array | ArrayBuffer | string;
+export type NodeExtractColorInput = Buffer | Uint8Array | ArrayBuffer | string;

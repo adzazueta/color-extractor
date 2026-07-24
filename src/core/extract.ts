@@ -9,13 +9,13 @@ import { passesFilter } from './filter.js';
 import { candidatesToClusters } from './legacy/adapter.js';
 import { normalizePalette } from './neutral/normalize.js';
 import type {
-    CoreExtractPaletteOptions,
-    ResolvedCoreExtractPaletteOptions,
+    CoreExtractColorOptions,
+    ResolvedCoreExtractColorOptions,
 } from './neutral-options.js';
 import { resolveNeutralOptions } from './neutral-options.js';
 import type { ExtractColorsOptions } from './options.js';
 import { applyOutputFlags, type FullExtractionResult } from './output.js';
-import type { ExtractPaletteResult } from './palette-types.js';
+import type { ExtractColorResult } from './palette-types.js';
 import { normalizePixels } from './pixels.js';
 import type { ExtractColorsResult, ExtractionMetadata } from './result.js';
 import {
@@ -37,16 +37,16 @@ export interface ImageDataLike {
     readonly height: number;
 }
 
-export type PalettePixelInput = {
+export type ColorPixelInput = {
     readonly data: Uint8Array | Uint8ClampedArray;
     readonly width: number;
     readonly height: number;
     readonly channels: 3 | 4;
 };
 
-function validatePalettePixelInput(
+function validateColorPixelInput(
     input: unknown,
-): asserts input is PalettePixelInput {
+): asserts input is ColorPixelInput {
     if (input === null || typeof input !== 'object') {
         throw new ColorExtractorError(
             'COLOR_EXTRACTOR_UNSUPPORTED_INPUT',
@@ -123,13 +123,13 @@ function checkAborted(signal?: AbortSignal): void {
     }
 }
 
-export function runNeutralPalettePipeline(
-    input: PalettePixelInput,
-    options: ResolvedCoreExtractPaletteOptions,
+export function runNeutralColorPipeline(
+    input: ColorPixelInput,
+    options: ResolvedCoreExtractColorOptions,
     signal?: AbortSignal,
-): ExtractPaletteResult {
+): ExtractColorResult {
     checkAborted(signal);
-    validatePalettePixelInput(input);
+    validateColorPixelInput(input);
     checkAborted(signal);
 
     const pixels = normalizePixels(
@@ -210,10 +210,10 @@ export function runNeutralPalettePipeline(
     });
 }
 
-export async function extractPaletteFromPixels(
-    input: PalettePixelInput,
-    options?: CoreExtractPaletteOptions,
-): Promise<ExtractPaletteResult> {
+export async function extractColorFromPixels(
+    input: ColorPixelInput,
+    options?: CoreExtractColorOptions,
+): Promise<ExtractColorResult> {
     const signal = Object.hasOwn(
         (options ?? {}) as Record<string, unknown>,
         'signal',
@@ -221,7 +221,7 @@ export async function extractPaletteFromPixels(
         ? options?.signal
         : undefined;
     const resolved = resolveNeutralOptions(options, 'core');
-    return runNeutralPalettePipeline(input, resolved, signal);
+    return runNeutralColorPipeline(input, resolved, signal);
 }
 
 function emptyResult(): ExtractColorsResult {
@@ -410,7 +410,7 @@ export function runExtractionPipeline(
     return applyOutputFlags(fullResult, resolved.output);
 }
 
-/** @deprecated Use `extractPaletteFromPixels` instead. Semantic role extraction moved out of the extractor in 0.2.0. See the migration guide in the README. Will be removed in 0.3.0. */
+/** @deprecated Use `extractColorFromPixels` instead. Semantic role extraction moved out of the extractor in 0.2.0. See the migration guide in the README. Will be removed in 0.3.0. */
 export async function extractColorsFromPixels(
     input: PixelInput,
     options?: ExtractColorsOptions,
@@ -418,7 +418,7 @@ export async function extractColorsFromPixels(
     return runExtractionPipeline(input, options);
 }
 
-/** @deprecated Use `extractPaletteFromImageData` (browser) or `extractPaletteFromPixels` (core) instead. Will be removed in 0.3.0. */
+/** @deprecated Use `extractPaletteFromImageData` (browser) or `extractColorFromPixels` (core) instead. Will be removed in 0.3.0. */
 export async function extractColorsFromImageData(
     imageData: ImageDataLike,
     options?: ExtractColorsOptions,

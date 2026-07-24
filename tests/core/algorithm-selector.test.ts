@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
     ColorExtractorError,
     type ExtractionAlgorithm,
-    extractPaletteFromPixels,
+    extractColorFromPixels,
     resolveNeutralOptions,
 } from '../../src/core/index.js';
 
@@ -23,8 +23,8 @@ describe('Algorithm Selector and Metadata', () => {
     });
 
     it('produces identical output when algorithm is omitted vs explicitly "lab-kmeans"', async () => {
-        const resultOmitted = await extractPaletteFromPixels(mockPixels);
-        const resultExplicit = await extractPaletteFromPixels(mockPixels, {
+        const resultOmitted = await extractColorFromPixels(mockPixels);
+        const resultExplicit = await extractColorFromPixels(mockPixels, {
             algorithm: 'lab-kmeans',
         });
 
@@ -33,7 +33,7 @@ describe('Algorithm Selector and Metadata', () => {
         expect(resultExplicit.metadata.algorithmVersion).toBe(
             resultOmitted.metadata.algorithmVersion,
         );
-        expect(resultExplicit.swatches).toEqual(resultOmitted.swatches);
+        expect(resultExplicit.colors).toEqual(resultOmitted.colors);
         expect(resultExplicit.metadata.algorithmDetails).toEqual({
             algorithm: 'lab-kmeans',
             requestedClusters: 4,
@@ -92,7 +92,7 @@ describe('Algorithm Selector and Metadata', () => {
         const resolved = resolveNeutralOptions({ algorithm: 'mmcq' }, 'core');
         expect(resolved.algorithm).toBe('mmcq');
 
-        const result = await extractPaletteFromPixels(mockPixels, {
+        const result = await extractColorFromPixels(mockPixels, {
             algorithm: 'mmcq',
         });
         expect(result.metadata.algorithm).toBe('mmcq');
