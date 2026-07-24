@@ -418,7 +418,7 @@ export async function extractColorsFromPixels(
     return runExtractionPipeline(input, options);
 }
 
-/** @deprecated Use `extractPaletteFromImageData` (browser) or `extractColorFromPixels` (core) instead. Will be removed in 0.3.0. */
+/** @deprecated Use `extractColorFromImageData` (browser) or `extractColorFromPixels` (core) instead. Will be removed in 0.4.0. */
 export async function extractColorsFromImageData(
     imageData: ImageDataLike,
     options?: ExtractColorsOptions,

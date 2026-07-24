@@ -653,7 +653,7 @@ function checkRejectLegacyKeys(obj: Record<string, unknown>): void {
         if (LEGACY_KEYS.has(key)) {
             invalidOpt(
                 key,
-                `legacy option "${key}" is not supported by extractPalette(); use the neutral option group instead`,
+                `legacy option "${key}" is not supported by extractColor(); use the neutral option group instead`,
             );
         }
     }
