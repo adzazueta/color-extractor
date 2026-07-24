@@ -68,6 +68,10 @@ jobs:
           fi
           if [ '${{ inputs.release_type }}' = 'stable' ] && [ -f .changeset/pre.json ]; then
             pnpm changeset pre exit
+            if [ -f .changeset/pre.json ]; then
+              echo "error: changeset pre exit failed — .changeset/pre.json still exists"
+              exit 1
+            fi
           fi
           pnpm release:prepare
           VERSION=$(node -p "require('./package.json').version")
@@ -87,6 +91,9 @@ jobs:
       - name: Build dist for lint-staged
         run: pnpm build
 
+      - name: Run release checks
+        run: pnpm release:check
+
       - name: Commit and push validated version
         run: |
           git config user.name "github-actions[bot]"
@@ -98,9 +105,6 @@ jobs:
           else
             echo "no changes to commit"
           fi
-
-      - name: Run release checks
-        run: pnpm release:check
 
       - name: Publish, tag, and create GitHub Release
         uses: changesets/action@v1

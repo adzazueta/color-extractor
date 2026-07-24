@@ -45,11 +45,27 @@ describe('release workflow', () => {
         );
     });
 
+    it('runs release checks before committing', () => {
+        const checkIdx = workflow.indexOf('pnpm release:check');
+        const commitIdx = workflow.indexOf('git commit --no-verify');
+        expect(checkIdx).toBeGreaterThan(-1);
+        expect(commitIdx).toBeGreaterThan(-1);
+        expect(checkIdx).toBeLessThan(commitIdx);
+    });
+
     it('commits and pushes validated version before publishing', () => {
         expect(workflow).toContain(
-            'git commit -m "chore(release): v$' + '{{ env.version }}"',
+            'git commit --no-verify -m "chore(release): v$' +
+                '{{ env.version }}"',
         );
         expect(workflow).toContain('git push');
+    });
+
+    it('verifies pre.json removed after pre exit for stable releases', () => {
+        expect(workflow).toContain('changeset pre exit');
+        expect(workflow).toContain(
+            'changeset pre exit failed — .changeset/pre.json still exists',
+        );
     });
 
     it('uses changesets/action@v1 for publish, tags and GitHub Release', () => {
