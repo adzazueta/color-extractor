@@ -176,7 +176,6 @@ describe('neutral types — all entrypoints', () => {
     }
 
     const INTERNAL_ALGORITHM_TYPES = [
-        'AlgorithmCandidateResult',
         'AlgorithmContext',
         'AlgorithmDiagnostics',
         'ExtractionCandidate',

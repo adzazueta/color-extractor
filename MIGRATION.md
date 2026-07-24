@@ -2,7 +2,7 @@
 
 ## Summary
 
-`0.2.0` introduces a neutral palette API (`extractPalette`) that returns observed-color evidence without semantic role assignment. The `0.1.x` role-based API (`extractColors`) is deprecated and will be removed in `0.4.0`.
+`0.2.0` introduces a neutral palette API (`extractPalette`) that returns observed-color evidence without semantic role assignment. The `0.1.x` role-based API (`extractColors`) is deprecated and will be removed in `0.3.0`.
 
 ## Quick migration
 
@@ -106,9 +106,9 @@ The extractor no longer assigns semantic roles. The engine adapter is not part o
 | `ExtractColorsResult` | `ExtractPaletteResult` | New shape: `{ swatches, rankings, metadata }`. |
 | `MinimalExtractColorsResult` | — | Removed. Neutral result is always the full shape. |
 | `ExtractedColor` | `ExtractedSwatch` | New shape: `{ id, hex, rgb, lab, chroma, population, proportion, score, hsl? }`. |
-| `RGB` | `RgbColor` | `{ r, g, b }` — same shape, new type name. Scheduled for deprecation in 0.4.0. |
-| `HSL` | `HslColor` | `{ h, s, l }` — same shape, new type name. Scheduled for deprecation in 0.4.0. |
-| `Lab` | `LabColor` | `{ L, a, b }` — same shape, new type name. Scheduled for deprecation in 0.4.0. |
+| `RGB` | `RgbColor` | `{ r, g, b }` — same shape, new type name. Scheduled for deprecation in 0.3.0. |
+| `HSL` | `HslColor` | `{ h, s, l }` — same shape, new type name. Scheduled for deprecation in 0.3.0. |
+| `Lab` | `LabColor` | `{ L, a, b }` — same shape, new type name. Scheduled for deprecation in 0.3.0. |
 | `ExtractionMetadata` | `ExtractionMetadata` | Expanded: new fields `algorithm`, `algorithmVersion`, `candidateCount`, `returnedColors`, `returnedPopulation`, `coverage`, `algorithmDetails`. |
 | — | `PaletteRankings` | New: three ranking strategies. |
 | — | `SwatchId` | New: branded string type `"swatch-{hex}"`. |
@@ -161,5 +161,5 @@ All fields are always present with no opt-in flags. No semantic roles, no source
 | Version | Status |
 | --- | --- |
 | 0.2.0 | Legacy API deprecated. Neutral API introduced. |
-| 0.3.x | Legacy API frozen, still available. Deprecation warnings in documentation. |
-| 0.4.0 | Legacy API removed. `RGB`, `HSL`, `Lab` type aliases removed. |
+| 0.2.x | Legacy API frozen, still available. Deprecation warnings in documentation. |
+| 0.3.0 | Legacy API removed. `RGB`, `HSL`, `Lab` type aliases removed. |

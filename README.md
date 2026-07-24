@@ -4,7 +4,7 @@ Extract perceptually meaningful observed colors from images in browsers and Node
 
 The neutral palette API uses deterministic CIELAB K-means by default and also supports deterministic MMCQ quantization. Both algorithms return observed colors, population evidence, perceptual rankings, and algorithm diagnostics without assigning semantic roles.
 
-The `0.2` release introduces a neutral palette API that returns observed-color evidence without semantic role assignment. Legacy role-based extraction (`extractColors`) remains available through `0.3.x` and is deprecated for removal in `0.4.0`.
+The `0.2` release introduces a neutral palette API that returns observed-color evidence without semantic role assignment. Legacy role-based extraction (`extractColors`) remains available through `0.2.x` and is deprecated for removal in `0.3.0`.
 
 This package is ESM-only. Use `import` with the documented package entrypoints.
 
@@ -473,7 +473,7 @@ Node support follows the installed `sharp` and libvips build. Common formats inc
 
 ## Legacy API deprecation
 
-The `0.1.x` role-based API (`extractColors`, `extractColorsFromPixels`, `extractColorsFromImageData`) is deprecated starting in `0.2.0`. It remains available and frozen through `0.3.x` and will be removed in `0.4.0`.
+The `0.1.x` role-based API (`extractColors`, `extractColorsFromPixels`, `extractColorsFromImageData`) is deprecated starting in `0.2.0`. It remains available and frozen through `0.2.x` and will be removed in `0.3.0`.
 
 | Legacy | Neutral replacement |
 | --- | --- |
