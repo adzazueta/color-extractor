@@ -11,6 +11,7 @@ export default defineConfig({
     dts: true,
     clean: true,
     platform: 'neutral',
+    sourcemap: true,
     publint: true,
     deps: {
         neverBundle: ['sharp', /^node:/],

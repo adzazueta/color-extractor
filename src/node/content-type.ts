@@ -1,5 +1,5 @@
 import { ColorExtractorError } from '../core/errors.js';
-import type { SvgHandling } from '../core/options.js';
+import type { NodeDecodeOptions } from '../core/neutral-options.js';
 
 const ALLOWED_IMAGE_TYPES = new Set([
     'image/jpeg',
@@ -21,7 +21,7 @@ function normalizeContentType(contentType: string): string {
 
 export function validateContentType(
     contentType: string | null | undefined,
-    options: { validateContentType: boolean; svg: SvgHandling },
+    options: { validateContentType: boolean; svg: NodeDecodeOptions['svg'] },
 ): void {
     if (!options.validateContentType) return;
     if (!contentType) return;
@@ -29,12 +29,11 @@ export function validateContentType(
     const normalized = normalizeContentType(contentType);
 
     if (normalized === 'image/svg+xml') {
-        const svgDisabled =
-            options.svg === 'disabled-in-node' || options.svg === 'disabled';
+        const svgDisabled = options.svg === 'disabled';
         if (svgDisabled) {
             throw new ColorExtractorError(
                 'COLOR_EXTRACTOR_UNSUPPORTED_FORMAT',
-                'SVG content type is not supported in Node by default. Set decode.svg to "enabled-in-node" to allow SVG.',
+                'SVG content type is not supported in Node by default. Set decode.svg to "enabled" to allow SVG.',
                 { cause: { contentType: normalized, svg: options.svg } },
             );
         }

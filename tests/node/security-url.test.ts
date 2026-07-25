@@ -86,7 +86,7 @@ describe('security end-to-end through extractColors (ADZ-76)', () => {
     });
 
     describe('AC: protocol validation', () => {
-        it('throws COLOR_EXTRACTOR_UNSAFE_URL when allowedProtocols is empty', async () => {
+        it('throws COLOR_EXTRACTOR_INVALID_OPTIONS when allowedProtocols is empty', async () => {
             const { extractColors } = await import('../../src/node/index.js');
             try {
                 await extractColors(`http://127.0.0.1:${port}/test.png`, {
@@ -98,7 +98,7 @@ describe('security end-to-end through extractColors (ADZ-76)', () => {
                 expect.fail('Expected error');
             } catch (e) {
                 expect((e as ColorExtractorError).code).toBe(
-                    'COLOR_EXTRACTOR_UNSAFE_URL',
+                    'COLOR_EXTRACTOR_INVALID_OPTIONS',
                 );
             }
         });

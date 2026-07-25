@@ -1,5 +1,13 @@
-import { existsSync, readFileSync } from 'node:fs';
-import { dirname, resolve } from 'node:path';
+import { execFileSync } from 'node:child_process';
+import {
+    existsSync,
+    mkdtempSync,
+    readdirSync,
+    readFileSync,
+    rmSync,
+} from 'node:fs';
+import { tmpdir } from 'node:os';
+import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
@@ -131,5 +139,123 @@ describe('built entrypoints can be imported from Node', () => {
         const mod = (await import(url)) as { VERSION: string };
         expect(typeof mod.VERSION).toBe('string');
         expect(mod.VERSION).toBe(expectedVersion);
+    });
+});
+
+describe('legacy API names are absent from all entrypoints', () => {
+    const legacyNames = [
+        'extractColor',
+        'extractColorFromPixels',
+        'extractColorFromImageData',
+        'extractPalette',
+        'extractPaletteFromPixels',
+        'extractPaletteFromImageData',
+        'DEFAULT_OPTIONS',
+        'resolveOptions',
+    ];
+
+    it.each([
+        ['./dist/index.js', 'root'],
+        ['./dist/browser/index.js', 'browser'],
+        ['./dist/node/index.js', 'node'],
+        ['./dist/core/index.js', 'core'],
+    ])('%s does not export legacy names (%s)', async (relPath, label) => {
+        const url = pathToFileURL(resolve(rootDir, relPath)).href;
+        const mod = (await import(url)) as Record<string, unknown>;
+        for (const name of legacyNames) {
+            expect(mod[name], `${label} should not export ${name}`).toBe(
+                undefined,
+            );
+        }
+    });
+});
+
+describe('tarball lexical scan — no legacy terminology', () => {
+    const forbiddenTerms = [
+        'extractColor',
+        'extractColorFromPixels',
+        'extractColorFromImageData',
+        'extractPalette',
+        'extractPaletteFromPixels',
+        'extractPaletteFromImageData',
+        'DEFAULT_OPTIONS',
+        'resolveOptions',
+        'ExtractedColor',
+        'ExtractedSwatch',
+        'SwatchId',
+        'swatchIdFromHex',
+        'role',
+        'FilterCriteria',
+    ];
+
+    function collectDtsAndJsFiles(dir: string): string[] {
+        const results: string[] = [];
+        for (const entry of readdirSync(dir, { withFileTypes: true })) {
+            const full = join(dir, entry.name);
+            if (entry.isDirectory()) {
+                results.push(...collectDtsAndJsFiles(full));
+            } else if (
+                entry.name.endsWith('.js') ||
+                entry.name.endsWith('.d.ts')
+            ) {
+                results.push(full);
+            }
+        }
+        return results;
+    }
+
+    it('dist files contain no forbidden legacy terms', () => {
+        const distDir = resolve(rootDir, 'dist');
+        expect(existsSync(distDir)).toBe(true);
+        const files = collectDtsAndJsFiles(distDir);
+        expect(files.length).toBeGreaterThan(0);
+
+        for (const file of files) {
+            const content = readFileSync(file, 'utf-8');
+            for (const term of forbiddenTerms) {
+                const re = new RegExp(`\\b${term}\\b`);
+                expect(content).not.toMatch(re);
+            }
+        }
+    });
+
+    it('tarball JS/TS files contain no forbidden legacy terms', () => {
+        const tmpDir = mkdtempSync(join(tmpdir(), 'ce-tarball-scan-'));
+        try {
+            execFileSync('pnpm', ['pack', '--pack-destination', tmpDir], {
+                cwd: rootDir,
+                stdio: 'pipe',
+            });
+
+            const tgzFiles = readdirSync(tmpDir).filter((f) =>
+                f.endsWith('.tgz'),
+            );
+            expect(tgzFiles.length).toBe(1);
+
+            const tgzPath = join(tmpDir, tgzFiles[0]!);
+            execFileSync('tar', ['xzf', tgzPath, '-C', tmpDir], {
+                stdio: 'pipe',
+            });
+
+            const extractedDir = join(tmpDir, 'package');
+            expect(existsSync(extractedDir)).toBe(true);
+
+            const files = collectDtsAndJsFiles(extractedDir);
+            expect(files.length).toBeGreaterThan(0);
+
+            for (const file of files) {
+                const content = readFileSync(file, 'utf-8');
+                const relPath = file.slice(extractedDir.length + 1);
+                for (const term of forbiddenTerms) {
+                    const re = new RegExp(`\\b${term}\\b`);
+                    expect(
+                        content,
+                        `tarball ${relPath} should not contain "${term}"`,
+                    ).not.toMatch(re);
+                }
+            }
+        } finally {
+            rmSync(tmpDir, { recursive: true, force: true });
+        }
     });
 });

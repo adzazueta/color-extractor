@@ -1,16 +1,17 @@
 import { describe, expect, it } from 'vitest';
 import { ColorExtractorError } from '../../src/core/errors.js';
+import type { NodeDecodeOptions } from '../../src/core/neutral-options.js';
 import { validateContentType } from '../../src/node/content-type.js';
 
 function opts(
     overrides?: Partial<{
         validateContentType: boolean;
-        svg: 'disabled-in-node' | 'enabled-in-node' | 'disabled' | 'enabled';
+        svg: NodeDecodeOptions['svg'];
     }>,
 ) {
     return {
         validateContentType: true,
-        svg: 'disabled-in-node' as const,
+        svg: 'disabled' as const,
         ...overrides,
     };
 }
@@ -115,28 +116,10 @@ describe('validateContentType (ADZ-63)', () => {
     });
 
     describe('AC: SVG content type follows Node SVG policy', () => {
-        it('rejects image/svg+xml when svg is disabled-in-node', () => {
-            expect(() =>
-                validateContentType(
-                    'image/svg+xml',
-                    opts({ svg: 'disabled-in-node' }),
-                ),
-            ).toThrow(ColorExtractorError);
-        });
-
         it('rejects image/svg+xml when svg is disabled', () => {
             expect(() =>
                 validateContentType('image/svg+xml', opts({ svg: 'disabled' })),
             ).toThrow(ColorExtractorError);
-        });
-
-        it('allows image/svg+xml when svg is enabled-in-node', () => {
-            expect(() =>
-                validateContentType(
-                    'image/svg+xml',
-                    opts({ svg: 'enabled-in-node' }),
-                ),
-            ).not.toThrow();
         });
 
         it('allows image/svg+xml when svg is enabled', () => {

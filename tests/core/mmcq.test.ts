@@ -2,9 +2,9 @@ import { describe, expect, it } from 'vitest';
 import type { ExtractionSampleSet } from '../../src/core/algorithms/contract.js';
 import { mmcqAlgorithm } from '../../src/core/algorithms/mmcq/algorithm.js';
 import { ColorExtractorError } from '../../src/core/errors.js';
-import type { RGB } from '../../src/core/types.js';
+import type { RgbColor } from '../../src/core/palette-types.js';
 
-function createSampleSet(colors: RGB[]): ExtractionSampleSet {
+function createSampleSet(colors: RgbColor[]): ExtractionSampleSet {
     const samples = colors.map((rgb, index) => ({
         rgb,
         lab: { L: 50, a: 0, b: 0 },
@@ -105,7 +105,7 @@ describe('Deterministic MMCQ Core Algorithm', () => {
     });
 
     it('quantizes a high-diversity gradient into requested candidate count', () => {
-        const colors: RGB[] = [];
+        const colors: RgbColor[] = [];
         for (let i = 0; i < 256; i += 4) {
             colors.push({ r: i, g: 255 - i, b: (i * 2) % 256 });
         }
@@ -238,11 +238,11 @@ describe('Public MMCQ Result Integration & Legacy Isolation', () => {
         channels: 4 as const,
     };
 
-    it('extractPaletteFromPixels returns valid neutral palette with algorithm: "mmcq"', async () => {
-        const { extractPaletteFromPixels } = await import(
+    it('extractColorsFromPixels returns valid neutral palette with algorithm: "mmcq"', async () => {
+        const { extractColorsFromPixels } = await import(
             '../../src/core/extract.js'
         );
-        const palette = await extractPaletteFromPixels(mockPixels, {
+        const palette = await extractColorsFromPixels(mockPixels, {
             algorithm: 'mmcq',
             advanced: { mmcq: { boxes: 8 } },
         });
@@ -256,14 +256,12 @@ describe('Public MMCQ Result Integration & Legacy Isolation', () => {
             occupiedBins: expect.any(Number),
             splits: expect.any(Number),
         });
-        expect(palette.swatches.length).toBeGreaterThan(0);
-        expect(palette.rankings.perceptual).toHaveLength(
-            palette.swatches.length,
-        );
+        expect(palette.colors.length).toBeGreaterThan(0);
+        expect(palette.rankings.perceptual).toHaveLength(palette.colors.length);
     });
 
-    it('extractPalette from root entrypoint supports MMCQ algorithm option', async () => {
-        const { extractPalette } = await import('../../src/index.js');
+    it('extractColors from root entrypoint supports MMCQ algorithm option', async () => {
+        const { extractColors } = await import('../../src/index.js');
         const sharp = (await import('sharp')).default;
         const pngBuffer = await sharp({
             create: {
@@ -276,15 +274,15 @@ describe('Public MMCQ Result Integration & Legacy Isolation', () => {
             .png()
             .toBuffer();
 
-        const palette = await extractPalette(pngBuffer, {
+        const palette = await extractColors(pngBuffer, {
             algorithm: 'mmcq',
         });
         expect(palette.metadata.algorithm).toBe('mmcq');
         expect(palette.metadata.algorithmVersion).toBe('mmcq-v2');
     });
 
-    it('extractPalette from node entrypoint supports MMCQ algorithm option', async () => {
-        const { extractPalette } = await import('../../src/node/index.js');
+    it('extractColors from node entrypoint supports MMCQ algorithm option', async () => {
+        const { extractColors } = await import('../../src/node/index.js');
         const sharp = (await import('sharp')).default;
         const pngBuffer = await sharp({
             create: {
@@ -297,15 +295,15 @@ describe('Public MMCQ Result Integration & Legacy Isolation', () => {
             .png()
             .toBuffer();
 
-        const palette = await extractPalette(pngBuffer, {
+        const palette = await extractColors(pngBuffer, {
             algorithm: 'mmcq',
         });
         expect(palette.metadata.algorithm).toBe('mmcq');
         expect(palette.metadata.algorithmVersion).toBe('mmcq-v2');
     });
 
-    it('extractPalette from browser entrypoint supports MMCQ algorithm option', async () => {
-        const { extractPalette } = await import('../../src/browser/index.js');
+    it('extractColors from browser entrypoint supports MMCQ algorithm option', async () => {
+        const { extractColors } = await import('../../src/browser/index.js');
         class MockImageData {
             data: Uint8ClampedArray;
             width: number;
@@ -334,7 +332,7 @@ describe('Public MMCQ Result Integration & Legacy Isolation', () => {
                 2,
             ) as unknown as ImageData;
 
-            const palette = await extractPalette(imgData, {
+            const palette = await extractColors(imgData, {
                 algorithm: 'mmcq',
             });
             expect(palette.metadata.algorithm).toBe('mmcq');
@@ -344,24 +342,14 @@ describe('Public MMCQ Result Integration & Legacy Isolation', () => {
         }
     });
 
-    it('extractPaletteFromPixels from core entrypoint supports MMCQ algorithm option', async () => {
-        const { extractPaletteFromPixels } = await import(
+    it('extractColorsFromPixels from core entrypoint supports MMCQ algorithm option', async () => {
+        const { extractColorsFromPixels } = await import(
             '../../src/core/index.js'
         );
-        const palette = await extractPaletteFromPixels(mockPixels, {
+        const palette = await extractColorsFromPixels(mockPixels, {
             algorithm: 'mmcq',
         });
         expect(palette.metadata.algorithm).toBe('mmcq');
         expect(palette.metadata.algorithmVersion).toBe('mmcq-v2');
-    });
-
-    it('extractColors (legacy API) does not support MMCQ option', async () => {
-        const { extractColorsFromPixels } = await import(
-            '../../src/core/extract.js'
-        );
-        const colors = await extractColorsFromPixels(mockPixels, {
-            algorithm: 'mmcq',
-        } as unknown as Parameters<typeof extractColorsFromPixels>[1]);
-        expect(colors.primary).toBeDefined();
     });
 });

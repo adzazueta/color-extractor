@@ -1,7 +1,7 @@
 import { labSquaredDistance } from '../../src/core/color/lab.js';
 import type {
-    ExtractedSwatch,
-    ExtractPaletteResult,
+    ExtractColorResult,
+    ObservedColor,
 } from '../../src/core/palette-types.js';
 import type { LabSample } from '../../src/core/sample.js';
 import type { BenchmarkQualityMetrics } from './types.js';
@@ -31,9 +31,9 @@ export function calculatePercentile(
 
 export function calculateReconstructionError(
     samples: readonly LabSample[],
-    swatches: readonly ExtractedSwatch[],
+    colors: readonly ObservedColor[],
 ): { mean: number; p95: number } {
-    if (samples.length === 0 || swatches.length === 0) {
+    if (samples.length === 0 || colors.length === 0) {
         return { mean: 0, p95: 0 };
     }
 
@@ -42,8 +42,8 @@ export function calculateReconstructionError(
     for (let i = 0; i < samples.length; i++) {
         const sampleLab = samples[i]!.lab;
         let minDist = Number.POSITIVE_INFINITY;
-        for (const swatch of swatches) {
-            const dist = labDistance(sampleLab, swatch.lab);
+        for (const color of colors) {
+            const dist = labDistance(sampleLab, color.lab);
             if (dist < minDist) {
                 minDist = dist;
             }
@@ -60,18 +60,18 @@ export function calculateReconstructionError(
     return { mean, p95 };
 }
 
-export function calculateDiversity(swatches: readonly ExtractedSwatch[]): {
+export function calculateDiversity(colors: readonly ObservedColor[]): {
     min: number | null;
     mean: number | null;
 } {
-    if (swatches.length < 2) {
+    if (colors.length < 2) {
         return { min: null, mean: null };
     }
 
     const distances: number[] = [];
-    for (let i = 0; i < swatches.length; i++) {
-        for (let j = i + 1; j < swatches.length; j++) {
-            distances.push(labDistance(swatches[i]!.lab, swatches[j]!.lab));
+    for (let i = 0; i < colors.length; i++) {
+        for (let j = i + 1; j < colors.length; j++) {
+            distances.push(labDistance(colors[i]!.lab, colors[j]!.lab));
         }
     }
 
@@ -90,22 +90,19 @@ export function calculateDiversity(swatches: readonly ExtractedSwatch[]): {
 
 export function calculatePopulationConcentration(
     validPixels: number,
-    swatches: readonly ExtractedSwatch[],
+    colors: readonly ObservedColor[],
 ): { coverage: number; maxProportion: number; entropy: number } {
-    if (swatches.length === 0 || validPixels === 0) {
+    if (colors.length === 0 || validPixels === 0) {
         return { coverage: 0, maxProportion: 0, entropy: 0 };
     }
 
-    const returnedPopulation = swatches.reduce(
-        (sum, s) => sum + s.population,
-        0,
-    );
+    const returnedPopulation = colors.reduce((sum, s) => sum + s.population, 0);
     const coverage = returnedPopulation / validPixels;
 
     let maxPop = 0;
     let entropy = 0;
 
-    for (const s of swatches) {
+    for (const s of colors) {
         if (s.population > maxPop) {
             maxPop = s.population;
         }
@@ -122,16 +119,15 @@ export function calculatePopulationConcentration(
 }
 
 export function calculateDeterminism(
-    results: readonly ExtractPaletteResult[],
+    results: readonly ExtractColorResult[],
 ): boolean {
     if (results.length <= 1) return true;
 
-    const firstSwatches = JSON.stringify(results[0]?.swatches);
+    const firstColors = JSON.stringify(results[0]?.colors);
     const firstRankings = JSON.stringify(results[0]?.rankings);
 
     for (let i = 1; i < results.length; i++) {
-        if (JSON.stringify(results[i]?.swatches) !== firstSwatches)
-            return false;
+        if (JSON.stringify(results[i]?.colors) !== firstColors) return false;
         if (JSON.stringify(results[i]?.rankings) !== firstRankings)
             return false;
     }
@@ -141,23 +137,23 @@ export function calculateDeterminism(
 
 export function computeQualityMetrics(
     samples: readonly LabSample[],
-    results: readonly ExtractPaletteResult[],
+    results: readonly ExtractColorResult[],
 ): BenchmarkQualityMetrics {
     const primaryResult = results[0];
     if (!primaryResult) {
         throw new Error('No results provided to computeQualityMetrics');
     }
-    const swatches = primaryResult.swatches;
+    const colors = primaryResult.colors;
     const validPixels = primaryResult.metadata.validPixels;
 
     const { mean: reconstructionMean, p95: reconstructionP95 } =
-        calculateReconstructionError(samples, swatches);
+        calculateReconstructionError(samples, colors);
 
     const { min: diversityMin, mean: diversityMean } =
-        calculateDiversity(swatches);
+        calculateDiversity(colors);
 
     const { coverage, maxProportion, entropy } =
-        calculatePopulationConcentration(validPixels, swatches);
+        calculatePopulationConcentration(validPixels, colors);
 
     const determinism = calculateDeterminism(results);
 

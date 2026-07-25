@@ -70,8 +70,8 @@ describe('Node URL extraction with local server (ADZ-81)', () => {
                     remote: { allowPrivateNetworks: true },
                 },
             );
-            expect(result.primary).toBeDefined();
-            expect(result.primary.role).toBe('primary');
+            expect(result.colors[0]).toBeDefined();
+            expect(result.colors[0]!.hex).toBeTruthy();
         });
 
         it('extractColors returns metadata with runtime=node', async () => {
@@ -80,7 +80,6 @@ describe('Node URL extraction with local server (ADZ-81)', () => {
                 `http://127.0.0.1:${port}/test.png`,
                 {
                     remote: { allowPrivateNetworks: true },
-                    output: { includeMetadata: true },
                 },
             );
             expect(result.metadata?.runtime).toBe('node');

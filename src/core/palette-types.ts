@@ -1,4 +1,4 @@
-export type SwatchId = `swatch-${string}`;
+export type ColorId = `color-${string}`;
 
 export type RgbColor = {
     r: number;
@@ -18,8 +18,8 @@ export type LabColor = {
     b: number;
 };
 
-export type ExtractedSwatch = {
-    id: SwatchId;
+export type ObservedColor = {
+    id: ColorId;
     hex: string;
     rgb: RgbColor;
     lab: LabColor;
@@ -31,9 +31,9 @@ export type ExtractedSwatch = {
 };
 
 export type PaletteRankings = {
-    perceptual: SwatchId[];
-    population: SwatchId[];
-    chroma: SwatchId[];
+    perceptual: ColorId[];
+    population: ColorId[];
+    chroma: ColorId[];
 };
 
 export type ExtractionAlgorithm = 'lab-kmeans' | 'mmcq';
@@ -77,8 +77,8 @@ export type ExtractionMetadata = {
     algorithmDetails: AlgorithmDetails;
 };
 
-export type ExtractPaletteResult = {
-    swatches: ExtractedSwatch[];
+export type ExtractColorResult = {
+    colors: ObservedColor[];
     rankings: PaletteRankings;
     metadata: ExtractionMetadata;
 };

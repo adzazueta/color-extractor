@@ -1,5 +1,5 @@
 import { ColorExtractorError } from '../core/errors.js';
-import type { RemoteOptions } from '../core/options.js';
+import type { NodeRemoteOptions } from '../core/neutral-options.js';
 
 const DEFAULT_ALLOWED_PROTOCOLS: readonly string[] = ['http:', 'https:'];
 
@@ -48,7 +48,7 @@ export function assertAllowedProtocol(
 
 export function validateRemoteProtocol(
     href: string,
-    options?: Pick<RemoteOptions, 'allowedProtocols'>,
+    options?: Pick<NodeRemoteOptions, 'allowedProtocols'>,
 ): ParsedRemoteUrl {
     const allowed = options?.allowedProtocols ?? DEFAULT_ALLOWED_PROTOCOLS;
     if (allowed.length === 0) {

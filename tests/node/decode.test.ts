@@ -382,14 +382,14 @@ describe('maxPixels enforcement (ADZ-64)', () => {
 });
 
 describe('SVG rejection in Node (ADZ-68)', () => {
-    it('rejects SVG bytes when svg mode is disabled-in-node', async () => {
+    it('rejects SVG bytes when svg mode is disabled', async () => {
         const svg = Buffer.from(
             '<svg xmlns="http://www.w3.org/2000/svg"><rect/></svg>',
         );
         await expect(
             decodeBufferToPixels(svg, 150, {
                 respectOrientation: true,
-                svg: 'disabled-in-node',
+                svg: 'disabled',
             }),
         ).rejects.toMatchObject({ code: 'COLOR_EXTRACTOR_UNSUPPORTED_FORMAT' });
     });
@@ -401,31 +401,19 @@ describe('SVG rejection in Node (ADZ-68)', () => {
         await expect(
             decodeBufferToPixels(svg, 150, {
                 respectOrientation: true,
-                svg: 'disabled-in-node',
-            }),
-        ).rejects.toMatchObject({ code: 'COLOR_EXTRACTOR_UNSUPPORTED_FORMAT' });
-    });
-
-    it('rejects SVG when svg mode is disabled', async () => {
-        const svg = Buffer.from(
-            '<svg xmlns="http://www.w3.org/2000/svg"></svg>',
-        );
-        await expect(
-            decodeBufferToPixels(svg, 150, {
-                respectOrientation: true,
                 svg: 'disabled',
             }),
         ).rejects.toMatchObject({ code: 'COLOR_EXTRACTOR_UNSUPPORTED_FORMAT' });
     });
 
-    it('allows SVG bytes when svg mode is enabled-in-node', async () => {
+    it('allows SVG bytes when svg mode is enabled', async () => {
         const svg = Buffer.from(
             '<svg xmlns="http://www.w3.org/2000/svg"><rect/></svg>',
         );
         try {
             await decodeBufferToPixels(svg, 150, {
                 respectOrientation: true,
-                svg: 'enabled-in-node',
+                svg: 'enabled',
             });
         } catch (err) {
             expect((err as ColorExtractorError).code).not.toBe(
@@ -447,7 +435,7 @@ describe('SVG rejection in Node (ADZ-68)', () => {
         const png = await makePng(10, 10, { r: 200, g: 30, b: 30 });
         const result = await decodeBufferToPixels(png, 150, {
             respectOrientation: true,
-            svg: 'disabled-in-node',
+            svg: 'disabled',
         });
         expect(result.width).toBe(10);
     });
@@ -464,21 +452,20 @@ describe('animated first-frame handling (ADZ-66)', () => {
         expect(result.height).toBe(10);
     });
 
-    it('accepts all-frames mode', async () => {
+    it('accepts first-frame mode explicitly', async () => {
         const png = await makePng(10, 10, { r: 200, g: 30, b: 30 });
         const result = await decodeBufferToPixels(png, 150, {
             respectOrientation: true,
-            animated: 'all-frames',
+            animated: 'first-frame',
         });
         expect(result.width).toBe(10);
         expect(result.height).toBe(10);
     });
 
-    it('accepts disabled mode', async () => {
+    it('accepts default mode (animated option omitted)', async () => {
         const png = await makePng(10, 10, { r: 200, g: 30, b: 30 });
         const result = await decodeBufferToPixels(png, 150, {
             respectOrientation: true,
-            animated: 'disabled',
         });
         expect(result.width).toBe(10);
         expect(result.height).toBe(10);

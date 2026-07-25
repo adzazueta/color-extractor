@@ -2,31 +2,27 @@
 
 Extract perceptually meaningful observed colors from images in browsers and Node.js.
 
-The neutral palette API uses deterministic CIELAB K-means by default and also supports deterministic MMCQ quantization. Both algorithms return observed colors, population evidence, perceptual rankings, and algorithm diagnostics without assigning semantic roles.
+The neutral color extraction API uses deterministic CIELAB K-means by default and also supports deterministic MMCQ quantization. Both algorithms return observed colors, population evidence, perceptual rankings, and algorithm diagnostics without assigning semantic roles.
 
-The `0.2` release introduces a neutral palette API that returns observed-color evidence without semantic role assignment. Legacy role-based extraction (`extractColors`) remains available through `0.2.x` and is deprecated for removal in `0.3.0`.
+The `0.3` release uses a stable color-oriented API that returns observed-color evidence without semantic role assignment.
 
 This package is ESM-only. Use `import` with the documented package entrypoints.
 
 ```ts
-import { extractPalette } from '@adzazueta/color-extractor'
+import { extractColors } from '@adzazueta/color-extractor'
 
-const result = await extractPalette(image)
+const result = await extractColors(image)
 const topId = result.rankings.perceptual[0]
-const top = result.swatches.find(swatch => swatch.id === topId)
+const top = result.colors.find(color => color.id === topId)
 console.log(top?.id, top?.hex, top?.score)
 ```
 
 ## Installation
 
+To install the package:
+
 ```sh
 npm install @adzazueta/color-extractor
-```
-
-To install the `0.2` prerelease channel:
-
-```sh
-npm install @adzazueta/color-extractor@next
 ```
 
 For Node.js image decoding, install the optional `sharp` peer dependency:
@@ -42,16 +38,16 @@ The Node entrypoint requires Node.js `^20.19.0 || >=22.12.0`. Browser and core c
 ### Universal (root)
 
 ```ts
-import { extractPalette } from '@adzazueta/color-extractor'
+import { extractColors } from '@adzazueta/color-extractor'
 
-const result = await extractPalette(image)
+const result = await extractColors(image)
 
-// Resolve rankings to swatches
-const swatchesById = new Map(
-  result.swatches.map(swatch => [swatch.id, swatch]),
+// Resolve rankings to colors
+const colorsById = new Map(
+  result.colors.map(color => [color.id, color]),
 )
 const perceptual = result.rankings.perceptual.map(
-  id => swatchesById.get(id)!,
+  id => colorsById.get(id)!,
 )
 console.log(perceptual[0]?.hex)
 ```
@@ -59,36 +55,36 @@ console.log(perceptual[0]?.hex)
 ### Browser — file input
 
 ```ts
-import { extractPalette } from '@adzazueta/color-extractor'
+import { extractColors } from '@adzazueta/color-extractor'
 
 const fileInput = document.querySelector<HTMLInputElement>('input[type="file"]')
 const file = fileInput?.files?.[0]
 if (file) {
-  const result = await extractPalette(file)
-  console.log(result.swatches[0]?.hex)
+  const result = await extractColors(file)
+  console.log(result.colors[0]?.hex)
 }
 ```
 
 ### Browser — ImageData
 
 ```ts
-import { extractPaletteFromImageData } from '@adzazueta/color-extractor/browser'
+import { extractColorsFromImageData } from '@adzazueta/color-extractor/browser'
 
 const canvas = document.querySelector('canvas')
 const ctx = canvas?.getContext('2d')
 if (ctx) {
   const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
-  const result = await extractPaletteFromImageData(imageData)
-  console.log(result.swatches)
+  const result = await extractColorsFromImageData(imageData)
+  console.log(result.colors)
 }
 ```
 
 ### Node — local path
 
 ```ts
-import { extractPalette } from '@adzazueta/color-extractor/node'
+import { extractColors } from '@adzazueta/color-extractor/node'
 
-const result = await extractPalette('./photo.jpg')
+const result = await extractColors('./photo.jpg')
 console.log(result.rankings.perceptual)
 ```
 
@@ -96,58 +92,51 @@ console.log(result.rankings.perceptual)
 
 ```ts
 import { readFile } from 'node:fs/promises'
-import { extractPalette } from '@adzazueta/color-extractor/node'
+import { extractColors } from '@adzazueta/color-extractor/node'
 
 const buffer = await readFile('./photo.jpg')
-const result = await extractPalette(buffer)
+const result = await extractColors(buffer)
 console.log(result.metadata.validPixels)
 ```
 
 ### Core — pixel buffer
 
 ```ts
-import { extractPaletteFromPixels } from '@adzazueta/color-extractor/core'
+import { extractColorsFromPixels } from '@adzazueta/color-extractor/core'
 
-const result = await extractPaletteFromPixels({
+const result = await extractColorsFromPixels({
   data: new Uint8Array([/* RGBA bytes: width * height * 4 */]),
   width: 200,
   height: 150,
   channels: 4,
 })
-console.log(result.swatches.length)
+console.log(result.colors.length)
 ```
 
 ## Public entrypoints
 
 | Import path | Primary functions | Runtime |
 | --- | --- | --- |
-| `@adzazueta/color-extractor` | `extractPalette`, deprecated `extractColors` | Browser or Node through package export conditions |
-| `@adzazueta/color-extractor/browser` | `extractPalette`, `extractPaletteFromImageData`, deprecated `extractColors` | Browser |
-| `@adzazueta/color-extractor/node` | `extractPalette`, deprecated `extractColors` | Node.js |
-| `@adzazueta/color-extractor/core` | `extractPaletteFromPixels`, `runNeutralPalettePipeline`, `extractColorsFromPixels`, `extractColorsFromImageData` | Any; no decoder dependencies |
+| `@adzazueta/color-extractor` | `extractColors` | Browser or Node through package export conditions |
+| `@adzazueta/color-extractor/browser` | `extractColors`, `extractColorsFromImageData` | Browser |
+| `@adzazueta/color-extractor/node` | `extractColors` | Node.js |
+| `@adzazueta/color-extractor/core` | `extractColorsFromPixels` | Any; no decoder dependencies |
 
 The root import uses package export conditions: Node resolves the Node entrypoint, browser-oriented resolution uses the Browser entrypoint, and the default condition is Browser. Use an explicit subpath when you need deterministic runtime selection.
 
-All entrypoints expose the relevant public types, `VERSION`, `ColorExtractorError`, `DEFAULT_NEUTRAL_OPTIONS`, `DEFAULT_OPTIONS`, and `resolveOptions`. Browser, Node, and Core entrypoints also expose `COLOR_EXTRACTOR_ERROR_CODES`. The Browser entrypoint additionally exposes `decodeFileOrBlob`, `decodeRemoteUrl`, the `sample*` helpers, and `detectBrowserInputKind`. The Core entrypoint additionally exposes color conversion, filtering, sampling, output, and legacy role helpers. Generated TypeScript declarations are the complete export reference.
+All entrypoints expose the relevant public types and `VERSION`. All entrypoints also expose `ColorExtractorError`, `COLOR_EXTRACTOR_ERROR_CODES`, and `DEFAULT_NEUTRAL_OPTIONS`. Root, browser, and node expose the `ExtractColorOptions` union type covering all runtime-specific option shapes (`BrowserExtractColorOptions | NodeExtractColorOptions`); core exposes `CoreExtractColorOptions`. Generated TypeScript declarations are the complete export reference.
 
 Use explicit subpath imports when you need runtime-specific types, browser decoding helpers, or the Core pixel API.
 
 ### Primary signatures
 
 ```ts
-extractPalette(input, options?): Promise<ExtractPaletteResult>
-extractPaletteFromImageData(imageData, options?): Promise<ExtractPaletteResult> // browser
-extractPaletteFromPixels(input, options?): Promise<ExtractPaletteResult> // core
-extractColors(input, options?): Promise<ExtractColorsResult> // deprecated
+extractColors(input, options?): Promise<ExtractColorResult>
+extractColorsFromImageData(imageData, options?): Promise<ExtractColorResult> // browser
+extractColorsFromPixels(input, options?): Promise<ExtractColorResult> // core
 ```
 
-`extractPalette` is overloaded by the root entrypoint for Browser and Node inputs. `extractPaletteFromImageData` is available from `/browser`, and `extractPaletteFromPixels` is available from `/core`.
-
-The `/core` entrypoint also exports these low-level groups:
-
-- Color conversion: `rgbToHex`, `rgbToHsl`, `hslToRgb`, `xyzToLab`, `linearRgbToXyz`, `srgbByteToLinear`, `srgbToLinear`, `labDistance`, `labSquaredDistance`, `chromaFromLab`, `circularHueDistance`, `hueFromLab`, `normalizeHue`.
-- Pixel and filtering: `normalizePixels`, `filterPixels`, `passesFilter`, `validateFilterCriteria`, `sampleSquareGrid`, `convertRgbSamplesToLab`.
-- Legacy output and role helpers: `applyOutputFlags`, `buildPalette`, `buildPrimaryColor`, `findPrimaryIndex`, `selectSecondary`, `scorePrimary`, `scoreSecondary`, `buildHarmonyFallback`, `applyGrayPenalty`, `applyLightnessGap`, `contrastBoost`, and related helper types.
+`extractColors` is overloaded by the root entrypoint for Browser and Node inputs. `extractColorsFromImageData` is available from `/browser`, and `extractColorsFromPixels` is available from `/core`.
 
 ## Supported inputs by runtime
 
@@ -161,21 +150,21 @@ Browser URL requests must be allowed by CORS. Browser strings other than `http:/
 
 ## Neutral result model
 
-`extractPalette` returns an `ExtractPaletteResult`:
+`extractColors` returns an `ExtractColorResult`:
 
 ```ts
-type ExtractPaletteResult = {
-  swatches: ExtractedSwatch[]
+type ExtractColorResult = {
+  colors: ObservedColor[]
   rankings: PaletteRankings
   metadata: ExtractionMetadata
 }
 ```
 
-### Swatches
+### Colors
 
 ```ts
-type ExtractedSwatch = {
-  id: SwatchId        // e.g. "swatch-a85f46"
+type ObservedColor = {
+  id: ColorId        // e.g. "color-a85f46"
   hex: string         // e.g. "#a85f46"
   rgb: RgbColor       // { r: number, g: number, b: number }
   lab: LabColor       // { L: number, a: number, b: number }
@@ -187,36 +176,36 @@ type ExtractedSwatch = {
 }
 ```
 
-Every swatch is an observed color from the sampled valid pixels of the supplied image. No swatch is generated, adjusted, or assigned a UI role.
+Every color is an observed color from the sampled valid pixels of the supplied image. No color is generated, adjusted, or assigned a UI role.
 
 The `score` is relative within a single extraction result — it is not globally comparable across different images or extractions.
 
-`swatches` is sorted by ID (lexicographic), not by relevance. Use `rankings` to resolve order.
+`colors` is sorted by ID (lexicographic), not by relevance. Use `rankings` to resolve order.
 
 ### Rankings
 
 ```ts
 type PaletteRankings = {
-  perceptual: SwatchId[]   // rawScore desc → population desc → chroma desc → id asc
-  population: SwatchId[]   // population desc → rawScore desc → chroma desc → id asc
-  chroma: SwatchId[]       // chroma desc → rawScore desc → population desc → id asc
+  perceptual: ColorId[]   // rawScore desc → population desc → chroma desc → id asc
+  population: ColorId[]   // population desc → rawScore desc → chroma desc → id asc
+  chroma: ColorId[]       // chroma desc → rawScore desc → population desc → id asc
 }
 ```
 
-Every ranking contains exactly the same IDs as `swatches`. Rankings are permutations of the returned set.
+Every ranking contains exactly the same IDs as `colors`. Rankings are permutations of the returned set.
 
-A common consumer pattern to resolve ranked swatches:
+A common consumer pattern to resolve ranked colors:
 
 ```ts
-const swatchesById = new Map(
-  result.swatches.map(swatch => [swatch.id, swatch]),
+const colorsById = new Map(
+  result.colors.map(color => [color.id, color]),
 )
 const perceptual = result.rankings.perceptual.map(
-  id => swatchesById.get(id)!,
+  id => colorsById.get(id)!,
 )
 ```
 
-This is consumer code — there is no dedicated ranking helper in `0.2`.
+This is consumer code — the ranking is resolved directly using `result.rankings`.
 
 ### Metadata
 
@@ -261,15 +250,15 @@ type ExtractionMetadata = {
 
 `metadata.algorithm` and `metadata.algorithmDetails.algorithm` always match. `coverage` may be less than `1` when `maxColors` limits the result. `validPixels` and populations refer to the sampled pixels that passed filtering, not necessarily every source pixel.
 
-### Neutral Palette Defaults
+### Neutral Color Defaults
 
-The default options for neutral palette extraction (`extractPalette`) are exported as `DEFAULT_NEUTRAL_OPTIONS`:
+The default options for neutral color extraction (`extractColors`) are exported as `DEFAULT_NEUTRAL_OPTIONS`:
 
 ```ts
 import { DEFAULT_NEUTRAL_OPTIONS } from '@adzazueta/color-extractor'
 ```
 
-`DEFAULT_NEUTRAL_OPTIONS` contains the common neutral palette defaults: `algorithm: 'lab-kmeans'`, `sampling.maxDimension: 150`, filtering values `alphaThreshold: 128`, `minBrightness: 10`, `maxBrightness: 245`, `minSaturation: 8`, result values `maxColors: 5`, `includeHsl: false`, Lab K-means values `clusters: 8`, `iterations: 7`, MMCQ `boxes: 8`, and perceptual ranking values `chromaFloor: 12`, `lowChromaPenalty: 0.1`. Runtime-specific decode options (`decode`) and Node remote options (`remote`) are resolved separately per runtime. Legacy `extractColors` defaults remain available via `DEFAULT_OPTIONS`.
+`DEFAULT_NEUTRAL_OPTIONS` contains the common neutral defaults: `algorithm: 'lab-kmeans'`, `sampling.maxDimension: 150`, filtering values `alphaThreshold: 128`, `minBrightness: 10`, `maxBrightness: 245`, `minSaturation: 8`, result values `maxColors: 5`, `includeHsl: false`, Lab K-means values `clusters: 8`, `iterations: 7`, MMCQ `boxes: 8`, and perceptual ranking values `chromaFloor: 12`, `lowChromaPenalty: 0.1`. Runtime-specific decode options (`decode`) and Node remote options (`remote`) are resolved separately per runtime.
 
 ## Configuration
 
@@ -295,8 +284,8 @@ The shared neutral ranking uses `chroma * log(population + 1)`. When a candidate
 | `filtering` | `minBrightness` | `10` | Ignore near-black pixels below this sRGB brightness. Number range: 0–255. |
 | `filtering` | `maxBrightness` | `245` | Ignore near-white pixels above this sRGB brightness. Number range: 0–255. Must be >= `minBrightness`. |
 | `filtering` | `minSaturation` | `8` | Ignore low-saturation pixels below this HSL percentage. Number range: 0–100. |
-| `result` | `maxColors` | `5` | Maximum number of swatches in the returned result. Integer range: 1–64. |
-| `result` | `includeHsl` | `false` | Include HSL values in each swatch. |
+| `result` | `maxColors` | `5` | Maximum number of colors in the returned result. Integer range: 1–64. |
+| `result` | `includeHsl` | `false` | Include HSL values in each color. |
 | `advanced.labKmeans` | `clusters` | `max(8, maxColors)` | Internal cluster count. Integer range: 1–64. Must be >= `maxColors`. |
 | `advanced.labKmeans` | `iterations` | `7` | K-means refinement passes. Integer range: 1–100. |
 | `advanced.mmcq` | `boxes` | `max(8, maxColors)` | Requested MMCQ color boxes. Integer range: 1–64. Must be >= `maxColors`. |
@@ -304,7 +293,7 @@ The shared neutral ranking uses `chroma * log(population + 1)`. When a candidate
 | `advanced.perceptualRanking` | `lowChromaPenalty` | `0.1` | Score multiplier for low-chroma candidates. Number range: 0–1. |
 | `signal` | — | — | `AbortSignal` for cancellation. |
 
-> **Note:** `result.maxColors` caps the returned swatch count but is independent of the internal cluster/box count. The active algorithm's count defaults to at least 8 and must be >= `maxColors`.
+> **Note:** `result.maxColors` caps the returned color count but is independent of the internal cluster/box count. The active algorithm's count defaults to at least 8 and must be >= `maxColors`.
 
 > **Note:** When `algorithm` is `'lab-kmeans'`, `advanced.mmcq` is rejected. When `algorithm` is `'mmcq'`, `advanced.labKmeans` is rejected. `advanced.perceptualRanking` is valid for both algorithms.
 
@@ -344,9 +333,9 @@ Unknown, legacy, invalid, `null`, or runtime-incompatible options fail with `COL
 ### Full example
 
 ```ts
-import { extractPalette } from '@adzazueta/color-extractor'
+import { extractColors } from '@adzazueta/color-extractor'
 
-const result = await extractPalette(image, {
+const result = await extractColors(image, {
   sampling: { maxDimension: 300 },
   filtering: {
     alphaThreshold: 16,
@@ -366,7 +355,7 @@ const result = await extractPalette(image, {
 For MMCQ, select the algorithm and configure its boxes instead:
 
 ```ts
-const result = await extractPalette(image, {
+const result = await extractColors(image, {
   algorithm: 'mmcq',
   result: { maxColors: 6 },
   advanced: {
@@ -386,7 +375,7 @@ const controller = new AbortController()
 setTimeout(() => controller.abort(), 5000)
 
 try {
-  const result = await extractPalette(image, {
+  const result = await extractColors(image, {
     signal: controller.signal,
   })
 } catch (error) {
@@ -405,10 +394,10 @@ An already-aborted signal rejects immediately without decode, fetch, or sharp wo
 Library-generated validation, decoding, fetching, and extraction failures use `ColorExtractorError` with a stable `code` property. Platform exceptions that are not recognized by an adapter may propagate unchanged.
 
 ```ts
-import { ColorExtractorError, extractPalette } from '@adzazueta/color-extractor'
+import { ColorExtractorError, extractColors } from '@adzazueta/color-extractor'
 
 try {
-  await extractPalette(image)
+  await extractColors(image)
 } catch (error) {
   if (error instanceof ColorExtractorError) {
     console.error(error.code)   // stable machine-readable code
@@ -471,22 +460,10 @@ Browser support follows the platform decoder. PNG, JPEG, GIF, WebP, and BMP are 
 
 Node support follows the installed `sharp` and libvips build. Common formats include PNG, JPEG, WebP, GIF, AVIF, TIFF, BMP, and ICO.
 
-## Legacy API deprecation
-
-The `0.1.x` role-based API (`extractColors`, `extractColorsFromPixels`, `extractColorsFromImageData`) is deprecated starting in `0.2.0`. It remains available and frozen through `0.2.x` and will be removed in `0.3.0`.
-
-| Legacy | Neutral replacement |
-| --- | --- |
-| `extractColors` | `extractPalette` |
-| `extractColorsFromPixels` | `extractPaletteFromPixels` |
-| `extractColorsFromImageData` | `extractPaletteFromImageData` (browser) or `extractPaletteFromPixels` (core) |
-
-See [MIGRATION.md](MIGRATION.md) for a complete migration guide.
-
 ## Known limitations
 
 - Lab K-means (default) and MMCQ (`algorithm: 'mmcq'`) are the available neutral extraction algorithms.
-- No role assignment — every swatch is an observed color with no semantic label.
+- No role assignment — every color is an observed color with no semantic label.
 - No generated or adjusted colors (harmony fallback, lightness adjustment).
 - No public ranking helper — use the `Map` pattern shown above.
 - Cancellation granularity is between synchronous pipeline stages and between K-means iterations, not inside one synchronous K-means iteration.
@@ -494,12 +471,12 @@ See [MIGRATION.md](MIGRATION.md) for a complete migration guide.
 
 ## color-engine boundary
 
-Semantic role selection (primary, secondary, accent), harmony generation, lightness adjustment, and fallback policies moved out of `@adzazueta/color-extractor` in `0.2.0`.
+Semantic role selection (primary, secondary, accent), harmony generation, lightness adjustment, and fallback policies are out of scope for this package.
 
-`extractPalette` returns only observed-color evidence. Consumers that need role-labeled colors should compose the extractor with a separate engine layer:
+`extractColors` returns only observed-color evidence. Consumers that need role-labeled colors should compose the extractor with a separate engine layer:
 
 ```ts
-const extracted = await extractPalette(image)
+const extracted = await extractColors(image)
 const theme = colorEngineAdapter(extracted)  // illustrative — adapter name defined by the engine package
 ```
 
@@ -507,7 +484,7 @@ The exact engine adapter API is defined by `@adzazueta/color-engine` and is not 
 
 ## Versioning
 
-This package follows semantic versioning. The `0.1.x` and `0.2.x` major version zero lines may introduce breaking changes. The public API surface is documented in this README and in generated TypeScript declarations.
+This package follows semantic versioning. The `0.x` major version zero line may introduce breaking changes. The public API surface is documented in this README and in generated TypeScript declarations.
 
 ## Contributing
 

@@ -1,5 +1,5 @@
 import { ColorExtractorError, checkAborted } from '../core/errors.js';
-import type { DecodeOptions } from '../core/options.js';
+import type { NodeDecodeOptions } from '../core/neutral-options.js';
 import { loadSharp, type SharpModule } from './sharp.js';
 
 export interface DecodedPixels {
@@ -180,7 +180,7 @@ export async function decodeBufferToPixels(
     bytes: Buffer | Uint8Array,
     sampleSize: number,
     options: Pick<
-        DecodeOptions,
+        NodeDecodeOptions,
         | 'respectOrientation'
         | 'maxPixels'
         | 'svg'
@@ -200,13 +200,12 @@ export async function decodeBufferToPixels(
         );
     }
 
-    const svgMode = options.svg ?? 'disabled-in-node';
-    const svgDisabled =
-        svgMode === 'disabled-in-node' || svgMode === 'disabled';
+    const svgMode = options.svg ?? 'disabled';
+    const svgDisabled = svgMode === 'disabled';
     if (svgDisabled && isSvgBytes(bytes)) {
         throw new ColorExtractorError(
             'COLOR_EXTRACTOR_UNSUPPORTED_FORMAT',
-            'SVG images are not supported in Node by default. Set decode.svg to "enabled-in-node" to allow SVG.',
+            'SVG images are not supported in Node by default. Set decode.svg to "enabled" to allow SVG.',
             { cause: { svg: true, svgMode } },
         );
     }
@@ -228,17 +227,13 @@ export async function decodeBufferToPixels(
         case 'first-frame':
             inputOptions.page = 0;
             break;
-        case 'all-frames':
-            inputOptions.pages = -1;
-            break;
-        case 'disabled':
-            break;
-        default:
+        default: {
             throw new ColorExtractorError(
                 'COLOR_EXTRACTOR_UNSUPPORTED_INPUT',
                 `Invalid animated mode: ${animatedMode}`,
                 { cause: animatedMode },
             );
+        }
     }
 
     let pipeline: unknown;

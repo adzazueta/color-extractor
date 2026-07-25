@@ -521,7 +521,7 @@ describe('sampleImageDataInput (ADZ-61)', () => {
         });
     });
 
-    describe('extractPaletteFromImageData — without OffscreenCanvas', () => {
+    describe('extractColorsFromImageData — without OffscreenCanvas', () => {
         beforeAll(() => {
             vi.stubGlobal('OffscreenCanvas', undefined);
         });
@@ -542,7 +542,7 @@ describe('sampleImageDataInput (ADZ-61)', () => {
             }
             const imageData = { data, width: w, height: h } as ImageData;
 
-            const { extractPaletteFromImageData: ep } = await import(
+            const { extractColorsFromImageData: ep } = await import(
                 '../../src/browser/index.js'
             );
 

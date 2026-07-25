@@ -1,7 +1,7 @@
 {
     "name": "@adzazueta/color-extractor",
-    "version": "0.2.0-next.1",
-    "description": "Extract perceptually meaningful observed colors and palette data from images in browsers and Node.js",
+    "version": "0.3.0",
+    "description": "Extract perceptually meaningful observed colors from images in browsers and Node.js",
     "type": "module",
     "keywords": [
         "color",
@@ -47,15 +47,18 @@
         },
         "./browser": {
             "types": "./dist/browser/index.d.ts",
-            "import": "./dist/browser/index.js"
+            "import": "./dist/browser/index.js",
+            "default": "./dist/browser/index.js"
         },
         "./node": {
             "types": "./dist/node/index.d.ts",
-            "import": "./dist/node/index.js"
+            "import": "./dist/node/index.js",
+            "default": "./dist/node/index.js"
         },
         "./core": {
             "types": "./dist/core/index.d.ts",
-            "import": "./dist/core/index.js"
+            "import": "./dist/core/index.js",
+            "default": "./dist/core/index.js"
         },
         "./package.json": "./package.json"
     },
@@ -70,18 +73,19 @@
     ],
     "sideEffects": false,
     "scripts": {
-        "build": "pnpm sync-version && tsdown && node scripts/check-build-warnings.mjs",
+        "build": "pnpm sync-version && tsdown && node scripts/check-build-warnings.mjs && node scripts/strip-declaration-maps.mjs",
         "check-build-warnings": "node scripts/check-build-warnings.mjs",
         "changeset": "changeset",
         "release": "changeset publish",
         "release:prepare": "pnpm changeset version && pnpm sync-version",
         "release:check": "pnpm check-version && pnpm lint && pnpm typecheck && pnpm build && pnpm test && pnpm test:smoke && pnpm verify-fixtures",
         "sync-version": "node scripts/sync-version.mjs",
-        "check-version": "pnpm sync-version && git diff --quiet src/generated/version.ts || (echo 'error: src/generated/version.ts is out of sync — run pnpm sync-version and commit the result'; exit 1)",
+        "check-version": "node scripts/check-version.mjs",
         "test": "vitest run",
         "test:verbose": "vitest run --reporter=verbose",
         "test:watch": "vitest",
         "test:smoke": "node scripts/smoke.mjs",
+        "test:ci": "pnpm run build && pnpm test",
         "verify-fixtures": "node scripts/verify-fixtures.mjs",
         "benchmark:corpus": "tsx scripts/benchmark.mjs corpus",
         "benchmark:smoke": "tsx scripts/benchmark.mjs smoke",
@@ -105,7 +109,7 @@
         ]
     },
     "peerDependencies": {
-        "sharp": "^0.33.0"
+        "sharp": "^0.35.0"
     },
     "peerDependenciesMeta": {
         "sharp": {

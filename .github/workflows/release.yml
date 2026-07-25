@@ -28,6 +28,7 @@ jobs:
         run: |
           if ! printf '%s' "$RELEASE_BRANCH" | grep -qE '^release/v[0-9]+\.[0-9]+(\.[0-9]+)?(-[a-zA-Z0-9.]+)?$'; then
             echo "error: branch name must match release/vX.Y or release/vX.Y.Z-prerelease (e.g. release/v0.3, release/v0.2.0-next.1)"
+            echo "ADZ-141: use the release/vX.Y format with the v prefix"
             exit 1
           fi
 
@@ -81,8 +82,33 @@ jobs:
               exit 1
             fi
           else
+            TARGET_VERSION="${GITHUB_REF_NAME#release/v}"
+            case "$TARGET_VERSION" in
+              *-*)
+                echo "error: stable release branch must not contain a prerelease suffix, got ${GITHUB_REF_NAME}"
+                exit 1
+                ;;
+              *.*.*)
+                ;;
+              *.*)
+                TARGET_VERSION="${TARGET_VERSION}.0"
+                ;;
+            esac
+            if [ "${TARGET_VERSION}" != "0.3.0" ]; then
+              echo "error: this stable release workflow is locked to version 0.3.0, got ${TARGET_VERSION}"
+              exit 1
+            fi
+            if [ "${VERSION}" != "${TARGET_VERSION}" ]; then
+              node scripts/force-stable-version.mjs "${TARGET_VERSION}"
+              pnpm sync-version
+              VERSION=$(node -p "require('./package.json').version")
+            fi
             if echo "${VERSION}" | grep -q '\-'; then
               echo "error: stable version must not contain prerelease suffix, got ${VERSION}"
+              exit 1
+            fi
+            if [ "${VERSION}" != "${TARGET_VERSION}" ]; then
+              echo "error: stable version ${VERSION} does not match release branch target ${TARGET_VERSION}"
               exit 1
             fi
           fi
@@ -93,6 +119,13 @@ jobs:
 
       - name: Run release checks
         run: pnpm release:check
+
+      - name: Upload public-surface audit artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: public-surface-${{ env.version }}
+          path: public-surface.json
+          if-no-files-found: error
 
       - name: Commit and push validated version
         run: |
@@ -120,8 +153,26 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.RELEASE_TOKEN }}
         run: |
-          gh pr create \
+          PR_NUMBER=$(gh pr list \
             --base main \
             --head "${{ github.ref_name }}" \
-            --title "chore: release v${{ env.version }}" \
-            --body "Published and tagged release v${{ env.version }}. Merge with a merge commit to synchronize release metadata into main."
+            --json number \
+            --jq '.[0].number // empty' \
+          )
+          if [ -n "$PR_NUMBER" ]; then
+            gh pr edit "$PR_NUMBER" \
+              --title "chore: release v${{ env.version }}" \
+              --body "Published and tagged release v${{ env.version }}. Merge with a merge commit to synchronize release metadata into main."
+          else
+            gh pr create \
+              --base main \
+              --head "${{ github.ref_name }}" \
+              --title "chore: release v${{ env.version }}" \
+              --body "Published and tagged release v${{ env.version }}. Merge with a merge commit to synchronize release metadata into main."
+          fi
+
+      - name: Verify published package on npm
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+          PUBLISHED_VERSION: ${{ env.version }}
+        run: node scripts/verify-published.mjs

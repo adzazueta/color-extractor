@@ -1,8 +1,8 @@
-# Migration guide: 0.1.x → 0.2.x
+# Migration guide: 0.1.x -> 0.3.x
 
 ## Summary
 
-`0.2.0` introduces a neutral palette API (`extractPalette`) that returns observed-color evidence without semantic role assignment. The `0.1.x` role-based API (`extractColors`) is deprecated and will be removed in `0.3.0`.
+`0.1.x` provided a role-based color extraction API (`extractColors`) that assigned semantic roles (primary, secondary, accent) to extracted colors. `0.2.0-next.x` introduced a transitional neutral API (`extractPalette`) that returns observed-color evidence without semantic role assignment. In `0.3.0`, the transitional `extractPalette` API and all role-based aliases are removed, and the neutral API is stabilized under the `extractColors` name.
 
 ## Quick migration
 
@@ -17,18 +17,18 @@ const result = await extractColors(image)
 console.log(result.primary.hex, result.secondary?.hex)
 ```
 
-**After (0.2.x):**
+**After (0.3.x):**
 
 ```ts
-import { extractPalette } from '@adzazueta/color-extractor'
+import { extractColors } from '@adzazueta/color-extractor'
 
-const result = await extractPalette(image)
+const result = await extractColors(image)
 const topId = result.rankings.perceptual[0]
-const top = result.swatches.find(s => s.id === topId)
+const top = result.colors.find(s => s.id === topId)
 console.log(top?.hex)
 ```
 
-The result no longer assigns a semantic role (primary/secondary). Use `result.rankings.perceptual` to select the perceptually dominant swatch.
+The result no longer assigns a semantic role (primary/secondary). Use `result.rankings.perceptual` to select the perceptually dominant color.
 
 ### Core consumer
 
@@ -44,12 +44,12 @@ const result = await extractColorsFromPixels({
 })
 ```
 
-**After (0.2.x):**
+**After (0.3.x):**
 
 ```ts
-import { extractPaletteFromPixels } from '@adzazueta/color-extractor/core'
+import { extractColorsFromPixels } from '@adzazueta/color-extractor/core'
 
-const result = await extractPaletteFromPixels({
+const result = await extractColorsFromPixels({
   data: new Uint8Array([/* RGB or RGBA bytes */]),
   width: 800,
   height: 600,
@@ -64,9 +64,9 @@ The new signature requires an explicit `channels` field (3 or 4) and does not al
 If you previously relied on `extractColors` for primary/secondary/accent selection, compose the extractor with a separate engine:
 
 ```ts
-import { extractPalette } from '@adzazueta/color-extractor'
+import { extractColors } from '@adzazueta/color-extractor'
 
-const extracted = await extractPalette(image)
+const extracted = await extractColors(image)
 const theme = colorEngineAdapter(extracted)  // adapter name defined by @adzazueta/color-engine
 ```
 
@@ -74,15 +74,15 @@ The extractor no longer assigns semantic roles. The engine adapter is not part o
 
 ## Function mapping
 
-| 0.1.x (deprecated) | 0.2.x replacement | Notes |
+| 0.1.x (removed) | 0.3.x replacement | Notes |
 | --- | --- | --- |
-| `extractColors(input, options?)` | `extractPalette(input, options?)` | Returns `ExtractPaletteResult` instead of `ExtractColorsResult`. |
-| `extractColorsFromPixels(input, options?)` | `extractPaletteFromPixels(input, options?)` | Requires `channels: 3 \| 4`; no `number[]` data. |
-| `extractColorsFromImageData(imageData, options?)` | `extractPaletteFromImageData(imageData, options?)` — browser only, or `extractPaletteFromPixels(..., { channels: 4 })` | |
+| `extractColors(input, options?)` | `extractColors(input, options?)` | Returns `ExtractColorResult` instead of `ExtractColorsResult`. |
+| `extractColorsFromPixels(input, options?)` | `extractColorsFromPixels(input, options?)` | Requires `channels: 3 \| 4`; no `number[]` data. |
+| `extractColorsFromImageData(imageData, options?)` | `extractColorsFromImageData(imageData, options?)` — browser only, or `extractColorsFromPixels(..., { channels: 4 })` | |
 
 ## Option mapping
 
-| 0.1.x option | 0.2.x option | Notes |
+| 0.1.x option | 0.3.x option | Notes |
 | --- | --- | --- |
 | `sampleSize` | `sampling.maxDimension` | Same default (150). |
 | `paletteSize` | `result.maxColors` | Same default (5). |
@@ -92,30 +92,30 @@ The extractor no longer assigns semantic roles. The engine adapter is not part o
 | `output.includeHsl` | `result.includeHsl` | Default changed from `true` to `false`. |
 | `scoring.chromaFloor` | `advanced.perceptualRanking.chromaFloor` | Same default (12). |
 | `scoring.grayPenalty` | `advanced.perceptualRanking.lowChromaPenalty` | Same default (0.1). |
-| `output.includeLab` | Removed | Lab is always included in swatch data. |
+| `output.includeLab` | Removed | Lab is always included in color data. |
 | `output.includeScores` | Removed | Score, chroma, population, proportion are always included. |
-| `output.includePalette` | Removed | Swatches are always returned via `result.swatches`. |
+| `output.includePalette` | Removed | Swatches are always returned via `result.colors`. |
 | `output.includeAccents` | Removed | No accent concept in neutral API. |
 | `output.includeMetadata` | Removed | Metadata is always returned. |
 | `primary.*`, `secondary.*`, `scoring.*` (except chromaFloor/penalty), `lightness.*`, `accents` | No extractor equivalent | These are semantic role/engine concerns. See engine boundary below. |
 
 ## Type mapping
 
-| 0.1.x type | 0.2.x type | Notes |
+| 0.1.x type | 0.3.x type | Notes |
 | --- | --- | --- |
-| `ExtractColorsResult` | `ExtractPaletteResult` | New shape: `{ swatches, rankings, metadata }`. |
+| `ExtractColorsResult` | `ExtractColorResult` | New shape: `{ colors, rankings, metadata }`. |
 | `MinimalExtractColorsResult` | — | Removed. Neutral result is always the full shape. |
-| `ExtractedColor` | `ExtractedSwatch` | New shape: `{ id, hex, rgb, lab, chroma, population, proportion, score, hsl? }`. |
-| `RGB` | `RgbColor` | `{ r, g, b }` — same shape, new type name. Scheduled for deprecation in 0.3.0. |
-| `HSL` | `HslColor` | `{ h, s, l }` — same shape, new type name. Scheduled for deprecation in 0.3.0. |
-| `Lab` | `LabColor` | `{ L, a, b }` — same shape, new type name. Scheduled for deprecation in 0.3.0. |
+| `ExtractedColor` | `ObservedColor` | New shape: `{ id, hex, rgb, lab, chroma, population, proportion, score, hsl? }`. |
+| `RGB` | `RgbColor` | `{ r, g, b }` — same shape, new type name. |
+| `HSL` | `HslColor` | `{ h, s, l }` — same shape, new type name. |
+| `Lab` | `LabColor` | `{ L, a, b }` — same shape, new type name. |
 | `ExtractionMetadata` | `ExtractionMetadata` | Expanded: new fields `algorithm`, `algorithmVersion`, `candidateCount`, `returnedColors`, `returnedPopulation`, `coverage`, `algorithmDetails`. |
 | — | `PaletteRankings` | New: three ranking strategies. |
-| — | `SwatchId` | New: branded string type `"swatch-{hex}"`. |
+| — | `ColorId` | New: branded string type `"color-{hex}"`. |
 
 ## Removed semantic concerns
 
-These were part of the `0.1.x` role-based API. They do not exist in `0.2.x` and will be owned by `@adzazueta/color-engine`:
+These were part of the `0.1.x` role-based API. They do not exist in `0.3.x` and are owned by `@adzazueta/color-engine`:
 
 - `primary` — primary color selection
 - `secondary` — secondary color with fallback
@@ -144,12 +144,12 @@ These were part of the `0.1.x` role-based API. They do not exist in `0.2.x` and 
 
 Most fields are opt-in via `output` flags. Role and source are always present.
 
-### 0.2.x (`extractPalette`)
+### 0.3.x (`extractColors`)
 
 ```ts
 {
-  swatches: [{ id, hex, rgb, lab, chroma, population, proportion, score, hsl? }]
-  rankings: { perceptual: SwatchId[], population: SwatchId[], chroma: SwatchId[] }
+  colors: [{ id, hex, rgb, lab, chroma, population, proportion, score, hsl? }]
+  rankings: { perceptual: ColorId[], population: ColorId[], chroma: ColorId[] }
   metadata: { algorithm, algorithmVersion, packageVersion, runtime, decoder, sampledWidth, sampledHeight, sampledPixels, validPixels, candidateCount, returnedColors, returnedPopulation, coverage, algorithmDetails }
 }
 ```
@@ -160,6 +160,6 @@ All fields are always present with no opt-in flags. No semantic roles, no source
 
 | Version | Status |
 | --- | --- |
-| 0.2.0 | Legacy API deprecated. Neutral API introduced. |
-| 0.2.x | Legacy API frozen, still available. Deprecation warnings in documentation. |
-| 0.3.0 | Legacy API removed. `RGB`, `HSL`, `Lab` type aliases removed. |
+| 0.1.x | Role-based `extractColors` (primary, secondary, accent). |
+| 0.2.0-next.x | Transitional `extractPalette` neutral API introduced; legacy API deprecated. |
+| 0.3.0 | Transitional API removed. Neutral API stabilized as `extractColors`. `RGB`, `HSL`, `Lab` type aliases removed. |
