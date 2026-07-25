@@ -47,15 +47,18 @@
         },
         "./browser": {
             "types": "./dist/browser/index.d.ts",
-            "import": "./dist/browser/index.js"
+            "import": "./dist/browser/index.js",
+            "default": "./dist/browser/index.js"
         },
         "./node": {
             "types": "./dist/node/index.d.ts",
-            "import": "./dist/node/index.js"
+            "import": "./dist/node/index.js",
+            "default": "./dist/node/index.js"
         },
         "./core": {
             "types": "./dist/core/index.d.ts",
-            "import": "./dist/core/index.js"
+            "import": "./dist/core/index.js",
+            "default": "./dist/core/index.js"
         },
         "./package.json": "./package.json"
     },
@@ -82,6 +85,7 @@
         "test:verbose": "vitest run --reporter=verbose",
         "test:watch": "vitest",
         "test:smoke": "node scripts/smoke.mjs",
+        "test:ci": "pnpm run build && pnpm test",
         "verify-fixtures": "node scripts/verify-fixtures.mjs",
         "benchmark:corpus": "tsx scripts/benchmark.mjs corpus",
         "benchmark:smoke": "tsx scripts/benchmark.mjs smoke",

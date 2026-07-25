@@ -30,6 +30,7 @@ import type {
     PerceptualRankingOptions,
     ColorExtractorErrorCode,
     ExtractionMetadata,
+    ExtractColorOptions,
 } from '@adzazueta/color-extractor'
 
 import type { NodeExtractColorOptions, NodeDecodeOptions, NodeRemoteOptions, NodeExtractColorInput } from '@adzazueta/color-extractor/node'

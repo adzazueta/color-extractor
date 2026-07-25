@@ -124,7 +124,7 @@ console.log(result.colors.length)
 
 The root import uses package export conditions: Node resolves the Node entrypoint, browser-oriented resolution uses the Browser entrypoint, and the default condition is Browser. Use an explicit subpath when you need deterministic runtime selection.
 
-All entrypoints expose the relevant public types and `VERSION`. The root, Browser, and Node entrypoints expose `ColorExtractorError` and `DEFAULT_NEUTRAL_OPTIONS`; the Browser and Node entrypoints also expose `COLOR_EXTRACTOR_ERROR_CODES`. The Core entrypoint additionally exposes `COLOR_EXTRACTOR_ERROR_CODES`. Generated TypeScript declarations are the complete export reference.
+All entrypoints expose the relevant public types and `VERSION`. All entrypoints also expose `ColorExtractorError`, `COLOR_EXTRACTOR_ERROR_CODES`, and `DEFAULT_NEUTRAL_OPTIONS`. Root, browser, and node expose the `ExtractColorOptions` union type covering all runtime-specific option shapes (`BrowserExtractColorOptions | NodeExtractColorOptions`); core exposes `CoreExtractColorOptions`. Generated TypeScript declarations are the complete export reference.
 
 Use explicit subpath imports when you need runtime-specific types, browser decoding helpers, or the Core pixel API.
 

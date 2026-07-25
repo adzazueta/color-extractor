@@ -39,6 +39,7 @@ describe('package scripts', () => {
             'release:prepare',
             'sync-version',
             'test',
+            'test:ci',
             'test:smoke',
             'test:verbose',
             'test:watch',
@@ -55,6 +56,10 @@ describe('package scripts', () => {
 
     it('test runs vitest in single-run mode', () => {
         expect(scripts.test).toBe('vitest run');
+    });
+
+    it('test:ci builds before running tests', () => {
+        expect(scripts['test:ci']).toBe('pnpm run build && pnpm test');
     });
 
     it('test:verbose runs vitest in single-run mode with the verbose reporter', () => {

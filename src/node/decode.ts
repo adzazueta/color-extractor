@@ -205,7 +205,7 @@ export async function decodeBufferToPixels(
     if (svgDisabled && isSvgBytes(bytes)) {
         throw new ColorExtractorError(
             'COLOR_EXTRACTOR_UNSUPPORTED_FORMAT',
-            'SVG images are not supported in Node by default. Set decode.svg to "enabled-in-node" to allow SVG.',
+            'SVG images are not supported in Node by default. Set decode.svg to "enabled" to allow SVG.',
             { cause: { svg: true, svgMode } },
         );
     }

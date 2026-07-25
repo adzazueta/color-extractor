@@ -77,6 +77,7 @@ export type {
     BaseExtractColorOptions,
     BrowserDecodeOptions,
     BrowserExtractColorOptions,
+    ExtractColorOptions,
     NodeDecodeOptions,
     NodeExtractColorOptions,
     NodeRemoteOptions,

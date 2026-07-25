@@ -33,7 +33,7 @@ export function validateContentType(
         if (svgDisabled) {
             throw new ColorExtractorError(
                 'COLOR_EXTRACTOR_UNSUPPORTED_FORMAT',
-                'SVG content type is not supported in Node by default. Set decode.svg to "enabled-in-node" to allow SVG.',
+                'SVG content type is not supported in Node by default. Set decode.svg to "enabled" to allow SVG.',
                 { cause: { contentType: normalized, svg: options.svg } },
             );
         }

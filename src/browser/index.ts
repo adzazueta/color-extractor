@@ -42,6 +42,7 @@ export {
 export type {
     BrowserDecodeOptions,
     BrowserExtractColorOptions,
+    ExtractColorOptions,
     ResultOptions,
     SamplingOptions,
 } from '../core/neutral-options.js';

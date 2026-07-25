@@ -31,6 +31,7 @@ const WHITELIST = {
         'ColorPixelInput',
         'RootExtractColorInput',
         'ExtractColorResult',
+        'ExtractColorOptions',
         'ExtractionAlgorithm',
         'ExtractionDecoder',
         'ExtractionMetadata',
@@ -78,6 +79,7 @@ const WHITELIST = {
         'BaseExtractColorOptions',
         'BrowserDecodeOptions',
         'BrowserExtractColorOptions',
+        'ExtractColorOptions',
         'LabKmeansOptions',
         'PerceptualRankingOptions',
         'ResultOptions',
@@ -104,6 +106,7 @@ const WHITELIST = {
         'LabColor',
         'AdvancedExtractionOptions',
         'BaseExtractColorOptions',
+        'ExtractColorOptions',
         'LabKmeansOptions',
         'NodeDecodeOptions',
         'NodeExtractColorOptions',
@@ -300,7 +303,9 @@ function main() {
         const relMap = mapFile.slice(DIST.length + 1);
         const content = readFileSync(mapFile, 'utf-8');
         for (const legacy of LEGACY_REMOVED) {
-            if (content.includes(legacy)) {
+            const escaped = legacy.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            const re = new RegExp(`\\b${escaped}\\b`);
+            if (re.test(content)) {
                 if (!mapLegacyHits[legacy]) mapLegacyHits[legacy] = [];
                 mapLegacyHits[legacy].push(relMap);
             }

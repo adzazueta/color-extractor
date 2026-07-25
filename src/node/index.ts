@@ -41,6 +41,7 @@ export {
     type ColorExtractorErrorCode,
 } from '../core/index.js';
 export type {
+    ExtractColorOptions,
     NodeDecodeOptions,
     NodeExtractColorOptions,
     NodeRemoteOptions,
