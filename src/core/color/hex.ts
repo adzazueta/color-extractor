@@ -1,4 +1,4 @@
-import type { RGB } from '../types.js';
+import type { RgbColor } from '../palette-types.js';
 
 function formatChannel(channel: number): string {
     if (!Number.isFinite(channel)) {
@@ -9,6 +9,6 @@ function formatChannel(channel: number): string {
     return byte.toString(16).padStart(2, '0');
 }
 
-export function rgbToHex({ r, g, b }: RGB): string {
+export function rgbToHex({ r, g, b }: RgbColor): string {
     return `#${formatChannel(r)}${formatChannel(g)}${formatChannel(b)}`;
 }

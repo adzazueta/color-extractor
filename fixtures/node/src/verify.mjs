@@ -1,9 +1,8 @@
-import { extractPalette as extractRootPalette } from '@adzazueta/color-extractor';
+import { extractColor as extractRootColor } from '@adzazueta/color-extractor';
 import {
     COLOR_EXTRACTOR_ERROR_CODES,
     ColorExtractorError,
-    extractColors,
-    extractPalette,
+    extractColor,
     VERSION,
 } from '@adzazueta/color-extractor/node';
 import sharp from 'sharp';
@@ -20,36 +19,27 @@ async function main() {
         .png()
         .toBuffer();
 
-    const result = await extractColors(buffer, {
-        output: { includeMetadata: true },
-    });
-
-    if (!result.metadata) throw new Error('metadata is undefined');
-
-    const palette = await extractPalette(buffer, {
+    const result = await extractColor(buffer, {
         algorithm: 'lab-kmeans',
         result: { maxColors: 1 },
     });
-    if (palette.metadata.algorithm !== 'lab-kmeans') {
+
+    if (result.metadata.algorithm !== 'lab-kmeans') {
         throw new Error(
-            `expected algorithm 'lab-kmeans', got '${palette.metadata.algorithm}'`,
+            `expected algorithm 'lab-kmeans', got '${result.metadata.algorithm}'`,
         );
-    }
-    if (palette.metadata.runtime !== 'node') {
-        throw new Error(
-            `expected palette runtime 'node', got '${palette.metadata.runtime}'`,
-        );
-    }
-    const rootPalette = await extractRootPalette(buffer, {
-        result: { maxColors: 1 },
-    });
-    if (rootPalette.metadata.runtime !== 'node') {
-        throw new Error('expected root palette runtime to be node');
     }
     if (result.metadata.runtime !== 'node') {
         throw new Error(
             `expected runtime 'node', got '${result.metadata.runtime}'`,
         );
+    }
+    const rootResult = await extractRootColor(buffer, {
+        algorithm: 'lab-kmeans',
+        result: { maxColors: 1 },
+    });
+    if (rootResult.metadata.runtime !== 'node') {
+        throw new Error('expected root runtime to be node');
     }
     if (!result.metadata.packageVersion)
         throw new Error('missing packageVersion');

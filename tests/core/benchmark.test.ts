@@ -71,8 +71,8 @@ describe('Benchmark Corpus and Harness (ADZ-118)', () => {
         expect(err.p95).toBe(0);
     });
 
-    it('calculates palette diversity correctly and handles < 2 swatches with null', () => {
-        const singleSwatch = [
+    it('calculates palette diversity correctly and handles < 2 colors with null', () => {
+        const singleColor = [
             {
                 id: 'color-1' as const,
                 hex: '#c83232',
@@ -84,12 +84,12 @@ describe('Benchmark Corpus and Harness (ADZ-118)', () => {
                 score: 0.9,
             },
         ];
-        const divSingle = calculateDiversity(singleSwatch);
+        const divSingle = calculateDiversity(singleColor);
         expect(divSingle.min).toBeNull();
         expect(divSingle.mean).toBeNull();
 
-        const multiSwatches = [
-            ...singleSwatch,
+        const multiColors = [
+            ...singleColor,
             {
                 id: 'color-2' as const,
                 hex: '#32c832',
@@ -101,7 +101,7 @@ describe('Benchmark Corpus and Harness (ADZ-118)', () => {
                 score: 0.9,
             },
         ];
-        const divMulti = calculateDiversity(multiSwatches);
+        const divMulti = calculateDiversity(multiColors);
         expect(divMulti.min).toBe(0);
         expect(divMulti.mean).toBe(0);
     });

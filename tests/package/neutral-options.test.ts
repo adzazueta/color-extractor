@@ -336,4 +336,57 @@ describe('null option value validation', () => {
             ),
         ).toThrowError(ColorExtractorError);
     });
+
+    it('rejects null signal', async () => {
+        const { resolveNeutralOptions } = await import(
+            '../../src/core/neutral-options.js'
+        );
+        const { ColorExtractorError } = await import(
+            '../../src/core/errors.js'
+        );
+
+        expect(() =>
+            resolveNeutralOptions(
+                { signal: null as unknown as AbortSignal },
+                'core',
+            ),
+        ).toThrowError(ColorExtractorError);
+    });
+
+    it('rejects null remote.allowedProtocols', async () => {
+        const { resolveNeutralOptions } = await import(
+            '../../src/core/neutral-options.js'
+        );
+        const { ColorExtractorError } = await import(
+            '../../src/core/errors.js'
+        );
+
+        expect(() =>
+            resolveNeutralOptions(
+                {
+                    remote: {
+                        allowPrivateNetworks: true,
+                        allowedProtocols: null as unknown as string[],
+                    },
+                },
+                'node',
+            ),
+        ).toThrowError(ColorExtractorError);
+    });
+
+    it('rejects null remote object', async () => {
+        const { resolveNeutralOptions } = await import(
+            '../../src/core/neutral-options.js'
+        );
+        const { ColorExtractorError } = await import(
+            '../../src/core/errors.js'
+        );
+
+        expect(() =>
+            resolveNeutralOptions(
+                { remote: null as unknown as { allowPrivateNetworks: true } },
+                'node',
+            ),
+        ).toThrowError(ColorExtractorError);
+    });
 });

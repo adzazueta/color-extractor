@@ -1,8 +1,8 @@
-# Migration guide: 0.1.x → 0.2.x
+# Migration guide: 0.1.x -> 0.3.x
 
 ## Summary
 
-`0.2.0` introduces a neutral palette API (`extractColor`) that returns observed-color evidence without semantic role assignment. The `0.1.x` role-based API (`extractColors`) is deprecated and will be removed in `0.3.0`.
+`0.2.0` introduced a neutral color API (`extractColor`) that returns observed-color evidence without semantic role assignment. In `0.3.0`, the legacy role-based API (`extractColors`) and its aliases are removed.
 
 ## Quick migration
 
@@ -17,7 +17,7 @@ const result = await extractColors(image)
 console.log(result.primary.hex, result.secondary?.hex)
 ```
 
-**After (0.2.x):**
+**After (0.3.x):**
 
 ```ts
 import { extractColor } from '@adzazueta/color-extractor'
@@ -44,7 +44,7 @@ const result = await extractColorsFromPixels({
 })
 ```
 
-**After (0.2.x):**
+**After (0.3.x):**
 
 ```ts
 import { extractColorFromPixels } from '@adzazueta/color-extractor/core'
@@ -74,7 +74,7 @@ The extractor no longer assigns semantic roles. The engine adapter is not part o
 
 ## Function mapping
 
-| 0.1.x (deprecated) | 0.2.x replacement | Notes |
+| 0.1.x (removed) | 0.3.x replacement | Notes |
 | --- | --- | --- |
 | `extractColors(input, options?)` | `extractColor(input, options?)` | Returns `ExtractColorResult` instead of `ExtractColorsResult`. |
 | `extractColorsFromPixels(input, options?)` | `extractColorFromPixels(input, options?)` | Requires `channels: 3 \| 4`; no `number[]` data. |
@@ -82,7 +82,7 @@ The extractor no longer assigns semantic roles. The engine adapter is not part o
 
 ## Option mapping
 
-| 0.1.x option | 0.2.x option | Notes |
+| 0.1.x option | 0.3.x option | Notes |
 | --- | --- | --- |
 | `sampleSize` | `sampling.maxDimension` | Same default (150). |
 | `paletteSize` | `result.maxColors` | Same default (5). |
@@ -101,21 +101,21 @@ The extractor no longer assigns semantic roles. The engine adapter is not part o
 
 ## Type mapping
 
-| 0.1.x type | 0.2.x type | Notes |
+| 0.1.x type | 0.3.x type | Notes |
 | --- | --- | --- |
 | `ExtractColorsResult` | `ExtractColorResult` | New shape: `{ colors, rankings, metadata }`. |
 | `MinimalExtractColorsResult` | — | Removed. Neutral result is always the full shape. |
 | `ExtractedColor` | `ObservedColor` | New shape: `{ id, hex, rgb, lab, chroma, population, proportion, score, hsl? }`. |
-| `RGB` | `RgbColor` | `{ r, g, b }` — same shape, new type name. Scheduled for deprecation in 0.3.0. |
-| `HSL` | `HslColor` | `{ h, s, l }` — same shape, new type name. Scheduled for deprecation in 0.3.0. |
-| `Lab` | `LabColor` | `{ L, a, b }` — same shape, new type name. Scheduled for deprecation in 0.3.0. |
+| `RGB` | `RgbColor` | `{ r, g, b }` — same shape, new type name. |
+| `HSL` | `HslColor` | `{ h, s, l }` — same shape, new type name. |
+| `Lab` | `LabColor` | `{ L, a, b }` — same shape, new type name. |
 | `ExtractionMetadata` | `ExtractionMetadata` | Expanded: new fields `algorithm`, `algorithmVersion`, `candidateCount`, `returnedColors`, `returnedPopulation`, `coverage`, `algorithmDetails`. |
 | — | `PaletteRankings` | New: three ranking strategies. |
 | — | `ColorId` | New: branded string type `"color-{hex}"`. |
 
 ## Removed semantic concerns
 
-These were part of the `0.1.x` role-based API. They do not exist in `0.2.x` and will be owned by `@adzazueta/color-engine`:
+These were part of the `0.1.x` role-based API. They do not exist in `0.3.x` and are owned by `@adzazueta/color-engine`:
 
 - `primary` — primary color selection
 - `secondary` — secondary color with fallback
@@ -144,7 +144,7 @@ These were part of the `0.1.x` role-based API. They do not exist in `0.2.x` and 
 
 Most fields are opt-in via `output` flags. Role and source are always present.
 
-### 0.2.x (`extractColor`)
+### 0.3.x (`extractColor`)
 
 ```ts
 {
@@ -160,6 +160,6 @@ All fields are always present with no opt-in flags. No semantic roles, no source
 
 | Version | Status |
 | --- | --- |
-| 0.2.0 | Legacy API deprecated. Neutral API introduced. |
-| 0.2.x | Legacy API frozen, still available. Deprecation warnings in documentation. |
+| 0.2.0 | Neutral API introduced alongside the legacy API. |
+| 0.2.x | Neutral API stabilized; legacy API was deprecated. |
 | 0.3.0 | Legacy API removed. `RGB`, `HSL`, `Lab` type aliases removed. |

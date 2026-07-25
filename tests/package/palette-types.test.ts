@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import type { ExtractionMetadata } from '../../src/core/index.js';
 import type {
@@ -225,9 +225,123 @@ describe('deprecated legacy aliases', () => {
     });
 });
 
+describe('positive — stable type imports compile', () => {
+    it('all neutral types are importable from root', async () => {
+        const mod = await import('../../src/index.js');
+        expect(typeof mod.extractColor).toBe('function');
+        expect(typeof mod.ColorExtractorError).toBe('function');
+        expect(mod.DEFAULT_NEUTRAL_OPTIONS).toBeDefined();
+    });
+
+    it('all neutral types are importable from browser', async () => {
+        const mod = await import('../../src/browser/index.js');
+        expect(typeof mod.extractColor).toBe('function');
+        expect(typeof mod.ColorExtractorError).toBe('function');
+        expect(mod.DEFAULT_NEUTRAL_OPTIONS).toBeDefined();
+    });
+
+    it('all neutral types are importable from node', async () => {
+        const mod = await import('../../src/node/index.js');
+        expect(typeof mod.extractColor).toBe('function');
+        expect(typeof mod.ColorExtractorError).toBe('function');
+        expect(mod.DEFAULT_NEUTRAL_OPTIONS).toBeDefined();
+    });
+
+    it('all neutral types are importable from core', async () => {
+        const mod = await import('../../src/core/index.js');
+        expect(typeof mod.extractColorFromPixels).toBe('function');
+        expect(typeof mod.extractColorFromPixels).toBe('function');
+    });
+
+    it('stable type names exist in root declarations', () => {
+        const dts = readFileSync(resolve(rootDir, 'dist/index.d.ts'), 'utf-8');
+        const stableTypes = [
+            'ExtractColorResult',
+            'ObservedColor',
+            'ColorId',
+            'RgbColor',
+            'HslColor',
+            'LabColor',
+            'PaletteRankings',
+            'ExtractionAlgorithm',
+            'ExtractionRuntime',
+            'ExtractionDecoder',
+            'BaseExtractColorOptions',
+            'ExtractColorOptions',
+            'ColorExtractorError',
+            'COLOR_EXTRACTOR_ERROR_CODES',
+            'DEFAULT_NEUTRAL_OPTIONS',
+        ];
+        for (const name of stableTypes) {
+            expect(dts, `root should export type ${name}`).toMatch(
+                new RegExp(`\\b${name}\\b`),
+            );
+        }
+    });
+});
+
+describe('negative — removed legacy names are absent', () => {
+    const removedNames = [
+        'extractColors',
+        'extractPalette',
+        'extractColorsFromPixels',
+        'extractColorsFromImageData',
+        'extractPaletteFromPixels',
+        'extractPaletteFromImageData',
+        'DEFAULT_OPTIONS',
+        'resolveOptions',
+        'ExtractedColor',
+        'ExtractedSwatch',
+        'SwatchId',
+    ];
+
+    function assertDtsAbsent(relPath: string, label: string) {
+        const dts = readFileSync(resolve(rootDir, relPath), 'utf-8');
+        for (const name of removedNames) {
+            expect(
+                dts,
+                `${label} should not export removed name ${name}`,
+            ).not.toMatch(new RegExp(`\\b${name}\\b`));
+        }
+    }
+
+    it('root declarations contain no removed legacy names', () => {
+        assertDtsAbsent('dist/index.d.ts', 'root');
+    });
+
+    it('browser declarations contain no removed legacy names', () => {
+        assertDtsAbsent('dist/browser/index.d.ts', 'browser');
+    });
+
+    it('node declarations contain no removed legacy names', () => {
+        assertDtsAbsent('dist/node/index.d.ts', 'node');
+    });
+
+    it('core declarations contain no removed legacy names', () => {
+        assertDtsAbsent('dist/core/index.d.ts', 'core');
+    });
+
+    it('runtime exports contain no removed legacy names', async () => {
+        for (const relPath of [
+            './dist/index.js',
+            './dist/browser/index.js',
+            './dist/node/index.js',
+            './dist/core/index.js',
+        ]) {
+            const url = pathToFileURL(resolve(rootDir, relPath)).href;
+            const mod = (await import(url)) as Record<string, unknown>;
+            for (const name of removedNames) {
+                expect(mod[name], `${relPath} should not export ${name}`).toBe(
+                    undefined,
+                );
+            }
+        }
+    });
+});
+
 describe('negative — forbidden fields', () => {
     it('clusterIndex is not on ObservedColor', () => {
-        const swatch: ObservedColor = {
+        const color: ObservedColor = {
             id: 'color-a85f46',
             hex: '#a85f46',
             rgb: { r: 168, g: 95, b: 70 },
@@ -239,11 +353,11 @@ describe('negative — forbidden fields', () => {
             // @ts-expect-error — clusterIndex is not a neutral color field
             clusterIndex: 0,
         };
-        expect(swatch).toBeDefined();
+        expect(color).toBeDefined();
     });
 
     it('role is not on ObservedColor', () => {
-        const swatch: ObservedColor = {
+        const color: ObservedColor = {
             id: 'color-a85f46',
             hex: '#a85f46',
             rgb: { r: 168, g: 95, b: 70 },
@@ -255,11 +369,11 @@ describe('negative — forbidden fields', () => {
             // @ts-expect-error — role is not a neutral color field
             role: 'primary',
         };
-        expect(swatch).toBeDefined();
+        expect(color).toBeDefined();
     });
 
     it('source is not on ObservedColor', () => {
-        const swatch: ObservedColor = {
+        const color: ObservedColor = {
             id: 'color-a85f46',
             hex: '#a85f46',
             rgb: { r: 168, g: 95, b: 70 },
@@ -271,7 +385,7 @@ describe('negative — forbidden fields', () => {
             // @ts-expect-error — source is not a neutral color field
             source: 'cluster',
         };
-        expect(swatch).toBeDefined();
+        expect(color).toBeDefined();
     });
 
     it('primary is not on ExtractColorResult', () => {

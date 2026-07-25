@@ -62,7 +62,7 @@ function cand(
 }
 
 describe('normalizePalette — valid input', () => {
-    it('returns swatches, rankings, and metadata', () => {
+    it('returns colors, rankings, and metadata', () => {
         const result = normalizePalette({
             candidateResult: candidateResult([
                 cand(200, 100, 50, 50, 30, 20, 500, 0),
@@ -79,7 +79,7 @@ describe('normalizePalette — valid input', () => {
         expect(result.metadata.algorithm).toBe('lab-kmeans');
     });
 
-    it('swatches are sorted by ID ascending', () => {
+    it('colors are sorted by ID ascending', () => {
         const result = normalizePalette({
             candidateResult: candidateResult([
                 cand(200, 100, 50, 50, 30, 20, 340, 0),
@@ -164,7 +164,7 @@ describe('normalizePalette — valid input', () => {
         expect(result.colors[0]!.id).toBe('color-a85f46');
     });
 
-    it('every ranking is a permutation of swatch IDs', () => {
+    it('every ranking is a permutation of color IDs', () => {
         const result = normalizePalette({
             candidateResult: candidateResult([
                 cand(200, 100, 50, 50, 30, 20, 250, 0),
@@ -258,7 +258,7 @@ describe('normalizePalette — RGB deduplication', () => {
 });
 
 describe('normalizePalette — single candidate', () => {
-    it('returns one swatch with score 1 and rankings contain 1 ID', () => {
+    it('returns one color with score 1 and rankings contain 1 ID', () => {
         const result = normalizePalette({
             candidateResult: candidateResult([
                 cand(200, 100, 50, 50, 30, 20, 1000, 0),
@@ -343,11 +343,11 @@ describe('normalizePalette — perceptual score and low-chroma penalty', () => {
                 },
             },
         });
-        // Both swatches have chroma >= 10 from recalculated Lab
+        // Both colors have chroma >= 10 from recalculated Lab
         for (const s of result.colors) {
             expect(s.chroma).toBeGreaterThanOrEqual(10);
         }
-        // Highest-scoring swatch gets score 1
+        // Highest-scoring color gets score 1
         const best = result.colors.reduce((a, b) =>
             a.score >= b.score ? a : b,
         );
@@ -767,7 +767,7 @@ describe('normalizePalette — forbidden fields', () => {
 });
 
 describe('normalizePalette — MMCQ integration & equivalence', () => {
-    it('normalizes MMCQ algorithm candidate results with identical swatch and ranking contracts', () => {
+    it('normalizes MMCQ algorithm candidate results with identical color and ranking contracts', () => {
         const mmcqResult = normalizePalette({
             candidateResult: {
                 algorithm: 'mmcq',

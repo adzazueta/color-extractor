@@ -1,5 +1,5 @@
 import { ColorExtractorError } from '../core/errors.js';
-import type { RemoteOptions } from '../core/options.js';
+import type { NodeRemoteOptions } from '../core/neutral-options.js';
 
 const DEFAULT_TIMEOUT_MS = 10_000;
 const DEFAULT_MAX_BYTES = 10_000_000;
@@ -68,7 +68,7 @@ export async function safeCancelBody(response: Response): Promise<void> {
 
 export async function fetchRemoteBuffer(
     url: string,
-    options: Partial<Pick<RemoteOptions, 'timeoutMs' | 'maxBytes'>> = {},
+    options: Partial<Pick<NodeRemoteOptions, 'timeoutMs' | 'maxBytes'>> = {},
     fetcher: Fetcher = defaultFetcher,
 ): Promise<RemoteBufferResult> {
     const timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;

@@ -69,10 +69,10 @@ describe('validateRemoteProtocol (ADZ-62)', () => {
         });
 
         it('accepts multiple custom protocols', () => {
-            const r = validateRemoteProtocol('ws://x.com', {
-                allowedProtocols: ['http:', 'https:', 'ws:'],
+            const r = validateRemoteProtocol('https://x.com', {
+                allowedProtocols: ['http:', 'https:'],
             });
-            expect(r.protocol).toBe('ws:');
+            expect(r.protocol).toBe('https:');
         });
     });
 

@@ -10,11 +10,7 @@ export { hslToRgb, rgbToHsl } from './color/hsl.js';
 export { labDistance, labSquaredDistance, xyzToLab } from './color/lab.js';
 export { srgbByteToLinear, srgbToLinear } from './color/srgb.js';
 export { linearRgbToXyz } from './color/xyz.js';
-export {
-    DEFAULT_OPTIONS,
-    type ResolvedOptions,
-    resolveOptions,
-} from './defaults.js';
+
 export {
     COLOR_EXTRACTOR_ERROR_CODES,
     ColorExtractorError,
@@ -23,10 +19,6 @@ export {
 export {
     type ColorPixelInput,
     extractColorFromPixels,
-    /** @deprecated Use extractColorFromPixels instead */
-    extractColorsFromImageData,
-    /** @deprecated Use extractColorFromPixels instead */
-    extractColorsFromPixels,
     type ImageDataLike,
     runNeutralColorPipeline,
 } from './extract.js';

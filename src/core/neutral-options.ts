@@ -209,18 +209,6 @@ const NODE_DECODE_DEFAULTS: ResolvedNodeDecodeOptions = {
     normalizeColorProfile: true,
 };
 
-const LEGACY_KEYS = new Set([
-    'sampleSize',
-    'paletteSize',
-    'accents',
-    'kmeans',
-    'primary',
-    'secondary',
-    'scoring',
-    'output',
-    'lightness',
-]);
-
 const COMMON_GROUP_KEYS = new Set([
     'algorithm',
     'sampling',
@@ -370,7 +358,7 @@ function resolveAllowedProtocols(
     userValue: unknown,
     path: string,
 ): readonly ('http:' | 'https:')[] {
-    if (userValue === undefined || userValue === null) {
+    if (userValue === undefined) {
         return ['http:', 'https:'];
     }
     if (
@@ -387,7 +375,7 @@ function resolveAllowedProtocols(
 }
 
 function checkSignal(signal: unknown, path: string): AbortSignal | undefined {
-    if (signal === undefined || signal === null) {
+    if (signal === undefined) {
         return undefined;
     }
     if (
@@ -648,17 +636,6 @@ function checkAdvancedBounds(
     }
 }
 
-function checkRejectLegacyKeys(obj: Record<string, unknown>): void {
-    for (const key of Object.keys(obj)) {
-        if (LEGACY_KEYS.has(key)) {
-            invalidOpt(
-                key,
-                `legacy option "${key}" is not supported by extractColor(); use the neutral option group instead`,
-            );
-        }
-    }
-}
-
 function resolveBrowserDecode(
     userDecode: Record<string, unknown> | undefined,
 ): ResolvedBrowserDecodeOptions {
@@ -857,8 +834,6 @@ export function resolveNeutralOptions(
     }
 
     const obj = (options ?? {}) as Record<string, unknown>;
-
-    checkRejectLegacyKeys(obj);
 
     const common: CommonDefaults = {
         algorithm: 'lab-kmeans',

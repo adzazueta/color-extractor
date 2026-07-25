@@ -194,7 +194,7 @@ function rgbToLab(r: number, g: number, b: number): LabColor {
     };
 }
 
-function swatchIdFromHex(hex: string): ColorId {
+function colorIdFromHex(hex: string): ColorId {
     return `color-${hex.slice(1)}` as ColorId;
 }
 
@@ -334,7 +334,7 @@ export function normalizePalette(
             population: m.population,
             sourceIndex: m.sourceIndex,
             hex,
-            id: swatchIdFromHex(hex),
+            id: colorIdFromHex(hex),
             chroma,
             proportion,
             rawScore,

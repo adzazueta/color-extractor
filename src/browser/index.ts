@@ -43,9 +43,6 @@ export {
     COLOR_EXTRACTOR_ERROR_CODES,
     ColorExtractorError,
     type ColorExtractorErrorCode,
-    DEFAULT_OPTIONS,
-    type ResolvedOptions,
-    resolveOptions,
 } from '../core/index.js';
 export { VERSION } from '../generated/version.js';
 export type { BrowserExtractColorInput } from './types.js';

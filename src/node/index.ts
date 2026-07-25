@@ -43,9 +43,6 @@ export {
     COLOR_EXTRACTOR_ERROR_CODES,
     ColorExtractorError,
     type ColorExtractorErrorCode,
-    DEFAULT_OPTIONS,
-    type ResolvedOptions,
-    resolveOptions,
 } from '../core/index.js';
 export { VERSION } from '../generated/version.js';
 export type { NodeExtractColorInput } from './types.js';
@@ -197,10 +194,7 @@ async function fetchRemoteForPalette(
     try {
         validateContentType(contentType, {
             validateContentType: validateContentTypeFlag,
-            svg:
-                resolved.decode.svg === 'enabled'
-                    ? 'enabled'
-                    : 'disabled-in-node',
+            svg: resolved.decode.svg,
         });
     } catch (err) {
         await safeCancelBody(finalResponse);

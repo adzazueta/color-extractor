@@ -1,12 +1,12 @@
 import { xyzToLab } from './color/lab.js';
 import { srgbByteToLinear } from './color/srgb.js';
 import { linearRgbToXyz } from './color/xyz.js';
+import type { LabColor, RgbColor } from './palette-types.js';
 import type { NormalizedPixels, Pixel } from './pixels.js';
-import type { Lab, RGB } from './types.js';
 
 export interface LabSample {
-    readonly rgb: RGB;
-    readonly lab: Lab;
+    readonly rgb: RgbColor;
+    readonly lab: LabColor;
     readonly index: number;
 }
 

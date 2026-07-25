@@ -47,9 +47,9 @@ describe('package scripts', () => {
         ]);
     });
 
-    it('build runs sync-version, tsdown, then check-build-warnings', () => {
+    it('build runs sync-version, tsdown, check-build-warnings, then strip-declaration-maps', () => {
         expect(scripts.build).toBe(
-            'pnpm sync-version && tsdown && node scripts/check-build-warnings.mjs',
+            'pnpm sync-version && tsdown && node scripts/check-build-warnings.mjs && node scripts/strip-declaration-maps.mjs',
         );
     });
 

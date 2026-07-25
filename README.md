@@ -2,9 +2,9 @@
 
 Extract perceptually meaningful observed colors from images in browsers and Node.js.
 
-The neutral palette API uses deterministic CIELAB K-means by default and also supports deterministic MMCQ quantization. Both algorithms return observed colors, population evidence, perceptual rankings, and algorithm diagnostics without assigning semantic roles.
+The neutral color extraction API uses deterministic CIELAB K-means by default and also supports deterministic MMCQ quantization. Both algorithms return observed colors, population evidence, perceptual rankings, and algorithm diagnostics without assigning semantic roles.
 
-The `0.2` release introduces a neutral palette API that returns observed-color evidence without semantic role assignment. Legacy role-based extraction (`extractColors`) remains available through `0.2.x` and is deprecated for removal in `0.3.0`.
+The `0.3` release uses a stable color-oriented API that returns observed-color evidence without semantic role assignment.
 
 This package is ESM-only. Use `import` with the documented package entrypoints.
 
@@ -19,14 +19,10 @@ console.log(top?.id, top?.hex, top?.score)
 
 ## Installation
 
+To install the package:
+
 ```sh
 npm install @adzazueta/color-extractor
-```
-
-To install the `0.2` prerelease channel:
-
-```sh
-npm install @adzazueta/color-extractor@next
 ```
 
 For Node.js image decoding, install the optional `sharp` peer dependency:
@@ -121,14 +117,14 @@ console.log(result.colors.length)
 
 | Import path | Primary functions | Runtime |
 | --- | --- | --- |
-| `@adzazueta/color-extractor` | `extractColor`, deprecated `extractColors` | Browser or Node through package export conditions |
-| `@adzazueta/color-extractor/browser` | `extractColor`, `extractColorFromImageData`, deprecated `extractColors` | Browser |
-| `@adzazueta/color-extractor/node` | `extractColor`, deprecated `extractColors` | Node.js |
-| `@adzazueta/color-extractor/core` | `extractColorFromPixels`, `runNeutralColorPipeline`, `extractColorsFromPixels`, `extractColorsFromImageData` | Any; no decoder dependencies |
+| `@adzazueta/color-extractor` | `extractColor` | Browser or Node through package export conditions |
+| `@adzazueta/color-extractor/browser` | `extractColor`, `extractColorFromImageData` | Browser |
+| `@adzazueta/color-extractor/node` | `extractColor` | Node.js |
+| `@adzazueta/color-extractor/core` | `extractColorFromPixels`, `runNeutralColorPipeline` | Any; no decoder dependencies |
 
 The root import uses package export conditions: Node resolves the Node entrypoint, browser-oriented resolution uses the Browser entrypoint, and the default condition is Browser. Use an explicit subpath when you need deterministic runtime selection.
 
-All entrypoints expose the relevant public types, `VERSION`, `ColorExtractorError`, `DEFAULT_NEUTRAL_OPTIONS`, `DEFAULT_OPTIONS`, and `resolveOptions`. Browser, Node, and Core entrypoints also expose `COLOR_EXTRACTOR_ERROR_CODES`. The Browser entrypoint additionally exposes `decodeFileOrBlob`, `decodeRemoteUrl`, the `sample*` helpers, and `detectBrowserInputKind`. The Core entrypoint additionally exposes color conversion, filtering, sampling, output, and legacy role helpers. Generated TypeScript declarations are the complete export reference.
+All entrypoints expose the relevant public types and `VERSION`. The root, Browser, and Node entrypoints expose `ColorExtractorError` and `DEFAULT_NEUTRAL_OPTIONS`; the Browser and Node entrypoints also expose `COLOR_EXTRACTOR_ERROR_CODES`. The Core entrypoint additionally exposes `resolveNeutralOptions`, `COLOR_EXTRACTOR_ERROR_CODES`, color conversion (`rgbToHex`, `hslToRgb`, `srgbToLinear`, `xyzToLab`, …), filtering (`filterPixels`, `validateFilterCriteria`, `passesFilter`), sampling (`sampleSquareGrid`), and pixel normalization (`normalizePixels`, `runNeutralColorPipeline`, …). The Browser entrypoint additionally exposes `decodeFileOrBlob`, `decodeRemoteUrl`, the `sample*` helpers, and `detectBrowserInputKind`. Generated TypeScript declarations are the complete export reference.
 
 Use explicit subpath imports when you need runtime-specific types, browser decoding helpers, or the Core pixel API.
 
@@ -138,7 +134,6 @@ Use explicit subpath imports when you need runtime-specific types, browser decod
 extractColor(input, options?): Promise<ExtractColorResult>
 extractColorFromImageData(imageData, options?): Promise<ExtractColorResult> // browser
 extractColorFromPixels(input, options?): Promise<ExtractColorResult> // core
-extractColors(input, options?): Promise<ExtractColorsResult> // deprecated
 ```
 
 `extractColor` is overloaded by the root entrypoint for Browser and Node inputs. `extractColorFromImageData` is available from `/browser`, and `extractColorFromPixels` is available from `/core`.
@@ -147,7 +142,6 @@ The `/core` entrypoint also exports these low-level groups:
 
 - Color conversion: `rgbToHex`, `rgbToHsl`, `hslToRgb`, `xyzToLab`, `linearRgbToXyz`, `srgbByteToLinear`, `srgbToLinear`, `labDistance`, `labSquaredDistance`, `chromaFromLab`, `circularHueDistance`, `hueFromLab`, `normalizeHue`.
 - Pixel and filtering: `normalizePixels`, `filterPixels`, `passesFilter`, `validateFilterCriteria`, `sampleSquareGrid`, `convertRgbSamplesToLab`.
-- Legacy output and role helpers: `applyOutputFlags`, `buildPalette`, `buildPrimaryColor`, `findPrimaryIndex`, `selectSecondary`, `scorePrimary`, `scoreSecondary`, `buildHarmonyFallback`, `applyGrayPenalty`, `applyLightnessGap`, `contrastBoost`, and related helper types.
 
 ## Supported inputs by runtime
 
@@ -171,7 +165,7 @@ type ExtractColorResult = {
 }
 ```
 
-### Swatches
+### Colors
 
 ```ts
 type ObservedColor = {
@@ -216,7 +210,7 @@ const perceptual = result.rankings.perceptual.map(
 )
 ```
 
-This is consumer code — there is no dedicated ranking helper in `0.2`.
+This is consumer code — the ranking is resolved directly using `result.rankings`.
 
 ### Metadata
 
@@ -261,15 +255,15 @@ type ExtractionMetadata = {
 
 `metadata.algorithm` and `metadata.algorithmDetails.algorithm` always match. `coverage` may be less than `1` when `maxColors` limits the result. `validPixels` and populations refer to the sampled pixels that passed filtering, not necessarily every source pixel.
 
-### Neutral Palette Defaults
+### Neutral Color Defaults
 
-The default options for neutral palette extraction (`extractColor`) are exported as `DEFAULT_NEUTRAL_OPTIONS`:
+The default options for neutral color extraction (`extractColor`) are exported as `DEFAULT_NEUTRAL_OPTIONS`:
 
 ```ts
 import { DEFAULT_NEUTRAL_OPTIONS } from '@adzazueta/color-extractor'
 ```
 
-`DEFAULT_NEUTRAL_OPTIONS` contains the common neutral palette defaults: `algorithm: 'lab-kmeans'`, `sampling.maxDimension: 150`, filtering values `alphaThreshold: 128`, `minBrightness: 10`, `maxBrightness: 245`, `minSaturation: 8`, result values `maxColors: 5`, `includeHsl: false`, Lab K-means values `clusters: 8`, `iterations: 7`, MMCQ `boxes: 8`, and perceptual ranking values `chromaFloor: 12`, `lowChromaPenalty: 0.1`. Runtime-specific decode options (`decode`) and Node remote options (`remote`) are resolved separately per runtime. Legacy `extractColors` defaults remain available via `DEFAULT_OPTIONS`.
+`DEFAULT_NEUTRAL_OPTIONS` contains the common neutral defaults: `algorithm: 'lab-kmeans'`, `sampling.maxDimension: 150`, filtering values `alphaThreshold: 128`, `minBrightness: 10`, `maxBrightness: 245`, `minSaturation: 8`, result values `maxColors: 5`, `includeHsl: false`, Lab K-means values `clusters: 8`, `iterations: 7`, MMCQ `boxes: 8`, and perceptual ranking values `chromaFloor: 12`, `lowChromaPenalty: 0.1`. Runtime-specific decode options (`decode`) and Node remote options (`remote`) are resolved separately per runtime.
 
 ## Configuration
 
@@ -471,18 +465,6 @@ Browser support follows the platform decoder. PNG, JPEG, GIF, WebP, and BMP are 
 
 Node support follows the installed `sharp` and libvips build. Common formats include PNG, JPEG, WebP, GIF, AVIF, TIFF, BMP, and ICO.
 
-## Legacy API deprecation
-
-The `0.1.x` role-based API (`extractColors`, `extractColorsFromPixels`, `extractColorsFromImageData`) is deprecated starting in `0.2.0`. It remains available and frozen through `0.2.x` and will be removed in `0.3.0`.
-
-| Legacy | Neutral replacement |
-| --- | --- |
-| `extractColors` | `extractColor` |
-| `extractColorsFromPixels` | `extractColorFromPixels` |
-| `extractColorsFromImageData` | `extractColorFromImageData` (browser) or `extractColorFromPixels` (core) |
-
-See [MIGRATION.md](MIGRATION.md) for a complete migration guide.
-
 ## Known limitations
 
 - Lab K-means (default) and MMCQ (`algorithm: 'mmcq'`) are the available neutral extraction algorithms.
@@ -494,7 +476,7 @@ See [MIGRATION.md](MIGRATION.md) for a complete migration guide.
 
 ## color-engine boundary
 
-Semantic role selection (primary, secondary, accent), harmony generation, lightness adjustment, and fallback policies moved out of `@adzazueta/color-extractor` in `0.2.0`.
+Semantic role selection (primary, secondary, accent), harmony generation, lightness adjustment, and fallback policies are out of scope for this package.
 
 `extractColor` returns only observed-color evidence. Consumers that need role-labeled colors should compose the extractor with a separate engine layer:
 
@@ -507,7 +489,7 @@ The exact engine adapter API is defined by `@adzazueta/color-engine` and is not 
 
 ## Versioning
 
-This package follows semantic versioning. The `0.1.x` and `0.2.x` major version zero lines may introduce breaking changes. The public API surface is documented in this README and in generated TypeScript declarations.
+This package follows semantic versioning. The `0.x` major version zero line may introduce breaking changes. The public API surface is documented in this README and in generated TypeScript declarations.
 
 ## Contributing
 

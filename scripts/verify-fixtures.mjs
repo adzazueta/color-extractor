@@ -3,6 +3,7 @@ import { createHash } from 'node:crypto';
 import {
     copyFileSync,
     existsSync,
+    mkdirSync,
     mkdtempSync,
     readFileSync,
     rmSync,
@@ -23,6 +24,18 @@ const PKG_VERSION = PACKAGE_JSON.version;
 const PKG_SCOPE_SLUG = PKG_NAME.replace('/', '-').replace('@', '');
 const TARBALL_NAME = `${PKG_SCOPE_SLUG}-${PKG_VERSION}.tgz`;
 const TARBALL_PATH = resolve(ROOT, TARBALL_NAME);
+const TS_VERSION = JSON.parse(
+    readFileSync(
+        resolve(ROOT, 'node_modules', 'typescript', 'package.json'),
+        'utf-8',
+    ),
+).version;
+const SHARP_VERSION = JSON.parse(
+    readFileSync(
+        resolve(ROOT, 'node_modules', 'sharp', 'package.json'),
+        'utf-8',
+    ),
+).version;
 
 function run(label, cmd, args, opts = {}) {
     process.stdout.write(`\n  • ${label}... `);
@@ -151,7 +164,12 @@ async function main() {
         { name: 'core', extraDeps: {} },
         {
             name: 'node',
-            extraDeps: { sharp: PACKAGE_JSON.peerDependencies.sharp },
+            extraDeps: { sharp: SHARP_VERSION },
+        },
+        {
+            name: 'typescript',
+            typecheck: true,
+            extraDeps: { typescript: TS_VERSION },
         },
     ];
 
@@ -176,19 +194,50 @@ async function main() {
                 }),
             );
 
-            // Copy verify script
-            const verifySrc = resolve(
-                FIXTURES_DIR,
-                fix.name,
-                'src',
-                'verify.mjs',
-            );
-            const verifyDst = resolve(tmpDir, 'verify.mjs');
-            copyFileSync(verifySrc, verifyDst);
+            const hasSharp = Boolean(fix.extraDeps?.sharp);
+            const isTypecheck = Boolean(fix.typecheck);
+
+            if (isTypecheck) {
+                // Copy TypeScript source file
+                const verifySrc = resolve(
+                    FIXTURES_DIR,
+                    fix.name,
+                    'src',
+                    'verify.ts',
+                );
+                const srcDir = resolve(tmpDir, 'src');
+                mkdirSync(srcDir, { recursive: true });
+                const verifyDst = resolve(srcDir, 'verify.ts');
+                copyFileSync(verifySrc, verifyDst);
+
+                // Copy tsconfig.json
+                const tsconfigSrc = resolve(
+                    FIXTURES_DIR,
+                    fix.name,
+                    'tsconfig.json',
+                );
+                const tsconfigDst = resolve(tmpDir, 'tsconfig.json');
+                copyFileSync(tsconfigSrc, tsconfigDst);
+            } else {
+                // Copy verify script
+                const verifySrc = resolve(
+                    FIXTURES_DIR,
+                    fix.name,
+                    'src',
+                    'verify.mjs',
+                );
+                const verifyDst = resolve(tmpDir, 'verify.mjs');
+                copyFileSync(verifySrc, verifyDst);
+            }
 
             // Install from tarball
+            const installLabel = hasSharp
+                ? 'with sharp'
+                : isTypecheck
+                  ? 'with typescript'
+                  : 'no extra deps';
             const installOk = run(
-                `npm install (${fix.extraDeps.sharp ? 'with sharp' : 'no extra deps'})`,
+                `npm install (${installLabel})`,
                 'npm',
                 [
                     'install',
@@ -204,20 +253,91 @@ async function main() {
                 continue;
             }
 
-            // Run the fixture verify script
-            const runOk = run(`node verify.mjs`, 'node', [verifyDst], {
-                cwd: tmpDir,
-                timeout: 30_000,
-            });
-            if (!runOk) {
-                errors.push(`${fix.name}: verify script failed`);
-                continue;
+            if (isTypecheck) {
+                // TypeScript typecheck: compile with tsc --noEmit
+                const typecheckOk = run(
+                    'npx tsc --noEmit',
+                    'npx',
+                    ['tsc', '--noEmit'],
+                    { cwd: tmpDir, timeout: 30_000 },
+                );
+                if (!typecheckOk) {
+                    errors.push(`${fix.name}: TypeScript compilation failed`);
+                    continue;
+                }
+            } else {
+                // Run the fixture verify script
+                const verifyDst = resolve(tmpDir, 'verify.mjs');
+                const runOk = run(`node verify.mjs`, 'node', [verifyDst], {
+                    cwd: tmpDir,
+                    timeout: 30_000,
+                });
+                if (!runOk) {
+                    errors.push(`${fix.name}: verify script failed`);
+                    continue;
+                }
             }
 
             process.stdout.write(`  ✓ ${fix.name} fixture passed\n`);
         } finally {
             rmSync(tmpDir, { recursive: true, force: true });
         }
+    }
+
+    // 5. Validate declaration map references (no dangling .d.ts.map URLs)
+    process.stdout.write(`\n── Declaration map validation ──\n`);
+    let danglingCount = 0;
+    for (const file of contents) {
+        if (!file.endsWith('.d.ts')) continue;
+        const distPath = resolve(ROOT, file);
+        if (!existsSync(distPath)) continue;
+        const content = readFileSync(distPath, 'utf-8');
+        const mapRefs = content.match(
+            /\/\/# sourceMappingURL=(.*\.d\.ts\.map)/g,
+        );
+        if (mapRefs) {
+            for (const ref of mapRefs) {
+                const mapFile = ref.replace('//# sourceMappingURL=', '');
+                const mapPath = resolve(
+                    ROOT,
+                    file.replace(/[^/]*$/, ''),
+                    mapFile,
+                );
+                if (!existsSync(mapPath)) {
+                    process.stdout.write(
+                        `  ✗ dangling map ref: ${file} -> ${mapFile}\n`,
+                    );
+                    danglingCount++;
+                }
+            }
+        }
+    }
+    if (danglingCount === 0) {
+        process.stdout.write('  ✓ no dangling declaration map references\n');
+    } else {
+        const msg = `${danglingCount} dangling declaration map reference(s)`;
+        errors.push(msg);
+        process.stdout.write(`  ✘ ${msg}\n`);
+    }
+
+    // 6. Generate public-surface audit artifact
+    process.stdout.write(`\n── Public surface audit ──\n`);
+    const { main: generateSurface } = await import(
+        './generate-public-surface.mjs'
+    );
+    try {
+        const surface = generateSurface();
+        if (surface.legacyRemnantsFound.length > 0) {
+            const msg = `legacy remnants found: ${surface.legacyRemnantsFound.join(', ')}`;
+            errors.push(msg);
+            process.stdout.write(`  ✘ ${msg}\n`);
+        } else {
+            process.stdout.write('  ✓ no legacy remnants in public surface\n');
+        }
+    } catch (e) {
+        const msg = `public-surface generation failed: ${e.message}`;
+        errors.push(msg);
+        process.stdout.write(`  ✘ ${msg}\n`);
     }
 
     report(errors, artifacts);

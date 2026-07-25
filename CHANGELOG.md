@@ -1,5 +1,18 @@
 # @adzazueta/color-extractor
 
+## 0.3.0
+
+### Major Changes
+
+- Remove all legacy role-based API surface: `extractColors`, `extractPalette`, `extractColorsFromPixels`, `extractColorsFromImageData`, `extractPaletteFromPixels`, `extractPaletteFromImageData`, `ExtractedColor`, `ExtractedSwatch`, `SwatchId`, `DEFAULT_OPTIONS`, `resolveOptions`, `ResolvedOptions`
+- Rename stable entrypoints from `extractPalette` family to `extractColor` family
+- Remove legacy role modules: `role.ts`, `options.ts`, `output.ts`, `types.ts`, `result.ts`, `defaults.ts`, `legacy/adapter.ts`, `legacy/cluster.ts`
+- Remove internal `swatch` terminology from all source and test code
+- Rewrite `scripts/smoke.mjs` for stable `extractColor` API
+- Rewrite all fixtures (browser, node, core) to use `extractColor`
+- Add tarball lexical scan for legacy name detection
+- Update README to remove legacy API deprecation section, `Swatches` terminology, and legacy entrypoint references
+
 ## 0.2.0-next.1
 
 ### Minor Changes

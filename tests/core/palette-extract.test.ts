@@ -32,7 +32,7 @@ const PERMISSIVE_FILTER: CoreExtractColorOptions['filtering'] = {
 };
 
 describe('extractColorFromPixels — observed RGB', () => {
-    it('returns swatches whose RGB exists in the input pixels (solid color)', async () => {
+    it('returns colors whose RGB exists in the input pixels (solid color)', async () => {
         const result = await extractColorFromPixels(
             {
                 data: pixelData(2, 2, [{ r: 200, g: 150, b: 100 }]),
@@ -53,7 +53,7 @@ describe('extractColorFromPixels — observed RGB', () => {
         expect(result.colors[0]!.lab).toBeDefined();
     });
 
-    it('returns swatches whose RGB exists in the input (more pixels than clusters, intermediate centroid)', async () => {
+    it('returns colors whose RGB exists in the input (more pixels than clusters, intermediate centroid)', async () => {
         const colors = [
             { r: 220, g: 50, b: 50 },
             { r: 210, g: 60, b: 55 },

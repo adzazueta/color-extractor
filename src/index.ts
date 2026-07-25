@@ -77,9 +77,7 @@ export type {
     SamplingOptions,
 } from './core/index.js';
 export {
+    COLOR_EXTRACTOR_ERROR_CODES,
     ColorExtractorError,
     DEFAULT_NEUTRAL_OPTIONS,
-    DEFAULT_OPTIONS,
-    type ResolvedOptions,
-    resolveOptions,
 } from './core/index.js';

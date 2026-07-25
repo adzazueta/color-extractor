@@ -53,7 +53,7 @@ function stopServer(server: http.Server): Promise<void> {
     return new Promise((resolve) => server.close(() => resolve()));
 }
 
-describe('security end-to-end through extractColors (ADZ-76)', () => {
+describe('security end-to-end through extractColor (ADZ-76)', () => {
     let server: http.Server;
     let port: number;
 

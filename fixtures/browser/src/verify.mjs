@@ -7,8 +7,7 @@ globalThis.ImageData = class {
 };
 
 const {
-    extractColors,
-    extractPalette,
+    extractColor,
     VERSION,
     ColorExtractorError,
     COLOR_EXTRACTOR_ERROR_CODES,
@@ -24,22 +23,17 @@ async function main() {
     }
 
     const input = new globalThis.ImageData(data, 20, 20);
-    const result = await extractColors(input, {
-        output: { includeMetadata: true },
-    });
-
-    if (!result.metadata) throw new Error('metadata is undefined');
-
-    const palette = await extractPalette(input, {
+    const result = await extractColor(input, {
         algorithm: 'lab-kmeans',
         result: { maxColors: 1 },
     });
-    if (palette.metadata.algorithm !== 'lab-kmeans') {
+
+    if (result.metadata.algorithm !== 'lab-kmeans') {
         throw new Error(
-            `expected algorithm 'lab-kmeans', got '${palette.metadata.algorithm}'`,
+            `expected algorithm 'lab-kmeans', got '${result.metadata.algorithm}'`,
         );
     }
-    if (palette.metadata.decoder !== 'image-data') {
+    if (result.metadata.decoder !== 'image-data') {
         throw new Error('expected image-data palette decoder');
     }
     if (result.metadata.runtime !== 'browser') {

@@ -1,5 +1,5 @@
 import { ColorExtractorError } from '../core/errors.js';
-import type { RemoteOptions } from '../core/options.js';
+import type { NodeRemoteOptions } from '../core/neutral-options.js';
 import type { ParsedRemoteUrl } from './security.js';
 
 const LOOPBACK_V4 = [
@@ -218,7 +218,7 @@ const defaultResolver: ResolveHostname = async () => {
 
 export function assertPublicHostnameSync(
     parsed: ParsedRemoteUrl,
-    options: Pick<RemoteOptions, 'allowPrivateNetworks'>,
+    options: Pick<NodeRemoteOptions, 'allowPrivateNetworks'>,
 ): void {
     if (options.allowPrivateNetworks) return;
     const host = parsed.hostname;
@@ -240,7 +240,7 @@ export function assertPublicHostnameSync(
 
 export async function assertPublicHostname(
     parsed: ParsedRemoteUrl,
-    options: Pick<RemoteOptions, 'allowPrivateNetworks'>,
+    options: Pick<NodeRemoteOptions, 'allowPrivateNetworks'>,
     resolver: ResolveHostname = defaultResolver,
 ): Promise<void> {
     assertPublicHostnameSync(parsed, options);
