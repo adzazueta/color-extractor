@@ -53,7 +53,7 @@ function stopServer(server: http.Server): Promise<void> {
     return new Promise((resolve) => server.close(() => resolve()));
 }
 
-describe('security end-to-end through extractColor (ADZ-76)', () => {
+describe('security end-to-end through extractColors (ADZ-76)', () => {
     let server: http.Server;
     let port: number;
 
@@ -71,12 +71,12 @@ describe('security end-to-end through extractColor (ADZ-76)', () => {
 
     describe('AC: private network is rejected by default', () => {
         it('throws COLOR_EXTRACTOR_UNSAFE_URL for localhost without allowPrivateNetworks', async () => {
-            const { extractColor } = await import('../../src/node/index.js');
+            const { extractColors } = await import('../../src/node/index.js');
             await expect(
-                extractColor(`http://127.0.0.1:${port}/test.png`),
+                extractColors(`http://127.0.0.1:${port}/test.png`),
             ).rejects.toThrow(ColorExtractorError);
             try {
-                await extractColor(`http://127.0.0.1:${port}/test.png`);
+                await extractColors(`http://127.0.0.1:${port}/test.png`);
             } catch (e) {
                 expect((e as ColorExtractorError).code).toBe(
                     'COLOR_EXTRACTOR_UNSAFE_URL',
@@ -87,9 +87,9 @@ describe('security end-to-end through extractColor (ADZ-76)', () => {
 
     describe('AC: protocol validation', () => {
         it('throws COLOR_EXTRACTOR_INVALID_OPTIONS when allowedProtocols is empty', async () => {
-            const { extractColor } = await import('../../src/node/index.js');
+            const { extractColors } = await import('../../src/node/index.js');
             try {
-                await extractColor(`http://127.0.0.1:${port}/test.png`, {
+                await extractColors(`http://127.0.0.1:${port}/test.png`, {
                     remote: {
                         allowPrivateNetworks: true,
                         allowedProtocols: [],
@@ -106,9 +106,9 @@ describe('security end-to-end through extractColor (ADZ-76)', () => {
 
     describe('AC: redirect validation', () => {
         it('throws COLOR_EXTRACTOR_UNSAFE_URL for redirect to disallowed protocol', async () => {
-            const { extractColor } = await import('../../src/node/index.js');
+            const { extractColors } = await import('../../src/node/index.js');
             try {
-                await extractColor(
+                await extractColors(
                     `http://127.0.0.1:${port}/redirect-bad-protocol`,
                     {
                         remote: { allowPrivateNetworks: true },
@@ -123,9 +123,9 @@ describe('security end-to-end through extractColor (ADZ-76)', () => {
         });
 
         it('throws COLOR_EXTRACTOR_UNSAFE_URL for redirect loop', async () => {
-            const { extractColor } = await import('../../src/node/index.js');
+            const { extractColors } = await import('../../src/node/index.js');
             try {
-                await extractColor(`http://127.0.0.1:${port}/redirect-loop`, {
+                await extractColors(`http://127.0.0.1:${port}/redirect-loop`, {
                     remote: { allowPrivateNetworks: true },
                 });
                 expect.fail('Expected error');
@@ -139,9 +139,9 @@ describe('security end-to-end through extractColor (ADZ-76)', () => {
 
     describe('AC: max pixel limit', () => {
         it('throws COLOR_EXTRACTOR_IMAGE_TOO_LARGE when maxPixels is exceeded', async () => {
-            const { extractColor } = await import('../../src/node/index.js');
+            const { extractColors } = await import('../../src/node/index.js');
             try {
-                await extractColor(`http://127.0.0.1:${port}/big-dimensions`, {
+                await extractColors(`http://127.0.0.1:${port}/big-dimensions`, {
                     remote: { allowPrivateNetworks: true },
                     decode: { maxPixels: 100 },
                 });
@@ -156,9 +156,9 @@ describe('security end-to-end through extractColor (ADZ-76)', () => {
 
     describe('AC: SVG disabled by default', () => {
         it('throws COLOR_EXTRACTOR_UNSUPPORTED_FORMAT for SVG content type', async () => {
-            const { extractColor } = await import('../../src/node/index.js');
+            const { extractColors } = await import('../../src/node/index.js');
             try {
-                await extractColor(`http://127.0.0.1:${port}/svg-content`, {
+                await extractColors(`http://127.0.0.1:${port}/svg-content`, {
                     remote: { allowPrivateNetworks: true },
                 });
                 expect.fail('Expected error');

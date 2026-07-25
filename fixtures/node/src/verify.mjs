@@ -1,8 +1,8 @@
-import { extractColor as extractRootColor } from '@adzazueta/color-extractor';
+import { extractColors as extractRootColor } from '@adzazueta/color-extractor';
 import {
     COLOR_EXTRACTOR_ERROR_CODES,
     ColorExtractorError,
-    extractColor,
+    extractColors,
     VERSION,
 } from '@adzazueta/color-extractor/node';
 import sharp from 'sharp';
@@ -19,7 +19,7 @@ async function main() {
         .png()
         .toBuffer();
 
-    const result = await extractColor(buffer, {
+    const result = await extractColors(buffer, {
         algorithm: 'lab-kmeans',
         result: { maxColors: 1 },
     });

@@ -1,10 +1,10 @@
 import { ColorExtractorError } from '../core/errors.js';
-import { extractColorFromPixels } from '../core/extract.js';
+import { extractColorsFromPixels } from '../core/extract.js';
 import type {
-    BrowserExtractColorOptions,
     CoreExtractColorOptions,
     ExtractColorResult,
 } from '../core/index.js';
+import type { BrowserExtractColorOptions } from '../core/neutral-options.js';
 import { resolveNeutralOptions } from '../core/neutral-options.js';
 import {
     decodeFileOrBlob,
@@ -20,10 +20,7 @@ import type { BrowserExtractColorInput } from './types.js';
 export type {
     AdvancedExtractionOptions,
     BaseExtractColorOptions,
-    BrowserDecodeOptions,
-    BrowserExtractColorOptions,
     ColorId,
-    ExtractColorOptions,
     ExtractColorResult,
     ExtractionAlgorithm,
     ExtractionDecoder,
@@ -35,19 +32,23 @@ export type {
     ObservedColor,
     PaletteRankings,
     PerceptualRankingOptions,
-    ResultOptions,
     RgbColor,
-    SamplingOptions,
 } from '../core/index.js';
 export {
     COLOR_EXTRACTOR_ERROR_CODES,
     ColorExtractorError,
     type ColorExtractorErrorCode,
 } from '../core/index.js';
+export type {
+    BrowserDecodeOptions,
+    BrowserExtractColorOptions,
+    ResultOptions,
+    SamplingOptions,
+} from '../core/neutral-options.js';
 export { VERSION } from '../generated/version.js';
 export type { BrowserExtractColorInput } from './types.js';
 
-export async function extractColor(
+export async function extractColors(
     input: BrowserExtractColorInput,
     options?: BrowserExtractColorOptions,
 ): Promise<ExtractColorResult> {
@@ -146,7 +147,7 @@ export async function extractColor(
         signal,
     };
 
-    const result = await extractColorFromPixels(
+    const result = await extractColorsFromPixels(
         {
             data: decoded.data,
             width: decoded.width,
@@ -169,7 +170,7 @@ export async function extractColor(
     };
 }
 
-export async function extractColorFromImageData(
+export async function extractColorsFromImageData(
     imageData: ImageData,
     options?: BrowserExtractColorOptions,
 ): Promise<ExtractColorResult> {
@@ -218,7 +219,7 @@ export async function extractColorFromImageData(
         signal,
     };
 
-    const result = await extractColorFromPixels(
+    const result = await extractColorsFromPixels(
         {
             data: decoded.data,
             width: decoded.width,
@@ -239,13 +240,3 @@ export async function extractColorFromImageData(
 }
 
 export { DEFAULT_NEUTRAL_OPTIONS } from '../core/neutral-options.js';
-export type { DecodedPixels } from './decode.js';
-export {
-    decodeFileOrBlob,
-    decodeRemoteUrl,
-    sampleCanvasElement,
-    sampleImageBitmap,
-    sampleImageDataInput,
-    sampleImageElement,
-} from './decode.js';
-export { type BrowserInputKind, detectBrowserInputKind } from './detect.js';

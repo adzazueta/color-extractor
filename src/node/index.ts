@@ -1,11 +1,13 @@
 import { ColorExtractorError, checkAborted } from '../core/errors.js';
-import { extractColorFromPixels } from '../core/extract.js';
+import { extractColorsFromPixels } from '../core/extract.js';
 import type {
     CoreExtractColorOptions,
     ExtractColorResult,
+} from '../core/index.js';
+import type {
     NodeExtractColorOptions,
     ResolvedNodeExtractColorOptions,
-} from '../core/index.js';
+} from '../core/neutral-options.js';
 import { resolveNeutralOptions } from '../core/neutral-options.js';
 import { validateContentType } from './content-type.js';
 import { decodeBufferToPixels } from './decode.js';
@@ -20,7 +22,6 @@ export type {
     AdvancedExtractionOptions,
     BaseExtractColorOptions,
     ColorId,
-    ExtractColorOptions,
     ExtractColorResult,
     ExtractionAlgorithm,
     ExtractionDecoder,
@@ -29,25 +30,27 @@ export type {
     HslColor,
     LabColor,
     LabKmeansOptions,
-    NodeDecodeOptions,
-    NodeExtractColorOptions,
-    NodeRemoteOptions,
     ObservedColor,
     PaletteRankings,
     PerceptualRankingOptions,
-    ResultOptions,
     RgbColor,
-    SamplingOptions,
 } from '../core/index.js';
 export {
     COLOR_EXTRACTOR_ERROR_CODES,
     ColorExtractorError,
     type ColorExtractorErrorCode,
 } from '../core/index.js';
+export type {
+    NodeDecodeOptions,
+    NodeExtractColorOptions,
+    NodeRemoteOptions,
+    ResultOptions,
+    SamplingOptions,
+} from '../core/neutral-options.js';
 export { VERSION } from '../generated/version.js';
 export type { NodeExtractColorInput } from './types.js';
 
-export async function extractColor(
+export async function extractColors(
     input: NodeExtractColorInput,
     options?: NodeExtractColorOptions,
 ): Promise<ExtractColorResult> {
@@ -89,11 +92,7 @@ export async function extractColor(
             );
             break;
         case 'remoteUrl':
-            bytes = await fetchRemoteForPalette(
-                input as string,
-                resolved,
-                signal,
-            );
+            bytes = await fetchRemoteImage(input as string, resolved, signal);
             break;
         default:
             throw new ColorExtractorError(
@@ -131,7 +130,7 @@ export async function extractColor(
         signal,
     };
 
-    const result = await extractColorFromPixels(
+    const result = await extractColorsFromPixels(
         {
             data: pixels.data,
             width: pixels.width,
@@ -151,7 +150,7 @@ export async function extractColor(
     };
 }
 
-async function fetchRemoteForPalette(
+async function fetchRemoteImage(
     href: string,
     resolved: ResolvedNodeExtractColorOptions,
     signal?: AbortSignal,

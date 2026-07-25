@@ -1,7 +1,7 @@
 import {
     COLOR_EXTRACTOR_ERROR_CODES,
     ColorExtractorError,
-    extractColorFromPixels,
+    extractColorsFromPixels,
     VERSION,
 } from '@adzazueta/color-extractor/core';
 
@@ -14,7 +14,7 @@ async function main() {
         data[i + 3] = 255;
     }
 
-    const result = await extractColorFromPixels(
+    const result = await extractColorsFromPixels(
         { data, width: 20, height: 20, channels: 4 },
         { algorithm: 'lab-kmeans', result: { maxColors: 1 } },
     );

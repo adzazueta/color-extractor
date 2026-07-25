@@ -52,11 +52,11 @@ async function main() {
         }
     }
 
-    // 2. Node entrypoint resolves with extractColor and VERSION
+    // 2. Node entrypoint resolves with extractColors and VERSION
     const nodeEntry = await import(resolve(ROOT, 'dist/node/index.js'));
     assert(
-        typeof nodeEntry.extractColor === 'function',
-        'node entry exports extractColor',
+        typeof nodeEntry.extractColors === 'function',
+        'node entry exports extractColors',
     );
     assert(typeof nodeEntry.VERSION === 'string', 'node entry exports VERSION');
     assert(
@@ -71,16 +71,12 @@ async function main() {
         typeof nodeEntry.DEFAULT_NEUTRAL_OPTIONS === 'object',
         'node entry exports DEFAULT_NEUTRAL_OPTIONS',
     );
-    assert(
-        typeof nodeEntry.extractColors === 'undefined',
-        'node entry does not export extractColors',
-    );
 
-    // 3. Browser entrypoint resolves with extractColor and VERSION
+    // 3. Browser entrypoint resolves with extractColors and VERSION
     const browserEntry = await import(resolve(ROOT, 'dist/browser/index.js'));
     assert(
-        typeof browserEntry.extractColor === 'function',
-        'browser entry exports extractColor',
+        typeof browserEntry.extractColors === 'function',
+        'browser entry exports extractColors',
     );
     assert(
         typeof browserEntry.VERSION === 'string',
@@ -98,36 +94,24 @@ async function main() {
         typeof browserEntry.DEFAULT_NEUTRAL_OPTIONS === 'object',
         'browser entry exports DEFAULT_NEUTRAL_OPTIONS',
     );
-    assert(
-        typeof browserEntry.extractColors === 'undefined',
-        'browser entry does not export extractColors',
-    );
 
-    // 4. Core entrypoint resolves with extractColorFromPixels and VERSION
+    // 4. Core entrypoint resolves with extractColorsFromPixels and VERSION
     const coreEntry = await import(resolve(ROOT, 'dist/core/index.js'));
     assert(
-        typeof coreEntry.extractColorFromPixels === 'function',
-        'core entry exports extractColorFromPixels',
+        typeof coreEntry.extractColorsFromPixels === 'function',
+        'core entry exports extractColorsFromPixels',
     );
     assert(typeof coreEntry.VERSION === 'string', 'core entry exports VERSION');
     assert(
         Array.isArray(coreEntry.COLOR_EXTRACTOR_ERROR_CODES),
         'core entry exports COLOR_EXTRACTOR_ERROR_CODES',
     );
-    assert(
-        typeof coreEntry.extractColorsFromPixels === 'undefined',
-        'core entry does not export extractColorsFromPixels',
-    );
-    assert(
-        typeof coreEntry.extractColorsFromImageData === 'undefined',
-        'core entry does not export extractColorsFromImageData',
-    );
 
-    // 5. Root entrypoint resolves with VERSION, ColorExtractorError, extractColor
+    // 5. Root entrypoint resolves with VERSION, ColorExtractorError, extractColors
     const rootEntry = await import(resolve(ROOT, 'dist/index.js'));
     assert(
-        typeof rootEntry.extractColor === 'function',
-        'root entry exports extractColor',
+        typeof rootEntry.extractColors === 'function',
+        'root entry exports extractColors',
     );
     assert(typeof rootEntry.VERSION === 'string', 'root entry exports VERSION');
     assert(
@@ -145,10 +129,6 @@ async function main() {
     assert(
         typeof rootEntry.resolveOptions === 'undefined',
         'root entry does not export resolveOptions',
-    );
-    assert(
-        typeof rootEntry.extractColors === 'undefined',
-        'root entry does not export extractColors',
     );
 
     // 6. No non-Node output references sharp (including shared chunks)

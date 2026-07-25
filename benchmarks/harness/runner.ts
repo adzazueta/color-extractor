@@ -2,7 +2,7 @@ import { execSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import os from 'node:os';
 import { performance } from 'node:perf_hooks';
-import { extractColorFromPixels } from '../../src/core/extract.js';
+import { extractColorsFromPixels } from '../../src/core/extract.js';
 import { passesFilter } from '../../src/core/filter.js';
 import type { CoreExtractColorOptions } from '../../src/core/neutral-options.js';
 import type { ExtractColorResult } from '../../src/core/palette-types.js';
@@ -103,7 +103,7 @@ export async function runFixtureBenchmark(
 
     // 1. Warmup runs (excluded from timing stats)
     for (let i = 0; i < warmupRuns; i++) {
-        await extractColorFromPixels(fixture.pixels, options);
+        await extractColorsFromPixels(fixture.pixels, options);
     }
 
     // 2. Measured timing runs (timed strictly around extraction)
@@ -112,7 +112,7 @@ export async function runFixtureBenchmark(
 
     for (let i = 0; i < measuredRuns; i++) {
         const start = performance.now();
-        const res = await extractColorFromPixels(fixture.pixels, options);
+        const res = await extractColorsFromPixels(fixture.pixels, options);
         const end = performance.now();
         durationsMs.push(end - start);
         results.push(res);

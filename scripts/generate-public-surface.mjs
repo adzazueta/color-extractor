@@ -1,4 +1,4 @@
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -7,10 +7,10 @@ const ROOT = resolve(__dirname, '..');
 const DIST = resolve(ROOT, 'dist');
 
 const LEGACY_REMOVED = [
-    'extractColors',
+    'extractColor',
+    'extractColorFromPixels',
+    'extractColorFromImageData',
     'extractPalette',
-    'extractColorsFromPixels',
-    'extractColorsFromImageData',
     'extractPaletteFromPixels',
     'extractPaletteFromImageData',
     'DEFAULT_OPTIONS',
@@ -19,6 +19,141 @@ const LEGACY_REMOVED = [
     'ExtractedSwatch',
     'SwatchId',
 ];
+
+const WHITELIST = {
+    root: [
+        'VERSION',
+        'COLOR_EXTRACTOR_ERROR_CODES',
+        'ColorExtractorError',
+        'ColorExtractorErrorCode',
+        'DEFAULT_NEUTRAL_OPTIONS',
+        'extractColors',
+        'ColorPixelInput',
+        'RootExtractColorInput',
+        'ExtractColorResult',
+        'ExtractionAlgorithm',
+        'ExtractionDecoder',
+        'ExtractionMetadata',
+        'ExtractionRuntime',
+        'ColorId',
+        'ObservedColor',
+        'PaletteRankings',
+        'RgbColor',
+        'HslColor',
+        'LabColor',
+        'AdvancedExtractionOptions',
+        'BaseExtractColorOptions',
+        'BrowserDecodeOptions',
+        'BrowserExtractColorOptions',
+        'CoreExtractColorOptions',
+        'LabKmeansOptions',
+        'NodeDecodeOptions',
+        'NodeExtractColorOptions',
+        'NodeRemoteOptions',
+        'PerceptualRankingOptions',
+        'ResultOptions',
+        'SamplingOptions',
+    ],
+    browser: [
+        'VERSION',
+        'COLOR_EXTRACTOR_ERROR_CODES',
+        'ColorExtractorError',
+        'ColorExtractorErrorCode',
+        'DEFAULT_NEUTRAL_OPTIONS',
+        'extractColors',
+        'extractColorsFromImageData',
+        'BrowserExtractColorInput',
+        'ExtractColorResult',
+        'ExtractionAlgorithm',
+        'ExtractionDecoder',
+        'ExtractionMetadata',
+        'ExtractionRuntime',
+        'ColorId',
+        'ObservedColor',
+        'PaletteRankings',
+        'RgbColor',
+        'HslColor',
+        'LabColor',
+        'AdvancedExtractionOptions',
+        'BaseExtractColorOptions',
+        'BrowserDecodeOptions',
+        'BrowserExtractColorOptions',
+        'LabKmeansOptions',
+        'PerceptualRankingOptions',
+        'ResultOptions',
+        'SamplingOptions',
+    ],
+    node: [
+        'VERSION',
+        'COLOR_EXTRACTOR_ERROR_CODES',
+        'ColorExtractorError',
+        'ColorExtractorErrorCode',
+        'DEFAULT_NEUTRAL_OPTIONS',
+        'extractColors',
+        'NodeExtractColorInput',
+        'ExtractColorResult',
+        'ExtractionAlgorithm',
+        'ExtractionDecoder',
+        'ExtractionMetadata',
+        'ExtractionRuntime',
+        'ColorId',
+        'ObservedColor',
+        'PaletteRankings',
+        'RgbColor',
+        'HslColor',
+        'LabColor',
+        'AdvancedExtractionOptions',
+        'BaseExtractColorOptions',
+        'LabKmeansOptions',
+        'NodeDecodeOptions',
+        'NodeExtractColorOptions',
+        'NodeRemoteOptions',
+        'PerceptualRankingOptions',
+        'ResultOptions',
+        'SamplingOptions',
+    ],
+    core: [
+        'VERSION',
+        'COLOR_EXTRACTOR_ERROR_CODES',
+        'ColorExtractorError',
+        'ColorExtractorErrorCode',
+        'DEFAULT_NEUTRAL_OPTIONS',
+        'extractColorsFromPixels',
+        'ColorPixelInput',
+        'ExtractColorResult',
+        'ExtractionAlgorithm',
+        'ExtractionDecoder',
+        'ExtractionMetadata',
+        'ExtractionRuntime',
+        'ColorId',
+        'ObservedColor',
+        'PaletteRankings',
+        'RgbColor',
+        'HslColor',
+        'LabColor',
+        'AdvancedExtractionOptions',
+        'BaseExtractColorOptions',
+        'CoreExtractColorOptions',
+        'LabKmeansOptions',
+        'PerceptualRankingOptions',
+        'ResultOptions',
+        'SamplingOptions',
+    ],
+};
+
+function getJsMapFiles(dirPath) {
+    const results = [];
+    if (!existsSync(dirPath)) return results;
+    for (const entry of readdirSync(dirPath, { withFileTypes: true })) {
+        const full = resolve(dirPath, entry.name);
+        if (entry.isDirectory()) {
+            results.push(...getJsMapFiles(full));
+        } else if (entry.name.endsWith('.js.map')) {
+            results.push(full);
+        }
+    }
+    return results;
+}
 
 function splitExportList(inner) {
     const parts = [];
@@ -126,10 +261,26 @@ function main() {
     ];
 
     const surface = {};
+    const whitelistViolations = [];
     for (const ep of entrypoints) {
         const fullPath = resolve(DIST, ep.path);
         const exports = extractExports(fullPath);
         const names = exports.map((e) => e.name);
+        const allowed = WHITELIST[ep.name];
+        for (const name of names) {
+            if (allowed && !allowed.includes(name)) {
+                whitelistViolations.push(
+                    `${ep.name} exports unexpected symbol: ${name}`,
+                );
+            }
+        }
+        for (const name of allowed || []) {
+            if (!names.includes(name)) {
+                whitelistViolations.push(
+                    `${ep.name} is missing expected symbol: ${name}`,
+                );
+            }
+        }
         surface[ep.name] = {
             file: ep.path,
             exports,
@@ -142,6 +293,20 @@ function main() {
         Object.values(surface).flatMap((ep) => ep.exports.map((e) => e.name)),
     );
 
+    // Scan .js.map files for legacy names
+    const mapFiles = getJsMapFiles(DIST);
+    const mapLegacyHits = {};
+    for (const mapFile of mapFiles) {
+        const relMap = mapFile.slice(DIST.length + 1);
+        const content = readFileSync(mapFile, 'utf-8');
+        for (const legacy of LEGACY_REMOVED) {
+            if (content.includes(legacy)) {
+                if (!mapLegacyHits[legacy]) mapLegacyHits[legacy] = [];
+                mapLegacyHits[legacy].push(relMap);
+            }
+        }
+    }
+
     const report = {
         packageVersion: readFileSync(resolve(ROOT, 'package.json'), 'utf-8')
             ? JSON.parse(readFileSync(resolve(ROOT, 'package.json'), 'utf-8'))
@@ -152,6 +317,8 @@ function main() {
         legacyRemnantsFound: LEGACY_REMOVED.filter((name) =>
             allExported.has(name),
         ),
+        whitelistViolations,
+        mapLegacyHits,
         entrypoints: surface,
     };
 
@@ -160,10 +327,20 @@ function main() {
     console.error(
         `  ✓ public-surface.json written (${Object.keys(surface).length} entrypoints, ${allExported.size} unique exports)`,
     );
+    if (whitelistViolations.length > 0) {
+        for (const v of whitelistViolations) {
+            console.error(`  ⚠ whitelist violation: ${v}`);
+        }
+    }
+    if (Object.keys(mapLegacyHits).length > 0) {
+        console.error(
+            `  ⚠ ${Object.keys(mapLegacyHits).length} legacy name(s) found in .js.map files`,
+        );
+    }
     return report;
 }
 
-export { extractExports, LEGACY_REMOVED, main };
+export { extractExports, LEGACY_REMOVED, main, WHITELIST };
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {
     main();

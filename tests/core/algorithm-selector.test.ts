@@ -2,9 +2,9 @@ import { describe, expect, it } from 'vitest';
 import {
     ColorExtractorError,
     type ExtractionAlgorithm,
-    extractColorFromPixels,
-    resolveNeutralOptions,
+    extractColorsFromPixels,
 } from '../../src/core/index.js';
+import { resolveNeutralOptions } from '../../src/core/neutral-options.js';
 
 describe('Algorithm Selector and Metadata', () => {
     const mockPixels = {
@@ -23,8 +23,8 @@ describe('Algorithm Selector and Metadata', () => {
     });
 
     it('produces identical output when algorithm is omitted vs explicitly "lab-kmeans"', async () => {
-        const resultOmitted = await extractColorFromPixels(mockPixels);
-        const resultExplicit = await extractColorFromPixels(mockPixels, {
+        const resultOmitted = await extractColorsFromPixels(mockPixels);
+        const resultExplicit = await extractColorsFromPixels(mockPixels, {
             algorithm: 'lab-kmeans',
         });
 
@@ -92,7 +92,7 @@ describe('Algorithm Selector and Metadata', () => {
         const resolved = resolveNeutralOptions({ algorithm: 'mmcq' }, 'core');
         expect(resolved.algorithm).toBe('mmcq');
 
-        const result = await extractColorFromPixels(mockPixels, {
+        const result = await extractColorsFromPixels(mockPixels, {
             algorithm: 'mmcq',
         });
         expect(result.metadata.algorithm).toBe('mmcq');

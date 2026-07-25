@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import {
     type ColorPixelInput,
-    extractColorFromPixels,
+    extractColorsFromPixels,
 } from '../../../src/core/extract.js';
 import { ColorExtractorError } from '../../../src/core/index.js';
 
@@ -56,10 +56,10 @@ function makeBicolorPixels(
     return { data, width, height, channels: 4 };
 }
 
-describe('extractColorFromPixels (e2e pipeline)', () => {
+describe('extractColorsFromPixels (e2e pipeline)', () => {
     describe('pipeline runs end-to-end', () => {
         it('produces colors from a uniform red image', async () => {
-            const result = await extractColorFromPixels(
+            const result = await extractColorsFromPixels(
                 makePixels(20, 20, { r: 200, g: 20, b: 20 }),
             );
             expect(result.colors.length).toBeGreaterThan(0);
@@ -67,7 +67,7 @@ describe('extractColorFromPixels (e2e pipeline)', () => {
         });
 
         it('returns deterministic color IDs', async () => {
-            const result = await extractColorFromPixels(
+            const result = await extractColorsFromPixels(
                 makePixels(20, 20, { r: 200, g: 20, b: 20 }),
             );
             for (const color of result.colors) {
@@ -76,7 +76,7 @@ describe('extractColorFromPixels (e2e pipeline)', () => {
         });
 
         it('colors have consistent hex and rgb', async () => {
-            const result = await extractColorFromPixels(
+            const result = await extractColorsFromPixels(
                 makePixels(20, 20, { r: 200, g: 20, b: 20 }),
             );
             for (const color of result.colors) {
@@ -93,7 +93,7 @@ describe('extractColorFromPixels (e2e pipeline)', () => {
 
     describe('bicolor images produce multiple colors', () => {
         it('extracts distinct colors from a red/blue split image', async () => {
-            const result = await extractColorFromPixels(
+            const result = await extractColorsFromPixels(
                 makeBicolorPixels(
                     40,
                     40,
@@ -105,7 +105,7 @@ describe('extractColorFromPixels (e2e pipeline)', () => {
         });
 
         it('rankings reference valid color IDs', async () => {
-            const result = await extractColorFromPixels(
+            const result = await extractColorsFromPixels(
                 makeBicolorPixels(
                     40,
                     40,
@@ -128,7 +128,7 @@ describe('extractColorFromPixels (e2e pipeline)', () => {
 
     describe('metadata is complete', () => {
         it('metadata has all required fields', async () => {
-            const result = await extractColorFromPixels(
+            const result = await extractColorsFromPixels(
                 makePixels(20, 20, { r: 200, g: 20, b: 20 }),
             );
             expect(result.metadata.algorithm).toBe('lab-kmeans');
@@ -143,7 +143,7 @@ describe('extractColorFromPixels (e2e pipeline)', () => {
         });
 
         it('algorithmDetails contains lab-kmeans specific fields', async () => {
-            const result = await extractColorFromPixels(
+            const result = await extractColorsFromPixels(
                 makePixels(20, 20, { r: 200, g: 20, b: 20 }),
             );
             const details = result.metadata.algorithmDetails;
@@ -158,7 +158,7 @@ describe('extractColorFromPixels (e2e pipeline)', () => {
 
     describe('coverage and population', () => {
         it('coverage is between 0 and 1', async () => {
-            const result = await extractColorFromPixels(
+            const result = await extractColorsFromPixels(
                 makePixels(20, 20, { r: 200, g: 20, b: 20 }),
             );
             expect(result.metadata.coverage).toBeGreaterThan(0);
@@ -166,7 +166,7 @@ describe('extractColorFromPixels (e2e pipeline)', () => {
         });
 
         it('returnedPopulation equals sum of color populations', async () => {
-            const result = await extractColorFromPixels(
+            const result = await extractColorsFromPixels(
                 makeBicolorPixels(
                     40,
                     40,
@@ -182,7 +182,7 @@ describe('extractColorFromPixels (e2e pipeline)', () => {
         });
 
         it('proportions sum to approximately 1', async () => {
-            const result = await extractColorFromPixels(
+            const result = await extractColorsFromPixels(
                 makeBicolorPixels(
                     40,
                     40,
@@ -207,7 +207,7 @@ describe('extractColorFromPixels (e2e pipeline)', () => {
                 a: 0,
             });
             await expect(
-                extractColorFromPixels(transparent),
+                extractColorsFromPixels(transparent),
             ).rejects.toMatchObject({
                 code: 'COLOR_EXTRACTOR_NO_VALID_PIXELS',
             });
@@ -215,7 +215,7 @@ describe('extractColorFromPixels (e2e pipeline)', () => {
 
         it('throws COLOR_EXTRACTOR_NO_VALID_PIXELS when all pixels are below the brightness range', async () => {
             const dark = makePixels(4, 4, { r: 0, g: 0, b: 0, a: 255 });
-            await expect(extractColorFromPixels(dark)).rejects.toMatchObject({
+            await expect(extractColorsFromPixels(dark)).rejects.toMatchObject({
                 code: 'COLOR_EXTRACTOR_NO_VALID_PIXELS',
             });
         });
@@ -227,9 +227,11 @@ describe('extractColorFromPixels (e2e pipeline)', () => {
                 b: 255,
                 a: 255,
             });
-            await expect(extractColorFromPixels(bright)).rejects.toMatchObject({
-                code: 'COLOR_EXTRACTOR_NO_VALID_PIXELS',
-            });
+            await expect(extractColorsFromPixels(bright)).rejects.toMatchObject(
+                {
+                    code: 'COLOR_EXTRACTOR_NO_VALID_PIXELS',
+                },
+            );
         });
 
         it('throws COLOR_EXTRACTOR_NO_VALID_PIXELS when all pixels are pure gray (below minSaturation)', async () => {
@@ -239,7 +241,7 @@ describe('extractColorFromPixels (e2e pipeline)', () => {
                 b: 128,
                 a: 255,
             });
-            await expect(extractColorFromPixels(gray)).rejects.toMatchObject({
+            await expect(extractColorsFromPixels(gray)).rejects.toMatchObject({
                 code: 'COLOR_EXTRACTOR_NO_VALID_PIXELS',
             });
         });
@@ -247,7 +249,7 @@ describe('extractColorFromPixels (e2e pipeline)', () => {
         it('error message hints at filtering options', async () => {
             const transparent = makePixels(4, 4, { r: 0, g: 0, b: 0, a: 0 });
             try {
-                await extractColorFromPixels(transparent);
+                await extractColorsFromPixels(transparent);
                 expect.fail('should have thrown');
             } catch (e) {
                 expect((e as Error).message).toMatch(/filter/i);
@@ -256,19 +258,19 @@ describe('extractColorFromPixels (e2e pipeline)', () => {
 
         it('throws for invalid input', async () => {
             await expect(
-                extractColorFromPixels({} as unknown as ColorPixelInput),
+                extractColorsFromPixels({} as unknown as ColorPixelInput),
             ).rejects.toThrow(ColorExtractorError);
         });
 
         it('throws for null', async () => {
             await expect(
-                extractColorFromPixels(null as unknown as ColorPixelInput),
+                extractColorsFromPixels(null as unknown as ColorPixelInput),
             ).rejects.toThrow(ColorExtractorError);
         });
     });
 
     describe('core entrypoint shape (build output)', () => {
-        it('dist/core/index.js exports extractColorFromPixels', async () => {
+        it('dist/core/index.js exports extractColorsFromPixels', async () => {
             const fs = await import('node:fs/promises');
             const path = await import('node:path');
             const rootDir = path.resolve(import.meta.dirname, '../../..');
@@ -276,7 +278,7 @@ describe('extractColorFromPixels (e2e pipeline)', () => {
                 path.resolve(rootDir, 'dist/core/index.js'),
                 'utf-8',
             );
-            expect(js).toMatch(/extractColorFromPixels/);
+            expect(js).toMatch(/extractColorsFromPixels/);
         });
 
         it('dist/core/index.d.ts does not reference Buffer or File globals', async () => {

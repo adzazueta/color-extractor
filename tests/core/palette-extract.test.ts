@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { ColorExtractorError } from '../../src/core/errors.js';
-import { extractColorFromPixels } from '../../src/core/extract.js';
+import { extractColorsFromPixels } from '../../src/core/extract.js';
 import type { CoreExtractColorOptions } from '../../src/core/neutral-options.js';
 
 function rgbSet(pixels: { r: number; g: number; b: number }[]): string[] {
@@ -31,9 +31,9 @@ const PERMISSIVE_FILTER: CoreExtractColorOptions['filtering'] = {
     minSaturation: 0,
 };
 
-describe('extractColorFromPixels — observed RGB', () => {
+describe('extractColorsFromPixels — observed RGB', () => {
     it('returns colors whose RGB exists in the input pixels (solid color)', async () => {
-        const result = await extractColorFromPixels(
+        const result = await extractColorsFromPixels(
             {
                 data: pixelData(2, 2, [{ r: 200, g: 150, b: 100 }]),
                 width: 2,
@@ -64,7 +64,7 @@ describe('extractColorFromPixels — observed RGB', () => {
             { r: 50, g: 150, b: 200 },
             { r: 55, g: 140, b: 210 },
         ];
-        const result = await extractColorFromPixels(
+        const result = await extractColorsFromPixels(
             {
                 data: pixelData(8, 1, colors),
                 width: 8,
@@ -87,7 +87,7 @@ describe('extractColorFromPixels — observed RGB', () => {
     });
 
     it('Lab and chroma are recalculated from canonical RGB', async () => {
-        const result = await extractColorFromPixels(
+        const result = await extractColorsFromPixels(
             {
                 data: pixelData(2, 2, [{ r: 200, g: 150, b: 100 }]),
                 width: 2,
@@ -116,7 +116,7 @@ describe('extractColorFromPixels — observed RGB', () => {
         const width = 400;
         const height = 400;
         const data = pixelData(width, height, [{ r: 200, g: 150, b: 100 }]);
-        const result = await extractColorFromPixels(
+        const result = await extractColorsFromPixels(
             { data, width, height, channels: 4 },
             {
                 sampling: { maxDimension: 10 },
@@ -133,7 +133,7 @@ describe('extractColorFromPixels — observed RGB', () => {
         const width = 151;
         const height = 151;
         const data = pixelData(width, height, [{ r: 200, g: 150, b: 100 }]);
-        const result = await extractColorFromPixels(
+        const result = await extractColorsFromPixels(
             { data, width, height, channels: 4 },
             {
                 sampling: { maxDimension: 150 },
@@ -150,13 +150,13 @@ describe('extractColorFromPixels — observed RGB', () => {
     });
 });
 
-describe('extractColorFromPixels — abort with arbitrary reason', () => {
+describe('extractColorsFromPixels — abort with arbitrary reason', () => {
     it('rejects with COLOR_EXTRACTOR_ABORTED when abort reason is a string', async () => {
         const ac = new AbortController();
         ac.abort('user cancelled');
 
         await expect(
-            extractColorFromPixels(
+            extractColorsFromPixels(
                 {
                     data: pixelData(2, 2, [{ r: 200, g: 150, b: 100 }]),
                     width: 2,
@@ -183,7 +183,7 @@ describe('extractColorFromPixels — abort with arbitrary reason', () => {
         );
 
         await expect(
-            extractColorFromPixels(
+            extractColorsFromPixels(
                 {
                     data: pixelData(2, 2, [{ r: 200, g: 150, b: 100 }]),
                     width: 2,
@@ -201,7 +201,7 @@ describe('extractColorFromPixels — abort with arbitrary reason', () => {
     });
 });
 
-describe('extractColorFromPixels — Object.prototype pollution regression', () => {
+describe('extractColorsFromPixels — Object.prototype pollution regression', () => {
     afterEach(() => {
         delete (Object.prototype as Record<string, unknown>).remote;
         delete (Object.prototype as Record<string, unknown>)
@@ -223,7 +223,7 @@ describe('extractColorFromPixels — Object.prototype pollution regression', () 
             allowPrivateNetworks: true,
         };
 
-        const result = await extractColorFromPixels(
+        const result = await extractColorsFromPixels(
             {
                 data: pixelData(2, 2, [{ r: 200, g: 150, b: 100 }]),
                 width: 2,

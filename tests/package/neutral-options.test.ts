@@ -191,11 +191,20 @@ describe('neutral option types — root and core entrypoints', () => {
         'BrowserDecodeOptions',
         'BrowserExtractColorOptions',
         'CoreExtractColorOptions',
-        'ExtractColorOptions',
         'LabKmeansOptions',
         'NodeDecodeOptions',
         'NodeExtractColorOptions',
         'NodeRemoteOptions',
+        'ResultOptions',
+        'PerceptualRankingOptions',
+        'SamplingOptions',
+    ];
+
+    const CORE_OPTION_TYPES = [
+        'AdvancedExtractionOptions',
+        'BaseExtractColorOptions',
+        'CoreExtractColorOptions',
+        'LabKmeansOptions',
         'ResultOptions',
         'PerceptualRankingOptions',
         'SamplingOptions',
@@ -212,8 +221,8 @@ describe('neutral option types — root and core entrypoints', () => {
         assertDtsExports('dist/index.d.ts', ROOT_OPTION_TYPES);
     });
 
-    it('exports from core declarations', () => {
-        assertDtsExports('dist/core/index.d.ts', ROOT_OPTION_TYPES);
+    it('exports from core declarations without runtime-specific types', () => {
+        assertDtsExports('dist/core/index.d.ts', CORE_OPTION_TYPES);
     });
 });
 
@@ -223,7 +232,6 @@ describe('neutral option types — browser entrypoint', () => {
         'BaseExtractColorOptions',
         'BrowserDecodeOptions',
         'BrowserExtractColorOptions',
-        'ExtractColorOptions',
         'LabKmeansOptions',
         'ResultOptions',
         'PerceptualRankingOptions',
@@ -242,6 +250,7 @@ describe('neutral option types — browser entrypoint', () => {
         expect(dts).not.toMatch(/\bNodeExtractColorOptions\b/);
         expect(dts).not.toMatch(/\bNodeRemoteOptions\b/);
         expect(dts).not.toMatch(/\bCoreExtractColorOptions\b/);
+        expect(dts).not.toMatch(/\bExtractColorOptions\b/);
     });
 });
 
@@ -249,7 +258,6 @@ describe('neutral option types — node entrypoint', () => {
     const NODE_OPTION_TYPES = [
         'AdvancedExtractionOptions',
         'BaseExtractColorOptions',
-        'ExtractColorOptions',
         'LabKmeansOptions',
         'NodeDecodeOptions',
         'NodeExtractColorOptions',
@@ -270,6 +278,7 @@ describe('neutral option types — node entrypoint', () => {
         expect(dts).not.toMatch(/\bBrowserDecodeOptions\b/);
         expect(dts).not.toMatch(/\bBrowserExtractColorOptions\b/);
         expect(dts).not.toMatch(/\bCoreExtractColorOptions\b/);
+        expect(dts).not.toMatch(/\bExtractColorOptions\b/);
     });
 });
 

@@ -22,7 +22,7 @@ const rootDir = resolve(here, '../..');
 describe('neutral types — root entrypoint', () => {
     it('does not accept Node-only options for browser inputs', () => {
         const assertRootOverload = (
-            extract: typeof import('../../src/index.js').extractColor,
+            extract: typeof import('../../src/index.js').extractColors,
             input: Blob,
         ) => {
             void extract(input, { sampling: { maxDimension: 100 } });
@@ -38,9 +38,9 @@ describe('neutral types — root entrypoint', () => {
         try {
             (globalThis as Record<string, unknown>).ImageData =
                 class DummyImageData {};
-            const { extractColor } = await import('../../src/index.js');
+            const { extractColors } = await import('../../src/index.js');
             const buf = new Uint8Array([255, 0, 0, 255]);
-            await expect(extractColor(buf)).rejects.not.toMatchObject({
+            await expect(extractColors(buf)).rejects.not.toMatchObject({
                 message: expect.stringContaining('Browser input kind'),
             });
         } finally {
@@ -228,29 +228,28 @@ describe('deprecated legacy aliases', () => {
 describe('positive — stable type imports compile', () => {
     it('all neutral types are importable from root', async () => {
         const mod = await import('../../src/index.js');
-        expect(typeof mod.extractColor).toBe('function');
+        expect(typeof mod.extractColors).toBe('function');
         expect(typeof mod.ColorExtractorError).toBe('function');
         expect(mod.DEFAULT_NEUTRAL_OPTIONS).toBeDefined();
     });
 
     it('all neutral types are importable from browser', async () => {
         const mod = await import('../../src/browser/index.js');
-        expect(typeof mod.extractColor).toBe('function');
+        expect(typeof mod.extractColors).toBe('function');
         expect(typeof mod.ColorExtractorError).toBe('function');
         expect(mod.DEFAULT_NEUTRAL_OPTIONS).toBeDefined();
     });
 
     it('all neutral types are importable from node', async () => {
         const mod = await import('../../src/node/index.js');
-        expect(typeof mod.extractColor).toBe('function');
+        expect(typeof mod.extractColors).toBe('function');
         expect(typeof mod.ColorExtractorError).toBe('function');
         expect(mod.DEFAULT_NEUTRAL_OPTIONS).toBeDefined();
     });
 
     it('all neutral types are importable from core', async () => {
         const mod = await import('../../src/core/index.js');
-        expect(typeof mod.extractColorFromPixels).toBe('function');
-        expect(typeof mod.extractColorFromPixels).toBe('function');
+        expect(typeof mod.extractColorsFromPixels).toBe('function');
     });
 
     it('stable type names exist in root declarations', () => {
@@ -267,7 +266,6 @@ describe('positive — stable type imports compile', () => {
             'ExtractionRuntime',
             'ExtractionDecoder',
             'BaseExtractColorOptions',
-            'ExtractColorOptions',
             'ColorExtractorError',
             'COLOR_EXTRACTOR_ERROR_CODES',
             'DEFAULT_NEUTRAL_OPTIONS',
@@ -282,10 +280,10 @@ describe('positive — stable type imports compile', () => {
 
 describe('negative — removed legacy names are absent', () => {
     const removedNames = [
-        'extractColors',
+        'extractColor',
+        'extractColorFromPixels',
+        'extractColorFromImageData',
         'extractPalette',
-        'extractColorsFromPixels',
-        'extractColorsFromImageData',
         'extractPaletteFromPixels',
         'extractPaletteFromImageData',
         'DEFAULT_OPTIONS',
@@ -293,6 +291,7 @@ describe('negative — removed legacy names are absent', () => {
         'ExtractedColor',
         'ExtractedSwatch',
         'SwatchId',
+        'FilterCriteria',
     ];
 
     function assertDtsAbsent(relPath: string, label: string) {

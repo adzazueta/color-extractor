@@ -1,9 +1,9 @@
 import type { BrowserExtractColorInput } from './browser/types.js';
+import type { ExtractColorResult } from './core/index.js';
 import type {
     BrowserExtractColorOptions,
-    ExtractColorResult,
     NodeExtractColorOptions,
-} from './core/index.js';
+} from './core/neutral-options.js';
 
 export { VERSION } from './generated/version.js';
 
@@ -21,26 +21,28 @@ function isNodeRuntime(): boolean {
     );
 }
 
-export function extractColor(
+export function extractColors(
     input: BrowserExtractColorInput,
     options?: BrowserExtractColorOptions,
 ): Promise<ExtractColorResult>;
-export function extractColor(
+export function extractColors(
     input: Uint8Array | ArrayBuffer | string,
     options?: NodeExtractColorOptions,
 ): Promise<ExtractColorResult>;
-export async function extractColor(
+export async function extractColors(
     input: RootExtractColorInput,
     options?: BrowserExtractColorOptions | NodeExtractColorOptions,
 ): Promise<ExtractColorResult> {
     if (isNodeRuntime()) {
-        const { extractColor: extractNode } = await import('./node/index.js');
+        const { extractColors: extractNode } = await import('./node/index.js');
         return extractNode(
             input as string | Uint8Array | ArrayBuffer,
             options as NodeExtractColorOptions,
         );
     }
-    const { extractColor: extractBrowser } = await import('./browser/index.js');
+    const { extractColors: extractBrowser } = await import(
+        './browser/index.js'
+    );
     return extractBrowser(
         input as BrowserExtractColorInput,
         options as BrowserExtractColorOptions,
@@ -48,36 +50,36 @@ export async function extractColor(
 }
 
 export type {
-    AdvancedExtractionOptions,
-    BaseExtractColorOptions,
-    BrowserDecodeOptions,
-    BrowserExtractColorOptions,
     ColorExtractorErrorCode,
     ColorId,
     ColorPixelInput,
     CoreExtractColorOptions,
-    ExtractColorOptions,
     ExtractColorResult,
     ExtractionAlgorithm,
     ExtractionDecoder,
     ExtractionMetadata,
     ExtractionRuntime,
-    FilterCriteria,
     HslColor,
     LabColor,
     LabKmeansOptions,
-    NodeDecodeOptions,
-    NodeExtractColorOptions,
-    NodeRemoteOptions,
     ObservedColor,
     PaletteRankings,
     PerceptualRankingOptions,
-    ResultOptions,
     RgbColor,
-    SamplingOptions,
 } from './core/index.js';
 export {
     COLOR_EXTRACTOR_ERROR_CODES,
     ColorExtractorError,
     DEFAULT_NEUTRAL_OPTIONS,
 } from './core/index.js';
+export type {
+    AdvancedExtractionOptions,
+    BaseExtractColorOptions,
+    BrowserDecodeOptions,
+    BrowserExtractColorOptions,
+    NodeDecodeOptions,
+    NodeExtractColorOptions,
+    NodeRemoteOptions,
+    ResultOptions,
+    SamplingOptions,
+} from './core/neutral-options.js';

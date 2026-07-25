@@ -9,9 +9,9 @@ The `0.3` release uses a stable color-oriented API that returns observed-color e
 This package is ESM-only. Use `import` with the documented package entrypoints.
 
 ```ts
-import { extractColor } from '@adzazueta/color-extractor'
+import { extractColors } from '@adzazueta/color-extractor'
 
-const result = await extractColor(image)
+const result = await extractColors(image)
 const topId = result.rankings.perceptual[0]
 const top = result.colors.find(color => color.id === topId)
 console.log(top?.id, top?.hex, top?.score)
@@ -38,9 +38,9 @@ The Node entrypoint requires Node.js `^20.19.0 || >=22.12.0`. Browser and core c
 ### Universal (root)
 
 ```ts
-import { extractColor } from '@adzazueta/color-extractor'
+import { extractColors } from '@adzazueta/color-extractor'
 
-const result = await extractColor(image)
+const result = await extractColors(image)
 
 // Resolve rankings to colors
 const colorsById = new Map(
@@ -55,12 +55,12 @@ console.log(perceptual[0]?.hex)
 ### Browser — file input
 
 ```ts
-import { extractColor } from '@adzazueta/color-extractor'
+import { extractColors } from '@adzazueta/color-extractor'
 
 const fileInput = document.querySelector<HTMLInputElement>('input[type="file"]')
 const file = fileInput?.files?.[0]
 if (file) {
-  const result = await extractColor(file)
+  const result = await extractColors(file)
   console.log(result.colors[0]?.hex)
 }
 ```
@@ -68,13 +68,13 @@ if (file) {
 ### Browser — ImageData
 
 ```ts
-import { extractColorFromImageData } from '@adzazueta/color-extractor/browser'
+import { extractColorsFromImageData } from '@adzazueta/color-extractor/browser'
 
 const canvas = document.querySelector('canvas')
 const ctx = canvas?.getContext('2d')
 if (ctx) {
   const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
-  const result = await extractColorFromImageData(imageData)
+  const result = await extractColorsFromImageData(imageData)
   console.log(result.colors)
 }
 ```
@@ -82,9 +82,9 @@ if (ctx) {
 ### Node — local path
 
 ```ts
-import { extractColor } from '@adzazueta/color-extractor/node'
+import { extractColors } from '@adzazueta/color-extractor/node'
 
-const result = await extractColor('./photo.jpg')
+const result = await extractColors('./photo.jpg')
 console.log(result.rankings.perceptual)
 ```
 
@@ -92,19 +92,19 @@ console.log(result.rankings.perceptual)
 
 ```ts
 import { readFile } from 'node:fs/promises'
-import { extractColor } from '@adzazueta/color-extractor/node'
+import { extractColors } from '@adzazueta/color-extractor/node'
 
 const buffer = await readFile('./photo.jpg')
-const result = await extractColor(buffer)
+const result = await extractColors(buffer)
 console.log(result.metadata.validPixels)
 ```
 
 ### Core — pixel buffer
 
 ```ts
-import { extractColorFromPixels } from '@adzazueta/color-extractor/core'
+import { extractColorsFromPixels } from '@adzazueta/color-extractor/core'
 
-const result = await extractColorFromPixels({
+const result = await extractColorsFromPixels({
   data: new Uint8Array([/* RGBA bytes: width * height * 4 */]),
   width: 200,
   height: 150,
@@ -117,31 +117,26 @@ console.log(result.colors.length)
 
 | Import path | Primary functions | Runtime |
 | --- | --- | --- |
-| `@adzazueta/color-extractor` | `extractColor` | Browser or Node through package export conditions |
-| `@adzazueta/color-extractor/browser` | `extractColor`, `extractColorFromImageData` | Browser |
-| `@adzazueta/color-extractor/node` | `extractColor` | Node.js |
-| `@adzazueta/color-extractor/core` | `extractColorFromPixels`, `runNeutralColorPipeline` | Any; no decoder dependencies |
+| `@adzazueta/color-extractor` | `extractColors` | Browser or Node through package export conditions |
+| `@adzazueta/color-extractor/browser` | `extractColors`, `extractColorsFromImageData` | Browser |
+| `@adzazueta/color-extractor/node` | `extractColors` | Node.js |
+| `@adzazueta/color-extractor/core` | `extractColorsFromPixels` | Any; no decoder dependencies |
 
 The root import uses package export conditions: Node resolves the Node entrypoint, browser-oriented resolution uses the Browser entrypoint, and the default condition is Browser. Use an explicit subpath when you need deterministic runtime selection.
 
-All entrypoints expose the relevant public types and `VERSION`. The root, Browser, and Node entrypoints expose `ColorExtractorError` and `DEFAULT_NEUTRAL_OPTIONS`; the Browser and Node entrypoints also expose `COLOR_EXTRACTOR_ERROR_CODES`. The Core entrypoint additionally exposes `resolveNeutralOptions`, `COLOR_EXTRACTOR_ERROR_CODES`, color conversion (`rgbToHex`, `hslToRgb`, `srgbToLinear`, `xyzToLab`, …), filtering (`filterPixels`, `validateFilterCriteria`, `passesFilter`), sampling (`sampleSquareGrid`), and pixel normalization (`normalizePixels`, `runNeutralColorPipeline`, …). The Browser entrypoint additionally exposes `decodeFileOrBlob`, `decodeRemoteUrl`, the `sample*` helpers, and `detectBrowserInputKind`. Generated TypeScript declarations are the complete export reference.
+All entrypoints expose the relevant public types and `VERSION`. The root, Browser, and Node entrypoints expose `ColorExtractorError` and `DEFAULT_NEUTRAL_OPTIONS`; the Browser and Node entrypoints also expose `COLOR_EXTRACTOR_ERROR_CODES`. The Core entrypoint additionally exposes `COLOR_EXTRACTOR_ERROR_CODES`. Generated TypeScript declarations are the complete export reference.
 
 Use explicit subpath imports when you need runtime-specific types, browser decoding helpers, or the Core pixel API.
 
 ### Primary signatures
 
 ```ts
-extractColor(input, options?): Promise<ExtractColorResult>
-extractColorFromImageData(imageData, options?): Promise<ExtractColorResult> // browser
-extractColorFromPixels(input, options?): Promise<ExtractColorResult> // core
+extractColors(input, options?): Promise<ExtractColorResult>
+extractColorsFromImageData(imageData, options?): Promise<ExtractColorResult> // browser
+extractColorsFromPixels(input, options?): Promise<ExtractColorResult> // core
 ```
 
-`extractColor` is overloaded by the root entrypoint for Browser and Node inputs. `extractColorFromImageData` is available from `/browser`, and `extractColorFromPixels` is available from `/core`.
-
-The `/core` entrypoint also exports these low-level groups:
-
-- Color conversion: `rgbToHex`, `rgbToHsl`, `hslToRgb`, `xyzToLab`, `linearRgbToXyz`, `srgbByteToLinear`, `srgbToLinear`, `labDistance`, `labSquaredDistance`, `chromaFromLab`, `circularHueDistance`, `hueFromLab`, `normalizeHue`.
-- Pixel and filtering: `normalizePixels`, `filterPixels`, `passesFilter`, `validateFilterCriteria`, `sampleSquareGrid`, `convertRgbSamplesToLab`.
+`extractColors` is overloaded by the root entrypoint for Browser and Node inputs. `extractColorsFromImageData` is available from `/browser`, and `extractColorsFromPixels` is available from `/core`.
 
 ## Supported inputs by runtime
 
@@ -155,7 +150,7 @@ Browser URL requests must be allowed by CORS. Browser strings other than `http:/
 
 ## Neutral result model
 
-`extractColor` returns an `ExtractColorResult`:
+`extractColors` returns an `ExtractColorResult`:
 
 ```ts
 type ExtractColorResult = {
@@ -257,7 +252,7 @@ type ExtractionMetadata = {
 
 ### Neutral Color Defaults
 
-The default options for neutral color extraction (`extractColor`) are exported as `DEFAULT_NEUTRAL_OPTIONS`:
+The default options for neutral color extraction (`extractColors`) are exported as `DEFAULT_NEUTRAL_OPTIONS`:
 
 ```ts
 import { DEFAULT_NEUTRAL_OPTIONS } from '@adzazueta/color-extractor'
@@ -338,9 +333,9 @@ Unknown, legacy, invalid, `null`, or runtime-incompatible options fail with `COL
 ### Full example
 
 ```ts
-import { extractColor } from '@adzazueta/color-extractor'
+import { extractColors } from '@adzazueta/color-extractor'
 
-const result = await extractColor(image, {
+const result = await extractColors(image, {
   sampling: { maxDimension: 300 },
   filtering: {
     alphaThreshold: 16,
@@ -360,7 +355,7 @@ const result = await extractColor(image, {
 For MMCQ, select the algorithm and configure its boxes instead:
 
 ```ts
-const result = await extractColor(image, {
+const result = await extractColors(image, {
   algorithm: 'mmcq',
   result: { maxColors: 6 },
   advanced: {
@@ -380,7 +375,7 @@ const controller = new AbortController()
 setTimeout(() => controller.abort(), 5000)
 
 try {
-  const result = await extractColor(image, {
+  const result = await extractColors(image, {
     signal: controller.signal,
   })
 } catch (error) {
@@ -399,10 +394,10 @@ An already-aborted signal rejects immediately without decode, fetch, or sharp wo
 Library-generated validation, decoding, fetching, and extraction failures use `ColorExtractorError` with a stable `code` property. Platform exceptions that are not recognized by an adapter may propagate unchanged.
 
 ```ts
-import { ColorExtractorError, extractColor } from '@adzazueta/color-extractor'
+import { ColorExtractorError, extractColors } from '@adzazueta/color-extractor'
 
 try {
-  await extractColor(image)
+  await extractColors(image)
 } catch (error) {
   if (error instanceof ColorExtractorError) {
     console.error(error.code)   // stable machine-readable code
@@ -478,10 +473,10 @@ Node support follows the installed `sharp` and libvips build. Common formats inc
 
 Semantic role selection (primary, secondary, accent), harmony generation, lightness adjustment, and fallback policies are out of scope for this package.
 
-`extractColor` returns only observed-color evidence. Consumers that need role-labeled colors should compose the extractor with a separate engine layer:
+`extractColors` returns only observed-color evidence. Consumers that need role-labeled colors should compose the extractor with a separate engine layer:
 
 ```ts
-const extracted = await extractColor(image)
+const extracted = await extractColors(image)
 const theme = colorEngineAdapter(extracted)  // illustrative — adapter name defined by the engine package
 ```
 

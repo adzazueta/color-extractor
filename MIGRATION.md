@@ -2,7 +2,7 @@
 
 ## Summary
 
-`0.2.0` introduced a neutral color API (`extractColor`) that returns observed-color evidence without semantic role assignment. In `0.3.0`, the legacy role-based API (`extractColors`) and its aliases are removed.
+`0.1.x` provided a role-based color extraction API (`extractColors`) that assigned semantic roles (primary, secondary, accent) to extracted colors. `0.2.0-next.x` introduced a transitional neutral API (`extractPalette`) that returns observed-color evidence without semantic role assignment. In `0.3.0`, the transitional `extractPalette` API and all role-based aliases are removed, and the neutral API is stabilized under the `extractColors` name.
 
 ## Quick migration
 
@@ -20,9 +20,9 @@ console.log(result.primary.hex, result.secondary?.hex)
 **After (0.3.x):**
 
 ```ts
-import { extractColor } from '@adzazueta/color-extractor'
+import { extractColors } from '@adzazueta/color-extractor'
 
-const result = await extractColor(image)
+const result = await extractColors(image)
 const topId = result.rankings.perceptual[0]
 const top = result.colors.find(s => s.id === topId)
 console.log(top?.hex)
@@ -47,9 +47,9 @@ const result = await extractColorsFromPixels({
 **After (0.3.x):**
 
 ```ts
-import { extractColorFromPixels } from '@adzazueta/color-extractor/core'
+import { extractColorsFromPixels } from '@adzazueta/color-extractor/core'
 
-const result = await extractColorFromPixels({
+const result = await extractColorsFromPixels({
   data: new Uint8Array([/* RGB or RGBA bytes */]),
   width: 800,
   height: 600,
@@ -64,9 +64,9 @@ The new signature requires an explicit `channels` field (3 or 4) and does not al
 If you previously relied on `extractColors` for primary/secondary/accent selection, compose the extractor with a separate engine:
 
 ```ts
-import { extractColor } from '@adzazueta/color-extractor'
+import { extractColors } from '@adzazueta/color-extractor'
 
-const extracted = await extractColor(image)
+const extracted = await extractColors(image)
 const theme = colorEngineAdapter(extracted)  // adapter name defined by @adzazueta/color-engine
 ```
 
@@ -76,9 +76,9 @@ The extractor no longer assigns semantic roles. The engine adapter is not part o
 
 | 0.1.x (removed) | 0.3.x replacement | Notes |
 | --- | --- | --- |
-| `extractColors(input, options?)` | `extractColor(input, options?)` | Returns `ExtractColorResult` instead of `ExtractColorsResult`. |
-| `extractColorsFromPixels(input, options?)` | `extractColorFromPixels(input, options?)` | Requires `channels: 3 \| 4`; no `number[]` data. |
-| `extractColorsFromImageData(imageData, options?)` | `extractColorFromImageData(imageData, options?)` — browser only, or `extractColorFromPixels(..., { channels: 4 })` | |
+| `extractColors(input, options?)` | `extractColors(input, options?)` | Returns `ExtractColorResult` instead of `ExtractColorsResult`. |
+| `extractColorsFromPixels(input, options?)` | `extractColorsFromPixels(input, options?)` | Requires `channels: 3 \| 4`; no `number[]` data. |
+| `extractColorsFromImageData(imageData, options?)` | `extractColorsFromImageData(imageData, options?)` — browser only, or `extractColorsFromPixels(..., { channels: 4 })` | |
 
 ## Option mapping
 
@@ -144,7 +144,7 @@ These were part of the `0.1.x` role-based API. They do not exist in `0.3.x` and 
 
 Most fields are opt-in via `output` flags. Role and source are always present.
 
-### 0.3.x (`extractColor`)
+### 0.3.x (`extractColors`)
 
 ```ts
 {
@@ -160,6 +160,6 @@ All fields are always present with no opt-in flags. No semantic roles, no source
 
 | Version | Status |
 | --- | --- |
-| 0.2.0 | Neutral API introduced alongside the legacy API. |
-| 0.2.x | Neutral API stabilized; legacy API was deprecated. |
-| 0.3.0 | Legacy API removed. `RGB`, `HSL`, `Lab` type aliases removed. |
+| 0.1.x | Role-based `extractColors` (primary, secondary, accent). |
+| 0.2.0-next.x | Transitional `extractPalette` neutral API introduced; legacy API deprecated. |
+| 0.3.0 | Transitional API removed. Neutral API stabilized as `extractColors`. `RGB`, `HSL`, `Lab` type aliases removed. |

@@ -194,7 +194,7 @@ export function runNeutralColorPipeline(
     });
 }
 
-export async function extractColorFromPixels(
+export async function extractColorsFromPixels(
     input: ColorPixelInput,
     options?: CoreExtractColorOptions,
 ): Promise<ExtractColorResult> {

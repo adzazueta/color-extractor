@@ -144,10 +144,10 @@ describe('built entrypoints can be imported from Node', () => {
 
 describe('legacy API names are absent from all entrypoints', () => {
     const legacyNames = [
-        'extractColors',
+        'extractColor',
+        'extractColorFromPixels',
+        'extractColorFromImageData',
         'extractPalette',
-        'extractColorsFromPixels',
-        'extractColorsFromImageData',
         'extractPaletteFromPixels',
         'extractPaletteFromImageData',
         'DEFAULT_OPTIONS',
@@ -172,10 +172,10 @@ describe('legacy API names are absent from all entrypoints', () => {
 
 describe('tarball lexical scan — no legacy terminology', () => {
     const forbiddenTerms = [
-        'extractColors',
+        'extractColor',
+        'extractColorFromPixels',
+        'extractColorFromImageData',
         'extractPalette',
-        'extractColorsFromPixels',
-        'extractColorsFromImageData',
         'extractPaletteFromPixels',
         'extractPaletteFromImageData',
         'DEFAULT_OPTIONS',
@@ -185,6 +185,7 @@ describe('tarball lexical scan — no legacy terminology', () => {
         'SwatchId',
         'swatchIdFromHex',
         'role',
+        'FilterCriteria',
     ];
 
     function collectDtsAndJsFiles(dir: string): string[] {

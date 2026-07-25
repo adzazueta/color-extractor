@@ -1,9 +1,9 @@
 // === POSITIVE: stable API imports must compile ===
 
-import { extractColor } from '@adzazueta/color-extractor'
-import { extractColor as nodeExtract } from '@adzazueta/color-extractor/node'
-import { extractColorFromImageData } from '@adzazueta/color-extractor/browser'
-import { extractColorFromPixels } from '@adzazueta/color-extractor/core'
+import { extractColors } from '@adzazueta/color-extractor'
+import { extractColors as nodeExtract } from '@adzazueta/color-extractor/node'
+import { extractColorsFromImageData } from '@adzazueta/color-extractor/browser'
+import { extractColorsFromPixels } from '@adzazueta/color-extractor/core'
 import {
     ColorExtractorError,
     VERSION,
@@ -23,7 +23,6 @@ import type {
     ExtractionRuntime,
     ExtractionDecoder,
     BaseExtractColorOptions,
-    ExtractColorOptions,
     AdvancedExtractionOptions,
     LabKmeansOptions,
     SamplingOptions,
@@ -35,7 +34,7 @@ import type {
 
 import type { NodeExtractColorOptions, NodeDecodeOptions, NodeRemoteOptions, NodeExtractColorInput } from '@adzazueta/color-extractor/node'
 import type { BrowserExtractColorOptions, BrowserDecodeOptions, BrowserExtractColorInput } from '@adzazueta/color-extractor/browser'
-import type { CoreExtractColorOptions, ColorPixelInput, FilterCriteria } from '@adzazueta/color-extractor/core'
+import type { CoreExtractColorOptions, ColorPixelInput } from '@adzazueta/color-extractor/core'
 
 // Verify types are usable in annotations
 declare const _result: ExtractColorResult
@@ -50,8 +49,14 @@ const _decoder: ExtractionDecoder = 'pixels'
 
 // === NEGATIVE: removed legacy API imports must fail under @ts-expect-error ===
 
-// @ts-expect-error — extractColors was removed in 0.3
-import { extractColors as _re1 } from '@adzazueta/color-extractor'
+// @ts-expect-error — extractColor (singular) was removed in 0.3
+import { extractColor as _reSingular1 } from '@adzazueta/color-extractor'
+
+// @ts-expect-error — extractColorFromPixels (singular) was removed in 0.3
+import { extractColorFromPixels as _reSingular2 } from '@adzazueta/color-extractor'
+
+// @ts-expect-error — extractColorFromImageData (singular) was removed in 0.3
+import { extractColorFromImageData as _reSingular3 } from '@adzazueta/color-extractor'
 
 // @ts-expect-error — extractPalette was removed in 0.3
 import { extractPalette as _re3 } from '@adzazueta/color-extractor'
@@ -71,12 +76,6 @@ import type { ExtractedColor } from '@adzazueta/color-extractor'
 // @ts-expect-error — SwatchId was removed in 0.3
 import type { SwatchId } from '@adzazueta/color-extractor'
 
-// @ts-expect-error — extractColorsFromPixels was removed in 0.3
-import { extractColorsFromPixels as _reLegacy1 } from '@adzazueta/color-extractor/core'
-
-// @ts-expect-error — extractColorsFromImageData was removed in 0.3
-import { extractColorsFromImageData as _reLegacy2 } from '@adzazueta/color-extractor/browser'
-
 // @ts-expect-error — extractPaletteFromPixels was removed in 0.3
 import { extractPaletteFromPixels as _reLegacy3 } from '@adzazueta/color-extractor/core'
 
@@ -84,7 +83,7 @@ import { extractPaletteFromPixels as _reLegacy3 } from '@adzazueta/color-extract
 import { extractPaletteFromImageData as _reLegacy4 } from '@adzazueta/color-extractor/browser'
 
 async function main() {
-    const result: ExtractColorResult = await extractColor('test.jpg')
+    const result: ExtractColorResult = await extractColors('test.jpg')
     console.log(result.colors[0]?.id)
 }
 

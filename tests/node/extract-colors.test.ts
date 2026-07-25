@@ -10,7 +10,7 @@ import { join, resolve } from 'node:path';
 import sharp from 'sharp';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { NodeExtractColorInput } from '../../src/node/index.js';
-import { extractColor } from '../../src/node/index.js';
+import { extractColors } from '../../src/node/index.js';
 import { _setSharpImporterForTests } from '../../src/node/sharp.js';
 
 const rootDir = resolve(import.meta.dirname, '../..');
@@ -35,11 +35,11 @@ beforeAll(() => {
     _setSharpImporterForTests(() => Promise.resolve(sharp));
 });
 
-describe('Node extractColor (Phase 7)', () => {
+describe('Node extractColors (Phase 7)', () => {
     describe('AC: nullish and unsupported inputs are rejected', () => {
         it('throws COLOR_EXTRACTOR_UNSUPPORTED_INPUT for null', async () => {
             await expect(
-                extractColor(null as unknown as NodeExtractColorInput),
+                extractColors(null as unknown as NodeExtractColorInput),
             ).rejects.toMatchObject({
                 code: 'COLOR_EXTRACTOR_UNSUPPORTED_INPUT',
             });
@@ -47,7 +47,7 @@ describe('Node extractColor (Phase 7)', () => {
 
         it('throws COLOR_EXTRACTOR_UNSUPPORTED_INPUT for undefined', async () => {
             await expect(
-                extractColor(undefined as unknown as NodeExtractColorInput),
+                extractColors(undefined as unknown as NodeExtractColorInput),
             ).rejects.toMatchObject({
                 code: 'COLOR_EXTRACTOR_UNSUPPORTED_INPUT',
             });
@@ -55,7 +55,7 @@ describe('Node extractColor (Phase 7)', () => {
 
         it('throws COLOR_EXTRACTOR_UNSUPPORTED_INPUT for a number', async () => {
             await expect(
-                extractColor(42 as unknown as NodeExtractColorInput),
+                extractColors(42 as unknown as NodeExtractColorInput),
             ).rejects.toMatchObject({
                 code: 'COLOR_EXTRACTOR_UNSUPPORTED_INPUT',
             });
@@ -65,14 +65,14 @@ describe('Node extractColor (Phase 7)', () => {
     describe('AC: Buffer input runs full extraction pipeline', () => {
         it('extracts colors from a 10x10 solid red PNG buffer', async () => {
             const png = await makePng(10, 10, { r: 180, g: 0, b: 0 });
-            const result = await extractColor(png);
+            const result = await extractColors(png);
             expect(result.colors[0]).toBeDefined();
             expect(result.colors[0]!.hex).toBe('#b40000');
         });
 
         it('extracts colors from a 10x10 solid green PNG', async () => {
             const png = await makePng(10, 10, { r: 0, g: 120, b: 0 });
-            const result = await extractColor(png);
+            const result = await extractColors(png);
             expect(result.colors[0]!.hex).toBe('#007800');
         });
     });
@@ -85,7 +85,7 @@ describe('Node extractColor (Phase 7)', () => {
                 png.byteOffset,
                 png.byteLength,
             );
-            const result = await extractColor(uint8);
+            const result = await extractColors(uint8);
             expect(result.colors[0]!.hex).toBe('#0000b4');
         });
     });
@@ -93,7 +93,7 @@ describe('Node extractColor (Phase 7)', () => {
     describe('AC: ArrayBuffer input runs full extraction pipeline', () => {
         it('extracts colors from a 10x10 yellow PNG as ArrayBuffer', async () => {
             const png = await makePng(10, 10, { r: 180, g: 180, b: 0 });
-            const result = await extractColor(png.buffer as ArrayBuffer);
+            const result = await extractColors(png.buffer as ArrayBuffer);
             expect(result.colors[0]!.hex).toBe('#b4b400');
         });
     });
@@ -120,14 +120,14 @@ describe('Node extractColor (Phase 7)', () => {
             tmpPath = join(tmpDir, 'test-green.png');
             writeFileSync(tmpPath, png);
 
-            const result = await extractColor(tmpPath);
+            const result = await extractColors(tmpPath);
             expect(result.colors[0]!.hex).toBe('#00b400');
         });
     });
 
     describe('AC: invalid image bytes produce COLOR_EXTRACTOR_DECODE_FAILED', () => {
         it('throws DECODE_FAILED for an empty Buffer', async () => {
-            await expect(extractColor(Buffer.alloc(0))).rejects.toMatchObject({
+            await expect(extractColors(Buffer.alloc(0))).rejects.toMatchObject({
                 code: 'COLOR_EXTRACTOR_DECODE_FAILED',
             });
         });
@@ -137,7 +137,7 @@ describe('Node extractColor (Phase 7)', () => {
             for (let i = 0; i < random.length; i++) {
                 random[i] = (i * 17 + 31) & 0xff;
             }
-            await expect(extractColor(random)).rejects.toMatchObject({
+            await expect(extractColors(random)).rejects.toMatchObject({
                 code: 'COLOR_EXTRACTOR_DECODE_FAILED',
             });
         });
@@ -146,7 +146,7 @@ describe('Node extractColor (Phase 7)', () => {
     describe('AC: options are passed through correctly', () => {
         it('accepts custom options alongside Buffer input', async () => {
             const png = await makePng(10, 10, { r: 100, g: 150, b: 200 });
-            const result = await extractColor(png, {
+            const result = await extractColors(png, {
                 sampling: { maxDimension: 50 },
                 result: { maxColors: 3 },
             });
@@ -156,10 +156,10 @@ describe('Node extractColor (Phase 7)', () => {
     });
 });
 
-describe('Node extractColor', () => {
+describe('Node extractColors', () => {
     it('runs the neutral pipeline for a Buffer input', async () => {
         const png = await makePng(300, 150, { r: 180, g: 0, b: 0 });
-        const result = await extractColor(png, {
+        const result = await extractColors(png, {
             sampling: { maxDimension: 150 },
             result: { maxColors: 1 },
         });
@@ -175,19 +175,19 @@ describe('Node extractColor', () => {
 });
 
 describe('dist entrypoint shape', () => {
-    it('dist/node/index.js exports extractColor', () => {
+    it('dist/node/index.js exports extractColors', () => {
         const js = readDist('node/index.js');
-        expect(js).toMatch(/extractColor/);
+        expect(js).toMatch(/extractColors/);
     });
 
-    it('dist/browser/index.js exports extractColor', () => {
+    it('dist/browser/index.js exports extractColors', () => {
         const js = readDist('browser/index.js');
-        expect(js).toMatch(/extractColor/);
+        expect(js).toMatch(/extractColors/);
     });
 
-    it('dist/index.d.ts declares extractColor at the root', () => {
+    it('dist/index.d.ts declares extractColors at the root', () => {
         const dts = readDist('index.d.ts');
-        expect(dts).toMatch(/extractColor/);
+        expect(dts).toMatch(/extractColors/);
     });
 
     it('dist/browser/index.d.ts declares BrowserExtractColorInput', () => {

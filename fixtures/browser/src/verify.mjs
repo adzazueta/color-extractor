@@ -7,7 +7,7 @@ globalThis.ImageData = class {
 };
 
 const {
-    extractColor,
+    extractColors,
     VERSION,
     ColorExtractorError,
     COLOR_EXTRACTOR_ERROR_CODES,
@@ -23,7 +23,7 @@ async function main() {
     }
 
     const input = new globalThis.ImageData(data, 20, 20);
-    const result = await extractColor(input, {
+    const result = await extractColors(input, {
         algorithm: 'lab-kmeans',
         result: { maxColors: 1 },
     });

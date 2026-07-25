@@ -3,8 +3,8 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import sharp from 'sharp';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
-import { extractColorFromPixels } from '../../src/core/extract.js';
-import { extractColor as nodeExtractColor } from '../../src/node/index.js';
+import { extractColorsFromPixels } from '../../src/core/extract.js';
+import { extractColors as nodeExtractColor } from '../../src/node/index.js';
 import { _setSharpImporterForTests } from '../../src/node/sharp.js';
 import { ENTRYPOINT_DISTS, loadPackageJson } from './version-sync.shared.js';
 
@@ -64,7 +64,7 @@ describe('version synchronization — extraction metadata', () => {
     });
 
     it('core extraction metadata includes correct packageVersion', async () => {
-        const result = await extractColorFromPixels(
+        const result = await extractColorsFromPixels(
             makePixels(20, 20, { r: 200, g: 20, b: 20 }),
         );
         expect(result.metadata).toBeDefined();
@@ -101,9 +101,9 @@ describe('version synchronization — extraction metadata', () => {
             data[i + 3] = 255;
         }
 
-        const { extractColor } = await import('../../src/browser/index.js');
+        const { extractColors } = await import('../../src/browser/index.js');
         const input = new MockImageData(data, 20, 20);
-        const result = await extractColor(input as unknown as ImageData);
+        const result = await extractColors(input as unknown as ImageData);
         expect(result.metadata).toBeDefined();
         expect(result.metadata!.packageVersion).toBe(PKG_VERSION);
         expect(result.metadata!.runtime).toBe('browser');
