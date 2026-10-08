@@ -1,0 +1,66 @@
+# @adzazueta/color-extractor
+
+## 0.3.0
+
+### Minor Changes
+
+- 7918a8d: - Rename neutral API family from `extractPalette` to `extractColors`: `extractColors`, `extractColorsFromPixels`, `extractColorsFromImageData`
+  - Remove transitional `extractPalette` API and all legacy role-based API: `extractPalette`, `extractPaletteFromPixels`, `extractPaletteFromImageData`, `ExtractedColor`, `ExtractedSwatch`, `SwatchId`, `DEFAULT_OPTIONS`, `resolveOptions`, `ResolvedOptions`
+  - Remove legacy role modules: `role.ts`, `options.ts`, `output.ts`, `types.ts`, `result.ts`, `defaults.ts`, `legacy/adapter.ts`, `legacy/cluster.ts`
+  - Remove internal `swatch` terminology from all source and test code
+  - Result shape is `{ colors, rankings, metadata }` with no semantic role assignment
+  - Reduce public export surface: low-level implementation helpers (color conversion, filtering, sampling, pixel normalization, browser decoder/sampling/detection, resolved-internal option types) removed from entrypoint barrels
+  - Rewrite `scripts/smoke.mjs` for stable `extractColors` API
+  - Rewrite all fixtures (browser, node, core, typescript) to use `extractColors`
+  - Add tarball lexical scan for legacy name detection
+  - Update README to remove legacy API deprecation section, `Swatches` terminology, and legacy entrypoint references
+  - Add public-surface audit artifact (public-surface.json) and whitelist verification per entrypoint
+  - Add declaration map (.js.map) scanning to verify-fixtures
+  - Add post-publish verification step in release workflow
+
+## 0.2.0-next.1
+
+### Minor Changes
+
+- 38a9969: - Publish comparison report: Lab K-means versus MMCQ extraction
+  - Register MMCQ in algorithm registry alongside Lab K-means
+  - Normalize MMCQ output into neutral observed swatches
+  - Add deterministic MMCQ (Median Cut Quantization) core algorithm
+  - Build benchmark corpus and comparison harness for algorithm evaluation
+  - Add algorithm selector with algorithm-aware metadata in extraction results
+  - Refactor Lab K-means behind the new contract
+  - Define internal neutral palette algorithm contract
+
+## 0.2.0-next.0
+
+### Minor Changes
+
+- ac0e4f7: - 8275a1a: nearest-neighbor and observed-RGB isolation for neutral pipeline — useObservedRgb flag in runLabKmeans (legacy path uses first-assigned pixel, neutral searches nearest observed pixel); smooth param for canvas sampling (defaults true, neutral passes false); kernel param for Sharp resize (neutral passes 'nearest', legacy defaults to lanczos3); software nearestNeighborRGBA downsampler for ImageData without OffscreenCanvas; non-integral resize ratio pixel convention
+  - 8275a1a: abort cancellation robustness — checkAborted always throws COLOR_EXTRACTOR_ABORTED regardless of signal.reason; Sharp abort checkpoints after loadSharp/metadata/toBuffer with pipeline destruction; createImageBitmap race against abort promise with late bitmap cleanup; abort listener cleanup in finally blocks across redirects/wireSignal/body-read paths; tests for pre-aborted and in-flight abort with arbitrary string and ColorExtractorError reasons across browser decode, node decode, redirects, and core extraction
+  - 8275a1a: SSRF and option validation hardening — ownUnknown() with Object.create(null) strips inherited properties from all option groups (remote, decode, advanced, sampling, filtering, result); assertPlainObject at every nested group level; expanded isPrivateIPv4/isPrivateIPv6 coverage (multicast, site-local, NAT64-embedded, IPv4-compatible IPv6); allowedProtocols deep copy at resolution time; pickRuntimeGroups Object.hasOwn + Object.create(null)
+  - 8275a1a: test hardening — ImageData downsampling without OffscreenCanvas (nearest-neighbor, alpha preservation, input immutability, non-integral ratio, invalid sampleSize); extractPaletteFromImageData metadata test; Node extractPalette e2e test (Buffer input, Sharp decoder); Object.prototype pollution regression tests for remote/decode/advanced/labKmeans/perceptualRanking; allowedProtocols mutation isolation test; abort-with-arbitrary-reason tests across all paths; HTTP client Host header assertion; IP range edge cases; package exports restructured to nested conditions (browser/node/default with types); type-level algorithmDetails in ExtractionMetadata; unused import cleanup (kmeans)
+  - b4dd99e: document neutral API migration — rewrite README.md with neutral API, create MIGRATION.md with complete 0.1.x→0.2 mapping
+  - dc9d54d: implement extractPalette public entrypoints — extractPalette (root/browser/node), extractPaletteFromImageData (browser), extractPaletteFromPixels (core) with PalettePixelInput type (channels 3|4), deprecate legacy extractColors family with TSDoc annotations
+  - 160bd26: implement normalizePalette for neutral swatch normalization — validation, RGB canonicalization, deduplication, CIELAB chroma-weighted scoring with low-chroma penalty, score normalization, maxColors selection, perceptual/population/chroma rankings, extraction metadata, cancellation checkpoints
+  - 24cff37: decouple Lab K-means candidates from role scoring — create src/core/algorithms/lab-kmeans/ module with types, initialize, assign, update, run; legacy adapter at src/core/legacy/
+  - aa4db9c: add neutral options types and resolver — sampling, filtering, result, advanced.labKmeans, advanced.perceptualRanking groups with runtime-specific browser/node/core variants and COLORS_EXTRACTOR_INVALID_OPTIONS validation
+  - a27603e: add neutral palette result and swatch types — ExtractedSwatch, PaletteRankings, ExtractPaletteResult, ExtractionMetadata, RgbColor, HslColor, LabColor, SwatchId, ExtractionRuntime, ExtractionDecoder, ExtractionAlgorithm
+
+## 0.1.2
+
+### Patch Changes
+
+- 678b053: - 92454ec: Synchronize package version with exported runtime metadata and add CI check-version step
+- 59461fb: Add version synchronization tests
+- 672fb2c: Define automated build-warning policy for tsdown externalized dependencies
+- 10f01a6: Remove stale repository docs directory
+- 9da7952: Add public contribution and repository-governance guidance (CONTRIBUTING.md)
+- 65a156f: Add packed-tarball browser, Node, and core consumer verification fixtures
+- 2e10643: Remove color-engine domain terminology from CONTRIBUTING.md and package description
+- c831b39: Remove color-engine domain terms from README subtitle
+
+## 0.1.1
+
+### Patch Changes
+
+- 7fe799e: Separate internal and public documentation
