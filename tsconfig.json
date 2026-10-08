@@ -13,7 +13,8 @@
     "declaration": true,
     "isolatedDeclarations": true,
     "noEmit": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "paths": { "@/*": ["./src/*"] }
   },
   "include": ["src", "test", "vite.config.ts"]
 }

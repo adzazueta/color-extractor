@@ -24,6 +24,7 @@ Repository of the npm package `@adzazueta/color-extractor`. Version 0.4.0 is a c
 - The package specification is the contract. Do not add features that are not in it, and do not change its behavior without a decision from the maintainer. If something is missing, ask.
 - ESM only, TypeScript 7 in strict mode with `isolatedDeclarations`, Node 22.12 or later.
 - No runtime dependencies. sharp is only an optional dependency of the Node adapter.
+- Import from `src/` with the `@/` alias (`@/core/oklab.js`), keeping the `.js` extension. Relative imports are fine inside the same folder.
 - `/core` uses no DOM, file system, or network.
 - Returned colors are always real pixels from the image.
 - **Determinism:**
