@@ -46,6 +46,18 @@ function describe(value: unknown): string {
   return `type ${typeof value}`;
 }
 
+// The getter of %TypedArray%.prototype[Symbol.toStringTag] reads the internal [[TypedArrayName]]
+// slot, so a Symbol.toStringTag override cannot fake it. It also works for typed arrays from
+// other realms (such as a worker) and for Node Buffers, and returns undefined for anything else.
+const typedArrayNameDescriptor = Object.getOwnPropertyDescriptor(
+  Object.getPrototypeOf(Uint8Array.prototype) as object,
+  Symbol.toStringTag,
+);
+
+function readTypedArrayName(value: unknown): unknown {
+  return typedArrayNameDescriptor?.get?.call(value);
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
@@ -184,13 +196,8 @@ export function validatePixels(input: unknown): PixelInput {
   }
   const { data, width, height } = input as { data?: unknown; width?: unknown; height?: unknown };
 
-  // The tag check accepts arrays from other realms (such as a worker) and Node Buffers.
-  // ArrayBuffer.isView rejects plain objects that only fake the tag.
-  const tag = Object.prototype.toString.call(data);
-  if (
-    !ArrayBuffer.isView(data) ||
-    (tag !== "[object Uint8Array]" && tag !== "[object Uint8ClampedArray]")
-  ) {
+  const typedArrayName = readTypedArrayName(data);
+  if (typedArrayName !== "Uint8Array" && typedArrayName !== "Uint8ClampedArray") {
     throw invalidInput(
       `Pixel "data" must be a Uint8Array or Uint8ClampedArray, received ${describe(data)}.`,
     );
