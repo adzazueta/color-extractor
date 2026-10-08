@@ -331,11 +331,11 @@ jobs:
             const tags = JSON.parse(require("node:fs").readFileSync("dist-tags.json", "utf8"));
             const { VERSION, DIST_TAG } = process.env;
             if (tags[DIST_TAG] !== VERSION) {
-              throw new Error(`Dist-tag ${DIST_TAG} is ${tags[DIST_TAG]}, expected ${VERSION}.`);
+              throw new Error("Dist-tag " + DIST_TAG + " is " + tags[DIST_TAG] + ", expected " + VERSION + ".");
             }
             // While prereleasing, latest keeps pointing at the last stable version.
             if (DIST_TAG === "next" && (!tags.latest || tags.latest.includes("-"))) {
-              throw new Error(`Dist-tag latest is ${tags.latest}, expected a stable version.`);
+              throw new Error("Dist-tag latest is " + tags.latest + ", expected a stable version.");
             }
-            console.log(`Dist-tags are correct: ${DIST_TAG} -> ${VERSION}, latest -> ${tags.latest}.`);
+            console.log("Dist-tags are correct: " + DIST_TAG + " -> " + VERSION + ", latest -> " + tags.latest + ".");
           '
