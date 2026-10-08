@@ -53,4 +53,7 @@ export default defineConfig({
   fmt: {
     ignorePatterns: ["dist/**", "coverage/**", "pnpm-lock.yaml"],
   },
+  staged: {
+    "*": "vp check --no-error-on-unmatched-pattern",
+  },
 });
