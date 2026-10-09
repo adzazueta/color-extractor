@@ -2,8 +2,9 @@ name: CI
 
 on:
   pull_request:
-    # edited: re-run the title check when the title is fixed.
-    types: [opened, edited, reopened, synchronize]
+    # No edited: the title check lives in pr-title.yml, so description edits
+    # do not re-run the full CI.
+    types: [opened, reopened, synchronize]
   push:
     branches: [next]
 
@@ -123,26 +124,6 @@ jobs:
         with:
           version: 1.30.1
           advanced-security: false
-
-  pr-title:
-    name: pr-title
-    if: >-
-      github.event_name == 'pull_request'
-      && github.event.pull_request.user.login != 'dependabot[bot]'
-      && !(github.event.pull_request.head.repo.full_name == github.repository
-      && startsWith(github.head_ref, 'changeset-release/'))
-    runs-on: ubuntu-24.04
-    timeout-minutes: 15
-    permissions: {}
-    steps:
-      - name: Check that the title starts with an ADZE key
-        env:
-          PR_TITLE: ${{ github.event.pull_request.title }}
-        run: |
-          if [[ ! "$PR_TITLE" =~ ^ADZE-[0-9]+\  ]]; then
-            echo "::error::The pull request title must start with an ADZE key, for example 'ADZE-12 Configure tsconfig.json'."
-            exit 1
-          fi
 
   changeset:
     name: changeset
