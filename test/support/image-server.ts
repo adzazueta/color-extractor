@@ -4,6 +4,7 @@ import type { Plugin } from "vite-plus";
 import { encodeTestImage, TEST_IMAGE_NAMES, type TestImageName } from "./images.js";
 
 const PREFIX = "/__test-images__/";
+const MAX_DELAY_MS = 5_000;
 
 export interface TestImageServer {
   readonly origin: string;
@@ -49,7 +50,9 @@ async function respond(
   if (context.cors && query.get("cors") === "1") {
     response.setHeader("access-control-allow-origin", "*");
   }
-  const delay = Number(query.get("delay") ?? "0");
+  // Clamped, so a request can never hold the server for long (CodeQL js/resource-exhaustion).
+  const requestedDelay = Number(query.get("delay") ?? "0");
+  const delay = requestedDelay > MAX_DELAY_MS ? MAX_DELAY_MS : requestedDelay;
   if (delay > 0) {
     await wait(delay);
   }
