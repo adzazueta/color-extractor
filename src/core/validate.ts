@@ -54,7 +54,7 @@ const typedArrayNameDescriptor = Object.getOwnPropertyDescriptor(
   Symbol.toStringTag,
 );
 
-function readTypedArrayName(value: unknown): unknown {
+export function readTypedArrayName(value: unknown): unknown {
   return typedArrayNameDescriptor?.get?.call(value);
 }
 
