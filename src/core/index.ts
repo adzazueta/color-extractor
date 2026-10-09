@@ -9,3 +9,5 @@ export type {
   PixelInput,
 } from "./types.js";
 export { extractColorsFromPixels } from "./extract.js";
+export { extractColors } from "./async.js";
+export type { PixelInput as ImageInput } from "./types.js";
