@@ -1,5 +1,6 @@
 import { defineConfig } from "vite-plus";
 import { playwright } from "vite-plus/test/browser-playwright";
+import { testImageServer } from "./test/support/image-server.js";
 
 export default defineConfig({
   resolve: { tsconfigPaths: true },
@@ -11,6 +12,8 @@ export default defineConfig({
     },
     format: "esm",
     platform: "neutral",
+    // Node built-ins stay external imports (the platform is neutral); otherwise vp pack warns UNRESOLVED_IMPORT.
+    deps: { neverBundle: [/^node:/] },
     fixedExtension: false,
     dts: true,
     publint: { level: "warning", strict: true },
@@ -34,6 +37,7 @@ export default defineConfig({
       },
       {
         extends: true,
+        plugins: [testImageServer()],
         test: {
           name: "browser",
           include: ["test/browser/**/*.test.ts"],
