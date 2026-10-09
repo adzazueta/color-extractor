@@ -435,6 +435,7 @@ describe("proposeWuClusters: weights", () => {
 });
 
 describe("proposeWuClusters: contract", () => {
+  // The naive reference is slow under coverage instrumentation (about 12 s in CI).
   it("matches a direct reading of the contract on seeded inputs", () => {
     for (let seed = 100; seed < 140; seed++) {
       const lattice = seed % 2 === 0;
@@ -446,7 +447,7 @@ describe("proposeWuClusters: contract", () => {
         expect(Array.from(result.labels)).toEqual(expected.labels);
       }
     }
-  });
+  }, 60_000);
 
   it("is deterministic and does not mutate its inputs", () => {
     const cells = cellsFrom(randomColors(8, 4000, false));
