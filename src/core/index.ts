@@ -8,3 +8,4 @@ export type {
   Mode,
   PixelInput,
 } from "./types.js";
+export { extractColorsFromPixels } from "./extract.js";
