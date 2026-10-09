@@ -1,5 +1,15 @@
 # @adzazueta/color-extractor
 
+## 0.4.0-next.0
+
+### Minor Changes
+
+- 982619d: Add the public API types: `Mode`, `PixelInput`, `ExtractionOptions`, `AsyncExtractionOptions`, `ExtractedColor`, and `ExtractionResult`.
+- ee3a76d: Add `extractColorsFromPixels` (core, synchronous) with population mode. Until perceptual mode exists, `perceptual` orders by area like `population` (`algorithmVersion` "1-population-only").
+- babde94: 0.4.0 is a complete rewrite of the package. It has a new API and a new result shape, so code written for 0.3 needs changes. The migration guide will be published with 0.4.0.
+- 1497ca3: Add `ColorExtractorError`, the single error type, with a `code` that identifies each failure.
+- 14064dc: Add `extractColors` for files, bytes, Blobs, and URLs (root, `/node`, `/browser`) and a pixel-only async `extractColors` in `/core`.
+
 ## 0.3.0
 
 ### Minor Changes
