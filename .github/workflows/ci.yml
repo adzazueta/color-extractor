@@ -106,6 +106,19 @@ jobs:
           node-version: 24
           cache: true
       - run: vp pack
+      - name: Create the tarball
+        run: |
+          mkdir -p "$RUNNER_TEMP/tarball"
+          vp pm pack --pack-destination "$RUNNER_TEMP/tarball"
+      # Specification 9.1: the smoke test runs on exactly Node.js 22.12.0.
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22.12.0
+          package-manager-cache: false
+      - name: Smoke test on Node.js 22.12.0
+        env:
+          SMOKE_EXPECTED_NODE: 22.12.0
+        run: node scripts/smoke.mjs "$RUNNER_TEMP"/tarball/*.tgz
 
   workflows:
     name: workflows
