@@ -2,10 +2,12 @@
 //
 // Usage: node scripts/smoke.mjs <path to the .tgz>
 //
-// Installs the tarball with npm in an empty project outside the repository, checks the entry
-// points without sharp (decoding must fail with DECODER_MISSING), then installs sharp and checks
-// that the same image decodes. Set SMOKE_EXPECTED_NODE (for example 22.12.0) to require an exact
-// Node.js version. Only node: built-ins are used, because Node.js 22.12.0 cannot run TypeScript.
+// It first checks that the tarball contains only package.json, dist/**, README.md, LICENSE, and
+// CHANGELOG.md. Then it installs the tarball with npm in an empty project outside the repository,
+// checks the entry points without sharp (decoding must fail with DECODER_MISSING), then installs
+// sharp and checks that the same image decodes. Set SMOKE_EXPECTED_NODE (for example 22.12.0) to
+// require an exact Node.js version. Only node: built-ins are used, because Node.js 22.12.0 cannot
+// run TypeScript.
 
 import { execFileSync } from "node:child_process";
 import {
@@ -20,6 +22,7 @@ import {
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { entriesOutsideAllowlist, readTarballEntries, TARBALL_ALLOWLIST } from "./tarball.mjs";
 
 let step = 0;
 const announce = (message) => console.log(`\n[smoke ${++step}] ${message}`);
@@ -52,6 +55,23 @@ try {
   } else {
     console.log(`Node.js ${process.version} (SMOKE_EXPECTED_NODE is not set).`);
   }
+
+  announce("Check the files in the tarball");
+  const entries = readTarballEntries(tarball);
+  const files = entries.filter((entry) => entry.type === "file").map((entry) => entry.path);
+  if (!files.includes("package/package.json")) {
+    throw new Error("The tarball has no package/package.json.");
+  }
+  if (!files.some((file) => file.startsWith("package/dist/"))) {
+    throw new Error("The tarball has no files in package/dist/.");
+  }
+  const outside = entriesOutsideAllowlist(entries);
+  if (outside.length > 0) {
+    throw new Error(
+      `The tarball contains files outside the allowlist (${TARBALL_ALLOWLIST.join(", ")}): ${outside.join(", ")}.`,
+    );
+  }
+  console.log(`${files.length} files, all in the allowlist.`);
 
   const repository = fileURLToPath(new URL("..", import.meta.url));
   const manifest = JSON.parse(readFileSync(join(repository, "package.json"), "utf8"));
