@@ -56,7 +56,13 @@ export default defineConfig({
     options: { typeAware: true, typeCheck: true },
   },
   fmt: {
-    ignorePatterns: ["dist/**", "coverage/**", "pnpm-lock.yaml"],
+    ignorePatterns: [
+      "dist/**",
+      "coverage/**",
+      "pnpm-lock.yaml",
+      "eval/annotations/**",
+      "eval/reports/**",
+    ],
   },
   staged: {
     "*": "vp check --no-error-on-unmatched-pattern",

@@ -35,3 +35,10 @@ Repository of the npm package `@adzazueta/color-extractor`. Version 0.4.0 is a c
 - Never update snapshots to make a test pass. Regenerate them with `vp test -u` only for an intentional algorithm change, which also changes `algorithmVersion`.
 - Do not commit third-party images; evaluation images live outside the repository.
 - Code, identifiers, comments, commit messages, the README, the changelog, and all documentation are in English.
+
+## Evaluation
+
+- Evaluation images never enter this repository; only annotations (`eval/annotations/`) and reports (`eval/reports/`) do.
+- Test annotations are made blind in the lab and never change after a test report includes them.
+- Annotations and reports are generated files, excluded from `vp fmt`. Never format or edit them by hand.
+- The match threshold lives in `eval/config.ts` and changes only by decision of the maintainer.
