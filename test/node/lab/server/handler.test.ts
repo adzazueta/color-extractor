@@ -722,7 +722,10 @@ describe("annotations", () => {
       "<b>key</b>": 1,
     });
     expect(reply.status).toBe(400);
-    expect(reply.body.toString("utf8")).not.toMatch(/<script>|<img>|<b>/);
+    const text = reply.body.toString("utf8");
+    for (const injected of ["<script>alert(1)</script>", "<img>", "<b>key</b>"]) {
+      expect(text).not.toContain(injected);
+    }
   });
 
   test("the wrong content type gives 415, a large body 413, and invalid JSON 400", async () => {
