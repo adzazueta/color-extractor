@@ -1,9 +1,11 @@
 import { defineConfig } from "vite-plus";
 import { playwright } from "vite-plus/test/browser-playwright";
+import { lab } from "./lab/server/plugin.js";
 import { testImageServer } from "./test/support/image-server.js";
 
 export default defineConfig({
   resolve: { tsconfigPaths: true },
+  plugins: [lab()],
   pack: {
     entry: {
       core: "src/core/index.ts",
