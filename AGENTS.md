@@ -8,6 +8,7 @@ Repository of the npm package `@adzazueta/color-extractor`. Version 0.4.0 is a c
 - `vp check`: format, lint, and type check.
 - `vp test`: run tests.
 - `vp pack`: build the package.
+- `vp run eval`: measure both modes on the evaluation sets and write the reports (needs `../color-extractor-eval` or `COLOR_EXTRACTOR_EVAL_DIR`).
 - `vp dev`: run the evaluation lab at `http://localhost:5173/lab/` (`/` redirects there). It reads the images from `color-extractor-eval` next to the main checkout, or from `COLOR_EXTRACTOR_EVAL_DIR`.
 
 ## Branches, pull requests, and releases
