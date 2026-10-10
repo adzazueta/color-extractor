@@ -69,4 +69,10 @@ export default defineConfig({
   staged: {
     "*": "vp check --no-error-on-unmatched-pattern",
   },
+  run: {
+    tasks: {
+      // The evaluation reads files outside the repository, so it is never cached.
+      eval: { command: "node eval/run.mjs", cache: false },
+    },
+  },
 });
