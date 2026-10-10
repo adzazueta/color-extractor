@@ -72,8 +72,11 @@ if (phase === "without-sharp") {
     ["path", path],
   ]) {
     await assert.rejects(root.extractColors(input), (error) => {
-      assert.ok(error instanceof root.ColorExtractorError, `${label}: a ColorExtractorError`);
-      assert.equal(error.code, "DECODER_MISSING", `${label}: the error code`);
+      assert.ok(
+        error instanceof root.ColorExtractorError,
+        `${String(label)}: a ColorExtractorError`,
+      );
+      assert.equal(error.code, "DECODER_MISSING", `${String(label)}: the error code`);
       return true;
     });
   }
