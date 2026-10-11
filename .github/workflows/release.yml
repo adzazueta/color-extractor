@@ -1,7 +1,7 @@
 name: Release
 
 # Ecosystem Decisions 7.4 and 7.5:
-# - Every push to next opens or updates the "Version Packages" pull request.
+# - Every push to main opens or updates the "Version Packages" pull request.
 # - When the version in package.json is not on npm yet (the version pull request
 #   was merged), the tarball is built, staged with `npm stage publish`, and
 #   published after the maintainer approves it on npmjs.com.
@@ -13,7 +13,7 @@ name: Release
 
 on:
   push:
-    branches: [next]
+    branches: [main]
 
 # One release at a time. Runs queue instead of being cancelled, so a run that is
 # waiting for the npm approval is never interrupted.
@@ -30,7 +30,7 @@ jobs:
   # Opens or updates the "Version Packages" pull request. The GitHub App token
   # makes CI run on that pull request (the default GITHUB_TOKEN would not
   # trigger workflows). Commits are created through the GitHub API, so GitHub
-  # signs them (the next ruleset requires signed commits).
+  # signs them (the default branch ruleset requires signed commits).
   version:
     name: version
     runs-on: ubuntu-24.04
@@ -58,7 +58,7 @@ jobs:
           github-token: ${{ steps.app-token.outputs.token }}
           commit-message: Version Packages
           pr-title: Version Packages
-          pr-base-branch: next
+          pr-base-branch: main
 
   # Decides whether this commit has to be published: it does when the version in
   # package.json is not on npm yet.
@@ -200,7 +200,7 @@ jobs:
         run: |
           set -uo pipefail
           # A version that is staged but not approved yet stays unpublished, so a
-          # later push to next gets here again. Staged versions share the unique
+          # later push to main gets here again. Staged versions share the unique
           # version index with published ones, so npm rejects the second attempt.
           # OIDC tokens cannot run `npm stage list`, so that rejection is
           # recognised by its message and treated as "already staged".

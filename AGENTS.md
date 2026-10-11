@@ -14,7 +14,7 @@ Repository of the npm package `@adzazueta/color-extractor`. Version 0.4.0 is a c
 
 ## Branches, pull requests, and releases
 
-- One short branch per task, named with its task key (for example, `ADZE-12-tsconfig`), and a pull request into `next`. Never push to `next` directly.
+- One short branch per task, named with its task key (for example, `ADZE-12-tsconfig`), and a pull request into `main`. Never push to `main` directly.
 - Pull request titles start with the task key, for example `ADZE-12 Configure tsconfig.json with TypeScript 7`. With squash merging, the title becomes the commit message.
 - A pull request that touches `src/` or `package.json` includes a changeset. Changes that users do not notice use `changeset --empty`. During 0.x, breaking changes are `minor`, never `major`.
 - Never merge the "Version Packages" pull request and never publish to npm. Only the maintainer does that.
