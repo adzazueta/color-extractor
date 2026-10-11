@@ -74,16 +74,19 @@ describe.each(LOSSLESS)("%s (lossless, opaque) equals the pixel result", (name) 
 });
 
 describe("blocks.jpg (lossy)", () => {
-  const expected = extractColorsFromPixels(blocks());
+  // Population mode: these tests are about inputs, not ranking. JPEG fringes create small groups
+  // (such as #203cb7 and #5c2b86) that perceptual mode can rank ahead of the white block.
+  const options = { mode: "population" } as const;
+  const expected = extractColorsFromPixels(blocks(), options);
 
   test("every input kind gives the same colors in the same order", async () => {
     const bytes = await encodeTestImage("blocks.jpg");
     const results = await Promise.all([
-      extractColors(join(directory, "blocks.jpg")),
-      extractColors(Buffer.from(bytes)),
-      extractColors(bytes.slice().buffer),
-      extractColors(`${server.origin}/__test-images__/blocks.jpg`),
-      extractColors(new URL(`${server.origin}/__test-images__/blocks.jpg`)),
+      extractColors(join(directory, "blocks.jpg"), options),
+      extractColors(Buffer.from(bytes), options),
+      extractColors(bytes.slice().buffer, options),
+      extractColors(`${server.origin}/__test-images__/blocks.jpg`, options),
+      extractColors(new URL(`${server.origin}/__test-images__/blocks.jpg`), options),
     ]);
     for (const result of results) {
       expect(result.meta.width).toBe(64);

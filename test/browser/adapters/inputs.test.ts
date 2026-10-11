@@ -33,12 +33,15 @@ describe.each<TestImageName>(["blocks.png", "blocks.webp", "blocks.avif"])("%s",
 });
 
 describe("blocks.jpg (lossy)", () => {
+  // Population mode: this test is about inputs, not ranking. JPEG fringes create small groups
+  // that perceptual mode can rank ahead of the white block.
   test("gives the same hues in the same order", async () => {
-    const result = await extractColors(await fixture("blocks.jpg"));
+    const population = extractColorsFromPixels(blocks(), { mode: "population" });
+    const result = await extractColors(await fixture("blocks.jpg"), { mode: "population" });
     expect(result.meta.width).toBe(64);
     expect(result.meta.height).toBe(48);
     expect(result.colors.length).toBeGreaterThanOrEqual(3);
-    for (const [index, want] of expected.colors.entries()) {
+    for (const [index, want] of population.colors.entries()) {
       const got = result.colors[index];
       for (let channel = 0; channel < 3; channel++) {
         expect(

@@ -6,12 +6,18 @@ import {
   ALGORITHM_VERSION,
   KMEANS_MAX_ITERATIONS,
   MERGE_THRESHOLD_SQUARED,
+  PERCEPTUAL_CHROMA_CAP,
+  PERCEPTUAL_COLORFULNESS_WEIGHT,
+  PERCEPTUAL_CONTRAST_WEIGHT,
+  PERCEPTUAL_LIGHTNESS_WEIGHT,
+  PERCEPTUAL_PRESENCE_DIVISOR,
   POSITION_WINDOW_RADIUS,
   RANKING_MIN_PRESENCE_DIVISOR,
   REPRESENTATIVE_PRESENCE_DIVISOR,
   ROUNDING_SCALE,
   WU_MAX_CLUSTERS,
 } from "@/core/pipeline/parameters.js";
+import { perceptualScores, type PerceptualParameters } from "@/core/pipeline/perceptual.js";
 import { rankGroups } from "@/core/pipeline/rank.js";
 import {
   selectRepresentativeColors,
@@ -22,19 +28,32 @@ import { ColorExtractorError } from "./errors.js";
 import type { ExtractedColor, ExtractionOptions, ExtractionResult, PixelInput } from "./types.js";
 import { validatePixelRequest, type ResolvedOptions } from "./validate.js";
 
+const PERCEPTUAL_PARAMETERS: PerceptualParameters = {
+  lightnessWeight: PERCEPTUAL_LIGHTNESS_WEIGHT,
+  chromaCap: PERCEPTUAL_CHROMA_CAP,
+  presenceDivisor: PERCEPTUAL_PRESENCE_DIVISOR,
+  contrastWeight: PERCEPTUAL_CONTRAST_WEIGHT,
+  colorfulnessWeight: PERCEPTUAL_COLORFULNESS_WEIGHT,
+};
+
 /**
  * Extracts the main colors of raw RGBA pixels, synchronously. Every returned color is a real pixel
  * of the image, with the position of one such pixel and its alpha.
  *
  * Fully transparent pixels are ignored, and an image with no visible pixel returns an empty
- * `colors` list. Colors are ordered by the area they cover (`coverage`, descending), and groups
- * with a negligible presence are not returned. `coverage` is the share of the visible area and
- * `score` is the area relative to the largest returned color. `count` limits the list length and
- * is never padded; `meta.count` echoes the requested count.
+ * `colors` list. Groups with a negligible presence are not returned, and `coverage` is the share of
+ * the visible area. Both modes find the same colors, with the same coverage and positions; only
+ * the order (and so which colors fit in `count`) and `score` differ:
  *
- * Temporary behavior: perceptual mode does not exist yet, so `mode: "perceptual"` (the default)
- * orders exactly like `"population"`. `meta.mode` reports the requested mode, and
- * `meta.algorithmVersion` is `"1-population-only"`.
+ * - `"perceptual"` (the default) orders colors by how much they stand out: their colorfulness and
+ *   their contrast with the rest of the image, reduced for colors that cover less than 2 % of it.
+ *   `score` is relative to the first color. When no color stands out at all (an image of a single
+ *   neutral color), the order and `score` are those of `"population"`.
+ * - `"population"` orders colors by the area they cover (`coverage`, descending), and `score` is
+ *   the area relative to the largest returned color.
+ *
+ * `count` limits the list length and is never padded, and a smaller `count` keeps the first colors
+ * of a larger one; `meta.count` echoes the requested count.
  *
  * @param pixels Raw RGBA pixels: `data` of length `width * height * 4`, `width`, and `height`.
  * @param options Optional `count` (1 to 16, default 5), `mode`, and `limits`.
@@ -99,14 +118,23 @@ function extract(pixels: PixelInput, options: ResolvedOptions): ExtractionResult
     merged.groupCount,
     REPRESENTATIVE_PRESENCE_DIVISOR,
   );
-  // Until perceptual mode exists (milestone 5), "perceptual" orders exactly like "population";
-  // meta.mode still reports the requested mode.
+  const scores =
+    options.mode === "perceptual"
+      ? perceptualScores(
+          assigned.weights,
+          representatives.colors,
+          histogram.totalWeight,
+          RANKING_MIN_PRESENCE_DIVISOR,
+          PERCEPTUAL_PARAMETERS,
+        )
+      : null;
   const ranked = rankGroups(
     assigned.weights,
     representatives.colors,
     histogram.totalWeight,
     RANKING_MIN_PRESENCE_DIVISOR,
     options.count,
+    scores,
   );
   const located = selectRepresentativePositions(
     pixels,
@@ -121,6 +149,9 @@ function extract(pixels: PixelInput, options: ResolvedOptions): ExtractionResult
   const groups = ranked.groups;
   // The heaviest group always passes the presence filter, so groups[0] exists.
   const largestWeight = assigned.weights[groups[0]!]!;
+  // Perceptual: the score relative to the first color's. When that is 0, every returned score is
+  // 0, so the order is the population order (groups[0] is the heaviest) and so is the score.
+  const firstScore = scores === null ? 0 : scores[groups[0]!]!;
   const colors: ExtractedColor[] = [];
   for (let slot = 0; slot < groups.length; slot++) {
     const group = groups[slot]!;
@@ -140,7 +171,9 @@ function extract(pixels: PixelInput, options: ResolvedOptions): ExtractionResult
       hex8: `${hex}${toHexByte(alpha)}`,
       rgba: [red, green, blue, alpha],
       coverage: roundRatio(weight / histogram.totalWeight),
-      score: roundRatio(weight / largestWeight),
+      score: roundRatio(
+        scores !== null && firstScore > 0 ? scores[group]! / firstScore : weight / largestWeight,
+      ),
       position: { x, y },
     });
   }
