@@ -6,7 +6,7 @@ on:
     # do not re-run the full CI.
     types: [opened, reopened, synchronize]
   push:
-    branches: [next]
+    branches: [main]
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
