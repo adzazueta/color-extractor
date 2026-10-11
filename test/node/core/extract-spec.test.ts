@@ -269,6 +269,21 @@ describe("spec 7.1: changing the mode only changes the order", () => {
     expect(perceptual.colors[1]!.score).toBeLessThan(0.5);
   });
 
+  it("perceptual mode moves a shade of the first color below a different color", () => {
+    // Red (50 %), a dark red that is a shade of it (30 %, about 0.03 away, under the variety
+    // distance 0.25), and a pale blue (20 %, over 0.27 from both). The dark red stands out more
+    // than the blue on its own, but it keeps only about an eighth of its score next to the red, so
+    // the blue goes before it. The first color is the same as without variety.
+    const image = createImage(100, 100, (x) =>
+      x < 50 ? [141, 3, 3, 255] : x < 80 ? [118, 2, 2, 255] : [120, 170, 200, 255],
+    );
+    const population = extractColorsFromPixels(image, { mode: "population" });
+    const perceptual = extractColorsFromPixels(image, { mode: "perceptual" });
+    expect(population.colors.map((c) => c.hex)).toEqual(["#8d0303", "#760202", "#78aac8"]);
+    expect(perceptual.colors.map((c) => c.hex)).toEqual(["#8d0303", "#78aac8", "#760202"]);
+    expect(perceptual.colors.map((c) => c.score)).toEqual([1, 0.799, 0.1237]);
+  });
+
   it.each(sampleImages())(
     "%s: the first score is 1, scores never increase, and all are in [0, 1]",
     (_name, image) => {

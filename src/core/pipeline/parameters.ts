@@ -44,7 +44,13 @@ export const PERCEPTUAL_CONTRAST_WEIGHT: number = 0.15;
 export const PERCEPTUAL_COLORFULNESS_WEIGHT: number = 0.85;
 
 /**
+ * Perceptual variety: after the first color, a color closer than 0.25 (perceptual contrast
+ * distance) to a color already placed is a shade of it and keeps distance / 0.25 of its score.
+ */
+export const PERCEPTUAL_VARIETY_DISTANCE: number = 0.25;
+
+/**
  * Version of the algorithm, reported in `meta.algorithmVersion`: `"<N>"` for a frozen algorithm,
  * `"<N>-<tag>"` for a temporary one.
  */
-export const ALGORITHM_VERSION: string = "2";
+export const ALGORITHM_VERSION: string = "3";
