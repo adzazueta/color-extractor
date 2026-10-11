@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vite-plus/test";
 import { ColorExtractorError } from "@/core/errors.js";
 import { extractColorsFromPixels } from "@/core/index.js";
-import type { PixelInput } from "@/core/types.js";
+import type { ExtractedColor, PixelInput } from "@/core/types.js";
 
 function solid(width: number, height: number, rgba: readonly number[]): PixelInput {
   const data = new Uint8Array(width * height * 4);
@@ -44,7 +44,7 @@ describe("extractColorsFromPixels", () => {
       height: 10,
       mode: "population",
       count: 5,
-      algorithmVersion: "1-population-only",
+      algorithmVersion: "2",
     });
     expect(result.colors).toHaveLength(3);
     result.colors.forEach((color, index) => {
@@ -87,7 +87,7 @@ describe("extractColorsFromPixels", () => {
         height: 2,
         mode: "perceptual",
         count: 3,
-        algorithmVersion: "1-population-only",
+        algorithmVersion: "2",
       },
     });
   });
@@ -115,15 +115,25 @@ describe("extractColorsFromPixels", () => {
       expect(hex8.startsWith(hex)).toBe(true);
       expect(hex8.slice(7)).toBe(rgba[3].toString(16).padStart(2, "0"));
     }
-    expect(result.colors.at(-1)!.rgba[3]).toBe(128);
-    expect(result.colors.at(-1)!.hex8).toBe("#0a14dc80");
+    // The order depends on the mode, so the semi-transparent blue is found by its hex.
+    const blue = result.colors.find((color) => color.hex === "#0a14dc");
+    expect(blue?.rgba[3]).toBe(128);
+    expect(blue?.hex8).toBe("#0a14dc80");
   });
 
-  it("orders perceptual like population and only changes meta.mode", () => {
+  it("reorders and rescores the same colors in perceptual mode", () => {
     const pixels = threeColors();
     const population = extractColorsFromPixels(pixels, { mode: "population" });
     const perceptual = extractColorsFromPixels(pixels, { mode: "perceptual" });
-    expect(perceptual.colors).toEqual(population.colors);
+    const identity = (color: ExtractedColor) =>
+      JSON.stringify([color.hex8, color.position, color.coverage]);
+    expect(perceptual.colors.map(identity).sort()).toEqual(population.colors.map(identity).sort());
+    // Population: red (largest), green, blue. Perceptual: blue stands out the most; all three
+    // are fully colorful and present, so the contrast with the rest decides.
+    expect(population.colors.map((color) => color.hex)).toEqual(["#c81e1e", "#14b428", "#0a14dc"]);
+    expect(perceptual.colors.map((color) => color.hex)).toEqual(["#0a14dc", "#c81e1e", "#14b428"]);
+    expect(perceptual.colors.map((color) => color.rank)).toEqual([1, 2, 3]);
+    expect(perceptual.colors.map((color) => color.score)).toEqual([1, 0.9829, 0.9814]);
     expect(population.meta.mode).toBe("population");
     expect(perceptual.meta.mode).toBe("perceptual");
     expect({ ...perceptual.meta, mode: "population" }).toEqual(population.meta);

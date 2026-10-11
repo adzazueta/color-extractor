@@ -211,13 +211,15 @@ describe("spec 7.1: every returned color matches the pixel at its position", () 
 describe("spec 7.1: requesting fewer colors keeps the first ones", () => {
   const counts = [1, 3, 5, 10, 16];
   it.each(sampleImages())("%s", (_name, image) => {
-    const results = counts.map((count) => extractColorsFromPixels(image, { count }).colors);
-    for (let i = 0; i < counts.length; i++) {
-      expect(results[i]!.length).toBeLessThanOrEqual(counts[i]!);
-      for (let j = i + 1; j < counts.length; j++) {
-        expect(results[j]!.slice(0, results[i]!.length)).toEqual(results[i]);
-        // A smaller request is never shorter than what the larger one has up to its count.
-        expect(results[i]!.length).toBe(Math.min(counts[i]!, results[j]!.length));
+    for (const mode of ["perceptual", "population"] as const) {
+      const results = counts.map((count) => extractColorsFromPixels(image, { mode, count }).colors);
+      for (let i = 0; i < counts.length; i++) {
+        expect(results[i]!.length).toBeLessThanOrEqual(counts[i]!);
+        for (let j = i + 1; j < counts.length; j++) {
+          expect(results[j]!.slice(0, results[i]!.length)).toEqual(results[i]);
+          // A smaller request is never shorter than what the larger one has up to its count.
+          expect(results[i]!.length).toBe(Math.min(counts[i]!, results[j]!.length));
+        }
       }
     }
   });
@@ -251,6 +253,47 @@ describe("spec 7.1: changing the mode only changes the order", () => {
     for (let i = 1; i < colors.length; i++) {
       expect(colors[i - 1]!.coverage).toBeGreaterThanOrEqual(colors[i]!.coverage);
     }
+  });
+
+  it("perceptual mode puts a small saturated block before a large gray area", () => {
+    // A 12 x 12 red block (1.44 %) on a 100 x 100 gray image.
+    const image = createImage(100, 100, (x, y) =>
+      x >= 40 && x < 52 && y >= 40 && y < 52 ? [220, 30, 40, 255] : [128, 128, 128, 255],
+    );
+    const population = extractColorsFromPixels(image, { mode: "population" });
+    const perceptual = extractColorsFromPixels(image, { mode: "perceptual" });
+    expect(population.colors.map((c) => c.hex)).toEqual(["#808080", "#dc1e28"]);
+    expect(perceptual.colors.map((c) => c.hex)).toEqual(["#dc1e28", "#808080"]);
+    expect(perceptual.colors.map((c) => c.coverage)).toEqual([0.0144, 0.9856]);
+    expect(perceptual.colors[0]!.score).toBe(1);
+    expect(perceptual.colors[1]!.score).toBeLessThan(0.5);
+  });
+
+  it.each(sampleImages())(
+    "%s: the first score is 1, scores never increase, and all are in [0, 1]",
+    (_name, image) => {
+      for (const mode of ["perceptual", "population"] as const) {
+        const { colors } = extractColorsFromPixels(image, { mode, count: 16 });
+        expect(colors[0]!.score).toBe(1);
+        for (let i = 0; i < colors.length; i++) {
+          expect(colors[i]!.score).toBeGreaterThanOrEqual(0);
+          expect(colors[i]!.score).toBeLessThanOrEqual(1);
+          if (i > 0) expect(colors[i]!.score).toBeLessThanOrEqual(colors[i - 1]!.score);
+        }
+      }
+    },
+  );
+
+  it.each([
+    ["black", [0, 0, 0, 255]],
+    ["gray", [128, 128, 128, 255]],
+    ["white", [255, 255, 255, 255]],
+  ] as [string, Rgba][])("a one-color %s image scores 1 in both modes", (_name, rgba) => {
+    const image = solidImage(6, 4, rgba);
+    const population = extractColorsFromPixels(image, { mode: "population" });
+    const perceptual = extractColorsFromPixels(image, { mode: "perceptual" });
+    expect(perceptual.colors).toEqual(population.colors);
+    expect(perceptual.colors.map((c) => c.score)).toEqual([1]);
   });
 });
 

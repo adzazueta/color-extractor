@@ -3,7 +3,13 @@ import { rankGroups } from "@/core/pipeline/rank.js";
 import { RANKING_MIN_PRESENCE_DIVISOR } from "@/core/pipeline/parameters.js";
 import { mulberry32 } from "../helpers.js";
 
-function rank(weights: number[], colors: number[], count: number, total?: number): number[] {
+function rank(
+  weights: number[],
+  colors: number[],
+  count: number,
+  total?: number,
+  scores?: number[],
+): number[] {
   const sum: number = weights.reduce((a, b) => a + b, 0);
   const result = rankGroups(
     Float64Array.from(weights),
@@ -11,6 +17,7 @@ function rank(weights: number[], colors: number[], count: number, total?: number
     total ?? sum,
     RANKING_MIN_PRESENCE_DIVISOR,
     count,
+    scores === undefined ? null : Float64Array.from(scores),
   );
   return Array.from(result.groups);
 }
@@ -109,5 +116,89 @@ describe("rankGroups", () => {
     expect(Array.from(result.groups)).toEqual([1, 2, 0]);
     expect(result.groups.buffer).not.toBe(weights.buffer);
     expect(result.groups.buffer).not.toBe(colors.buffer);
+  });
+});
+
+describe("rankGroups with perceptual scores", () => {
+  it("orders by score, descending, before weight", () => {
+    expect(rank([10, 50, 30], [1, 2, 3], 3, undefined, [0.9, 0.1, 0.5])).toEqual([0, 2, 1]);
+  });
+
+  it("breaks score ties by weight, then packed RGB, then group index", () => {
+    // Group 5 has the best score. The others tie at 0.5: group 2 is the heaviest; groups 0, 1,
+    // 3, and 4 tie at 40 and go by color (3, 0, then 1 and 4 by index).
+    const weights = [40, 40, 50, 40, 40, 1];
+    const colors = [0x300000, 0x500000, 0x900000, 0x100000, 0x500000, 0xffffff];
+    const scores = [0.5, 0.5, 0.5, 0.5, 0.5, 0.7];
+    expect(rank(weights, colors, 6, undefined, scores)).toEqual([5, 2, 3, 0, 1, 4]);
+  });
+
+  it("gives the population order with null, and with scores that all tie", () => {
+    const random = mulberry32(11);
+    const weights: number[] = [];
+    const colors: number[] = [];
+    for (let g = 0; g < 30; g++) {
+      weights.push(1 + Math.floor(random() * 20));
+      colors.push(Math.floor(random() * 0xffffff));
+    }
+    const population = rank(weights, colors, 30);
+    const total = weights.reduce((a, b) => a + b, 0);
+    const withNull = rankGroups(
+      Float64Array.from(weights),
+      Uint32Array.from(colors),
+      total,
+      RANKING_MIN_PRESENCE_DIVISOR,
+      30,
+      null,
+    );
+    expect(Array.from(withNull.groups)).toEqual(population);
+    expect(
+      rank(
+        weights,
+        colors,
+        30,
+        undefined,
+        Array.from({ length: 30 }, () => 0),
+      ),
+    ).toEqual(population);
+  });
+
+  it("still applies the presence minimum: a dropped group is not returned whatever its score", () => {
+    // Total 10,001: group 1 (weight 1) is dropped even with the best score.
+    expect(rank([10_000, 1], [1, 2], 5, 10_001, [0, 1])).toEqual([0]);
+  });
+
+  it("gives count 3 as a prefix of count 10", () => {
+    const random = mulberry32(5);
+    const weights: number[] = [];
+    const colors: number[] = [];
+    const scores: number[] = [];
+    for (let g = 0; g < 20; g++) {
+      weights.push(1 + Math.floor(random() * 50));
+      colors.push(Math.floor(random() * 0xffffff));
+      scores.push(Math.floor(random() * 4) / 4);
+    }
+    const three = rank(weights, colors, 3, undefined, scores);
+    const ten = rank(weights, colors, 10, undefined, scores);
+    expect(three).toHaveLength(3);
+    expect(ten.slice(0, 3)).toEqual(three);
+    for (let s = 1; s < ten.length; s++) {
+      expect(scores[ten[s - 1]!]!).toBeGreaterThanOrEqual(scores[ten[s]!]!);
+    }
+  });
+
+  it("does not mutate the scores", () => {
+    const scores = Float64Array.from([0.8, 0.2, 0.5]);
+    const copy = scores.slice();
+    const result = rankGroups(
+      Float64Array.from([2, 9, 4]),
+      Uint32Array.from([3, 2, 1]),
+      15,
+      RANKING_MIN_PRESENCE_DIVISOR,
+      3,
+      scores,
+    );
+    expect(scores).toEqual(copy);
+    expect(Array.from(result.groups)).toEqual([0, 2, 1]);
   });
 });

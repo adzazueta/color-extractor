@@ -28,8 +28,23 @@ export const RANKING_MIN_PRESENCE_DIVISOR: number = 10_000;
 /** Coverage and score are rounded to multiples of 1 / 10,000 (4 decimals). */
 export const ROUNDING_SCALE: number = 10_000;
 
+/** Perceptual contrast distance: sqrt(0.25 · ΔL² + Δa² + Δb²) in Oklab (lightness counts half). */
+export const PERCEPTUAL_LIGHTNESS_WEIGHT: number = 0.25;
+
+/** Oklab chroma at which colorfulness reaches 1: chroma is capped at 0.1 and divided by 0.1. */
+export const PERCEPTUAL_CHROMA_CAP: number = 0.1;
+
+/** Full perceptual presence when 50 · weight ≥ the total visible weight (2 %); linear below. */
+export const PERCEPTUAL_PRESENCE_DIVISOR: number = 50;
+
+/** Weight of the contrast with the rest of the image in the perceptual score. */
+export const PERCEPTUAL_CONTRAST_WEIGHT: number = 0.15;
+
+/** Weight of the colorfulness in the perceptual score. */
+export const PERCEPTUAL_COLORFULNESS_WEIGHT: number = 0.85;
+
 /**
  * Version of the algorithm, reported in `meta.algorithmVersion`: `"<N>"` for a frozen algorithm,
- * `"<N>-<tag>"` for a temporary one. The tag says that perceptual mode orders by area until it exists.
+ * `"<N>-<tag>"` for a temporary one.
  */
-export const ALGORITHM_VERSION: string = "1-population-only";
+export const ALGORITHM_VERSION: string = "2";
