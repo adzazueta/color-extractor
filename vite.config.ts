@@ -66,6 +66,9 @@ export default defineConfig({
       "pnpm-lock.yaml",
       "eval/annotations/**",
       "eval/reports/**",
+      // Written by `changeset version` in the version pull request, which nothing formats: its
+      // generator indents the blank lines of a multi-line entry with two spaces.
+      "CHANGELOG.md",
     ],
   },
   staged: {
