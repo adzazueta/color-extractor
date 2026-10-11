@@ -1,5 +1,2144 @@
 {
   "schemaVersion": 1,
   "set": "dev",
-  "images": []
+  "images": [
+    {
+      "id": "dev-001",
+      "sha256": "599f6e0948f8132d40573384b17e44ebbd090dca3a9f320e51a452f58f8d882b",
+      "category": "reference",
+      "width": 740,
+      "height": 493,
+      "acceptable": [
+        {
+          "samples": [
+            {
+              "x": 322,
+              "y": 17,
+              "hex": "#b71506"
+            },
+            {
+              "x": 320,
+              "y": 13,
+              "hex": "#f70700"
+            },
+            {
+              "x": 311,
+              "y": 15,
+              "hex": "#ed2b27"
+            },
+            {
+              "x": 306,
+              "y": 18,
+              "hex": "#e81803"
+            },
+            {
+              "x": 309,
+              "y": 15,
+              "hex": "#a93200"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dev-002",
+      "sha256": "2b850cad4eb56e5f65c64b2b376346ad8d78c16e51db93ab5ed9e20abee00994",
+      "category": "reference",
+      "width": 1920,
+      "height": 1080,
+      "acceptable": [
+        {
+          "samples": [
+            {
+              "x": 1175,
+              "y": 810,
+              "hex": "#eac888"
+            },
+            {
+              "x": 1175,
+              "y": 849,
+              "hex": "#e9cb8d"
+            },
+            {
+              "x": 1236,
+              "y": 820,
+              "hex": "#edcf93"
+            },
+            {
+              "x": 1235,
+              "y": 864,
+              "hex": "#efd193"
+            },
+            {
+              "x": 1170,
+              "y": 889,
+              "hex": "#ebcb92"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dev-003",
+      "sha256": "8bc343df38716f716569ae7c246aa270d56f62b019dbccb8fd149cd0034b7938",
+      "category": "reference",
+      "width": 750,
+      "height": 548,
+      "acceptable": [
+        {
+          "samples": [
+            {
+              "x": 201,
+              "y": 428,
+              "hex": "#8f0100"
+            },
+            {
+              "x": 211,
+              "y": 443,
+              "hex": "#7e0403"
+            },
+            {
+              "x": 141,
+              "y": 429,
+              "hex": "#960404"
+            },
+            {
+              "x": 121,
+              "y": 432,
+              "hex": "#a30506"
+            },
+            {
+              "x": 182,
+              "y": 460,
+              "hex": "#ba070a"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dev-004",
+      "sha256": "47e7fa66c5d9c5af22e7bd27410fdd00affb4415d842c6386bec6850cfdba2e6",
+      "category": "reference",
+      "width": 338,
+      "height": 481,
+      "acceptable": [
+        {
+          "samples": [
+            {
+              "x": 119,
+              "y": 344,
+              "hex": "#9bf3f5"
+            },
+            {
+              "x": 111,
+              "y": 332,
+              "hex": "#9bf1f0"
+            },
+            {
+              "x": 111,
+              "y": 367,
+              "hex": "#92eaec"
+            },
+            {
+              "x": 128,
+              "y": 357,
+              "hex": "#6cc3cd"
+            },
+            {
+              "x": 167,
+              "y": 374,
+              "hex": "#79cdd7"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dev-005",
+      "sha256": "352f134cb2112808275a119eff8667c5b8c3591913d7621cf86484ba9a9f3cfb",
+      "category": "character-art",
+      "width": 860,
+      "height": 1200,
+      "acceptable": [
+        {
+          "samples": [
+            {
+              "x": 732,
+              "y": 445,
+              "hex": "#ad7aa9"
+            },
+            {
+              "x": 748,
+              "y": 401,
+              "hex": "#cc9ec8"
+            },
+            {
+              "x": 773,
+              "y": 401,
+              "hex": "#b97fb1"
+            },
+            {
+              "x": 674,
+              "y": 485,
+              "hex": "#ae699f"
+            },
+            {
+              "x": 819,
+              "y": 598,
+              "hex": "#a475a4"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dev-006",
+      "sha256": "eed00f88677bcdde215f931612f5d76cd2534b655866ca82ea74c545d83e27ed",
+      "category": "character-art",
+      "width": 1200,
+      "height": 1626,
+      "acceptable": [
+        {
+          "samples": [
+            {
+              "x": 432,
+              "y": 475,
+              "hex": "#ae282f"
+            },
+            {
+              "x": 514,
+              "y": 399,
+              "hex": "#9f2f2b"
+            },
+            {
+              "x": 490,
+              "y": 461,
+              "hex": "#b62f2c"
+            },
+            {
+              "x": 238,
+              "y": 277,
+              "hex": "#dd4446"
+            },
+            {
+              "x": 390,
+              "y": 493,
+              "hex": "#b23030"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dev-007",
+      "sha256": "7f2e5e315555a2ab9a7317604cd234d62ebb36f32c71800f8357b7da5a665c92",
+      "category": "white-background",
+      "width": 1200,
+      "height": 1504,
+      "acceptable": [
+        {
+          "samples": [
+            {
+              "x": 943,
+              "y": 632,
+              "hex": "#adabdd"
+            },
+            {
+              "x": 886,
+              "y": 739,
+              "hex": "#acaad9"
+            },
+            {
+              "x": 993,
+              "y": 713,
+              "hex": "#c7c9e2"
+            },
+            {
+              "x": 1054,
+              "y": 608,
+              "hex": "#8e88c6"
+            },
+            {
+              "x": 1089,
+              "y": 674,
+              "hex": "#b2b1d9"
+            }
+          ]
+        },
+        {
+          "samples": [
+            {
+              "x": 322,
+              "y": 445,
+              "hex": "#bb3140"
+            },
+            {
+              "x": 352,
+              "y": 480,
+              "hex": "#75251e"
+            },
+            {
+              "x": 300,
+              "y": 595,
+              "hex": "#891b26"
+            },
+            {
+              "x": 492,
+              "y": 632,
+              "hex": "#ba2423"
+            },
+            {
+              "x": 524,
+              "y": 586,
+              "hex": "#dc4645"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dev-008",
+      "sha256": "5fd0c875b43eae7ab7900552a87f595cec2fe04cb2ab9f4f617302c4b575db97",
+      "category": "white-background",
+      "width": 300,
+      "height": 416,
+      "acceptable": [
+        {
+          "samples": [
+            {
+              "x": 59,
+              "y": 80,
+              "hex": "#eb4a73"
+            },
+            {
+              "x": 31,
+              "y": 77,
+              "hex": "#ec4162"
+            },
+            {
+              "x": 54,
+              "y": 66,
+              "hex": "#ea4972"
+            },
+            {
+              "x": 47,
+              "y": 85,
+              "hex": "#e53852"
+            },
+            {
+              "x": 81,
+              "y": 76,
+              "hex": "#eb5179"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dev-009",
+      "sha256": "bd9f6fa77fb3427c3882a3f5da8f7ab8e35f23a2fd061bd1629f3ef552f724e4",
+      "category": "character-art",
+      "width": 300,
+      "height": 420,
+      "acceptable": [
+        {
+          "samples": [
+            {
+              "x": 250,
+              "y": 184,
+              "hex": "#9f4c64"
+            },
+            {
+              "x": 252,
+              "y": 221,
+              "hex": "#873746"
+            },
+            {
+              "x": 276,
+              "y": 196,
+              "hex": "#a24d63"
+            },
+            {
+              "x": 232,
+              "y": 202,
+              "hex": "#9b4158"
+            },
+            {
+              "x": 264,
+              "y": 326,
+              "hex": "#99304f"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dev-010",
+      "sha256": "b5d73a21113e24fa97b46fec0559f2591f54fef5150d58d3fa3d8f1d91dde16d",
+      "category": "white-background",
+      "width": 600,
+      "height": 900,
+      "acceptable": [
+        {
+          "samples": [
+            {
+              "x": 306,
+              "y": 178,
+              "hex": "#1d4d3d"
+            },
+            {
+              "x": 286,
+              "y": 238,
+              "hex": "#295441"
+            },
+            {
+              "x": 323,
+              "y": 199,
+              "hex": "#20432f"
+            },
+            {
+              "x": 334,
+              "y": 256,
+              "hex": "#41725f"
+            },
+            {
+              "x": 352,
+              "y": 232,
+              "hex": "#19392c"
+            }
+          ]
+        },
+        {
+          "samples": [
+            {
+              "x": 203,
+              "y": 662,
+              "hex": "#788c45"
+            },
+            {
+              "x": 190,
+              "y": 423,
+              "hex": "#53802f"
+            },
+            {
+              "x": 168,
+              "y": 470,
+              "hex": "#5a8033"
+            },
+            {
+              "x": 276,
+              "y": 703,
+              "hex": "#6b7d49"
+            },
+            {
+              "x": 293,
+              "y": 667,
+              "hex": "#798a46"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dev-011",
+      "sha256": "8122b7b5830bdac49184500885b9a9b9ea9b85cd4eb65a1356b556b3fb06e803",
+      "category": "black-and-white",
+      "width": 300,
+      "height": 442,
+      "acceptable": [
+        {
+          "samples": [
+            {
+              "x": 174,
+              "y": 173,
+              "hex": "#656565"
+            },
+            {
+              "x": 157,
+              "y": 190,
+              "hex": "#656565"
+            },
+            {
+              "x": 208,
+              "y": 192,
+              "hex": "#656565"
+            },
+            {
+              "x": 211,
+              "y": 216,
+              "hex": "#656565"
+            },
+            {
+              "x": 185,
+              "y": 214,
+              "hex": "#656565"
+            }
+          ]
+        },
+        {
+          "samples": [
+            {
+              "x": 111,
+              "y": 247,
+              "hex": "#fefefe"
+            },
+            {
+              "x": 63,
+              "y": 23,
+              "hex": "#fefefe"
+            },
+            {
+              "x": 105,
+              "y": 5,
+              "hex": "#fefefe"
+            },
+            {
+              "x": 190,
+              "y": 48,
+              "hex": "#f8f8f8"
+            },
+            {
+              "x": 293,
+              "y": 29,
+              "hex": "#fefefe"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dev-012",
+      "sha256": "554be038310f333e68638db100c6be57347951abae20845a7f4b66e7dc619233",
+      "category": "character-art",
+      "width": 300,
+      "height": 416,
+      "acceptable": [
+        {
+          "samples": [
+            {
+              "x": 207,
+              "y": 36,
+              "hex": "#8bb147"
+            },
+            {
+              "x": 256,
+              "y": 46,
+              "hex": "#3f7437"
+            },
+            {
+              "x": 265,
+              "y": 98,
+              "hex": "#699349"
+            },
+            {
+              "x": 197,
+              "y": 86,
+              "hex": "#5c8c52"
+            },
+            {
+              "x": 255,
+              "y": 113,
+              "hex": "#60813f"
+            }
+          ]
+        },
+        {
+          "samples": [
+            {
+              "x": 160,
+              "y": 186,
+              "hex": "#f68e16"
+            },
+            {
+              "x": 163,
+              "y": 203,
+              "hex": "#f28022"
+            },
+            {
+              "x": 169,
+              "y": 194,
+              "hex": "#ef8a14"
+            },
+            {
+              "x": 160,
+              "y": 232,
+              "hex": "#f49518"
+            },
+            {
+              "x": 142,
+              "y": 232,
+              "hex": "#e27b27"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dev-013",
+      "sha256": "a7b11f74520af3e61672405a86afb64ec44843300430c18ad66e4da62839bc0b",
+      "category": "saturated-logo",
+      "width": 1200,
+      "height": 1886,
+      "acceptable": [
+        {
+          "samples": [
+            {
+              "x": 460,
+              "y": 489,
+              "hex": "#f9c9bd"
+            },
+            {
+              "x": 630,
+              "y": 547,
+              "hex": "#fbd6ce"
+            },
+            {
+              "x": 574,
+              "y": 551,
+              "hex": "#f8d3cb"
+            },
+            {
+              "x": 1136,
+              "y": 1744,
+              "hex": "#f4a1b3"
+            },
+            {
+              "x": 595,
+              "y": 43,
+              "hex": "#f4a1b3"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dev-014",
+      "sha256": "e2768ccf5f7447f45ed619adf2ab6c5fa181a557d198bc959df60e1abc445c49",
+      "category": "white-background",
+      "width": 300,
+      "height": 471,
+      "acceptable": [
+        {
+          "samples": [
+            {
+              "x": 245,
+              "y": 153,
+              "hex": "#417b1f"
+            },
+            {
+              "x": 244,
+              "y": 178,
+              "hex": "#3e7d1d"
+            },
+            {
+              "x": 273,
+              "y": 149,
+              "hex": "#3c7c19"
+            },
+            {
+              "x": 283,
+              "y": 167,
+              "hex": "#35801e"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dev-015",
+      "sha256": "ae498c86596afedfde7e8efe86842460d43826024999c7910ce03cccd98faf77",
+      "category": "character-art",
+      "width": 1200,
+      "height": 1672,
+      "acceptable": [
+        {
+          "samples": [
+            {
+              "x": 995,
+              "y": 341,
+              "hex": "#36647c"
+            },
+            {
+              "x": 1048,
+              "y": 361,
+              "hex": "#366378"
+            },
+            {
+              "x": 1054,
+              "y": 443,
+              "hex": "#4a667b"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dev-016",
+      "sha256": "6c95a8fd863f0ca7bf2f42e270e8907303d9917734d99090b29f75f3fd372abd",
+      "category": "general",
+      "width": 300,
+      "height": 417,
+      "acceptable": [
+        {
+          "samples": [
+            {
+              "x": 124,
+              "y": 46,
+              "hex": "#fedb01"
+            },
+            {
+              "x": 221,
+              "y": 57,
+              "hex": "#ffdc02"
+            },
+            {
+              "x": 142,
+              "y": 163,
+              "hex": "#ffda05"
+            },
+            {
+              "x": 199,
+              "y": 211,
+              "hex": "#fedb01"
+            },
+            {
+              "x": 151,
+              "y": 145,
+              "hex": "#fcdb00"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dev-017",
+      "sha256": "5d2bd945403a8be8b14d32fbdb3461a56aa887268e40cd5742631334f88c740d",
+      "category": "dark",
+      "width": 300,
+      "height": 416,
+      "acceptable": [
+        {
+          "samples": [
+            {
+              "x": 251,
+              "y": 103,
+              "hex": "#203225"
+            },
+            {
+              "x": 248,
+              "y": 124,
+              "hex": "#30433b"
+            },
+            {
+              "x": 280,
+              "y": 110,
+              "hex": "#141b16"
+            },
+            {
+              "x": 223,
+              "y": 74,
+              "hex": "#16231c"
+            },
+            {
+              "x": 243,
+              "y": 143,
+              "hex": "#1f3a31"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dev-018",
+      "sha256": "b59a81eb569fe9503d9cfb27e0047caa2c99465d7cd412e9ca885b2f3457d169",
+      "category": "character-art",
+      "width": 300,
+      "height": 416,
+      "acceptable": [
+        {
+          "samples": [
+            {
+              "x": 177,
+              "y": 96,
+              "hex": "#dd3a83"
+            },
+            {
+              "x": 96,
+              "y": 45,
+              "hex": "#df4287"
+            },
+            {
+              "x": 100,
+              "y": 33,
+              "hex": "#b23b75"
+            },
+            {
+              "x": 192,
+              "y": 46,
+              "hex": "#dd79b1"
+            },
+            {
+              "x": 192,
+              "y": 67,
+              "hex": "#d73a81"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dev-019",
+      "sha256": "566fb8453d6a906b5e2c537c0d848048ff287b912ca46d050d9dccafa939a66d",
+      "category": "character-art",
+      "width": 300,
+      "height": 467,
+      "acceptable": [
+        {
+          "samples": [
+            {
+              "x": 255,
+              "y": 353,
+              "hex": "#ec9d9c"
+            },
+            {
+              "x": 253,
+              "y": 349,
+              "hex": "#e69998"
+            },
+            {
+              "x": 254,
+              "y": 347,
+              "hex": "#e09595"
+            },
+            {
+              "x": 257,
+              "y": 155,
+              "hex": "#c1677f"
+            },
+            {
+              "x": 244,
+              "y": 160,
+              "hex": "#da7990"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dev-020",
+      "sha256": "1efff5f02857881768b6382b117e7b404324e15075cc844e2916013de4fba6e0",
+      "category": "character-art",
+      "width": 770,
+      "height": 1200,
+      "acceptable": [
+        {
+          "samples": [
+            {
+              "x": 414,
+              "y": 166,
+              "hex": "#888ab1"
+            },
+            {
+              "x": 348,
+              "y": 256,
+              "hex": "#7071a1"
+            },
+            {
+              "x": 405,
+              "y": 252,
+              "hex": "#675e8d"
+            },
+            {
+              "x": 469,
+              "y": 154,
+              "hex": "#5e639b"
+            },
+            {
+              "x": 482,
+              "y": 198,
+              "hex": "#50578d"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dev-021",
+      "sha256": "43afb06ea533b15bdf83bac99a452f6f4300955349d168d7fde23f100d77fbaa",
+      "category": "character-art",
+      "width": 300,
+      "height": 471,
+      "acceptable": [
+        {
+          "samples": [
+            {
+              "x": 125,
+              "y": 133,
+              "hex": "#fae067"
+            },
+            {
+              "x": 152,
+              "y": 136,
+              "hex": "#fce06a"
+            },
+            {
+              "x": 167,
+              "y": 150,
+              "hex": "#ffe784"
+            },
+            {
+              "x": 174,
+              "y": 133,
+              "hex": "#fae161"
+            },
+            {
+              "x": 206,
+              "y": 133,
+              "hex": "#ffe06b"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dev-022",
+      "sha256": "619eed2faa08632346c134a13a6bceddb70aed5ee1ae89d2a8059b8d1d089324",
+      "category": "dark",
+      "width": 1200,
+      "height": 1685,
+      "acceptable": [
+        {
+          "samples": [
+            {
+              "x": 871,
+              "y": 505,
+              "hex": "#e7d4c5"
+            },
+            {
+              "x": 921,
+              "y": 754,
+              "hex": "#e7d4c5"
+            },
+            {
+              "x": 798,
+              "y": 642,
+              "hex": "#e7d4c5"
+            },
+            {
+              "x": 892,
+              "y": 534,
+              "hex": "#e7d4c5"
+            },
+            {
+              "x": 883,
+              "y": 706,
+              "hex": "#e7d4c5"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dev-023",
+      "sha256": "8ae0cda5bb95948c2d2fe0ef7be893d60f87c1d903277be4490f275e51ffe580",
+      "category": "character-art",
+      "width": 300,
+      "height": 413,
+      "acceptable": [
+        {
+          "samples": [
+            {
+              "x": 25,
+              "y": 7,
+              "hex": "#8cca66"
+            },
+            {
+              "x": 36,
+              "y": 12,
+              "hex": "#95cb6b"
+            },
+            {
+              "x": 37,
+              "y": 26,
+              "hex": "#91cd6b"
+            },
+            {
+              "x": 159,
+              "y": 16,
+              "hex": "#96cc6e"
+            },
+            {
+              "x": 153,
+              "y": 67,
+              "hex": "#a1d17f"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dev-024",
+      "sha256": "dc823d97b6f1f554cca5be96c9971886fe58c9701f7a991b22de897ceb8c0049",
+      "category": "character-art",
+      "width": 300,
+      "height": 423,
+      "acceptable": [
+        {
+          "samples": [
+            {
+              "x": 114,
+              "y": 52,
+              "hex": "#4f3c92"
+            },
+            {
+              "x": 137,
+              "y": 51,
+              "hex": "#4b398d"
+            },
+            {
+              "x": 126,
+              "y": 75,
+              "hex": "#4b3c8c"
+            },
+            {
+              "x": 184,
+              "y": 56,
+              "hex": "#45378b"
+            },
+            {
+              "x": 184,
+              "y": 81,
+              "hex": "#523c95"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dev-025",
+      "sha256": "5a85e5c6c2c2ca99cbb91991116ea05aac7a9104f109c84ff9d7ac39a1a2de06",
+      "category": "character-art",
+      "width": 300,
+      "height": 467,
+      "acceptable": [
+        {
+          "samples": [
+            {
+              "x": 183,
+              "y": 94,
+              "hex": "#f8e386"
+            },
+            {
+              "x": 205,
+              "y": 93,
+              "hex": "#fac265"
+            },
+            {
+              "x": 191,
+              "y": 104,
+              "hex": "#f7d080"
+            },
+            {
+              "x": 175,
+              "y": 120,
+              "hex": "#ffc675"
+            },
+            {
+              "x": 178,
+              "y": 132,
+              "hex": "#f9c570"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dev-026",
+      "sha256": "fe5e33ee4abbcd1171cbbfa5292be25cb92e0ee6b33cb781cf877aeb11ec5a8c",
+      "category": "character-art",
+      "width": 300,
+      "height": 466,
+      "acceptable": [
+        {
+          "samples": [
+            {
+              "x": 121,
+              "y": 317,
+              "hex": "#423160"
+            },
+            {
+              "x": 112,
+              "y": 320,
+              "hex": "#433060"
+            },
+            {
+              "x": 108,
+              "y": 350,
+              "hex": "#473250"
+            },
+            {
+              "x": 235,
+              "y": 381,
+              "hex": "#352544"
+            },
+            {
+              "x": 245,
+              "y": 383,
+              "hex": "#49385b"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dev-027",
+      "sha256": "bc2acbd1b98810e931019788b61597c1081887f0118b496a7712f70bd87c1d90",
+      "category": "white-background",
+      "width": 300,
+      "height": 467,
+      "acceptable": [
+        {
+          "samples": [
+            {
+              "x": 141,
+              "y": 348,
+              "hex": "#e5202a"
+            },
+            {
+              "x": 139,
+              "y": 375,
+              "hex": "#da2028"
+            },
+            {
+              "x": 131,
+              "y": 362,
+              "hex": "#e21f2a"
+            },
+            {
+              "x": 86,
+              "y": 353,
+              "hex": "#d31f2a"
+            },
+            {
+              "x": 81,
+              "y": 232,
+              "hex": "#e71d2a"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dev-028",
+      "sha256": "a052108ab2af7aa73c996d5d693b6493ece8415d54d2090685f23671927ca069",
+      "category": "white-background",
+      "width": 300,
+      "height": 430,
+      "acceptable": [
+        {
+          "samples": [
+            {
+              "x": 91,
+              "y": 72,
+              "hex": "#a43c3b"
+            },
+            {
+              "x": 101,
+              "y": 54,
+              "hex": "#a9534e"
+            },
+            {
+              "x": 94,
+              "y": 90,
+              "hex": "#b74f3c"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dev-029",
+      "sha256": "e4a5002bb3a32b7712d24639ca5207a5460fc857540e8eaab45a631e319d7cef",
+      "category": "white-background",
+      "width": 300,
+      "height": 467,
+      "acceptable": [
+        {
+          "samples": [
+            {
+              "x": 102,
+              "y": 130,
+              "hex": "#be242a"
+            },
+            {
+              "x": 93,
+              "y": 119,
+              "hex": "#cb2630"
+            },
+            {
+              "x": 121,
+              "y": 114,
+              "hex": "#d0262f"
+            },
+            {
+              "x": 121,
+              "y": 143,
+              "hex": "#d72622"
+            },
+            {
+              "x": 152,
+              "y": 143,
+              "hex": "#dd471a"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dev-030",
+      "sha256": "de8359697ac91c4d655b26b7e2cc23b01c4bbaef4b1ebe2667f374f2249fae88",
+      "category": "dark",
+      "width": 864,
+      "height": 1200,
+      "acceptable": [
+        {
+          "samples": [
+            {
+              "x": 615,
+              "y": 691,
+              "hex": "#9a8073"
+            },
+            {
+              "x": 656,
+              "y": 761,
+              "hex": "#9b8173"
+            },
+            {
+              "x": 678,
+              "y": 727,
+              "hex": "#9e8477"
+            },
+            {
+              "x": 674,
+              "y": 619,
+              "hex": "#6b5e58"
+            },
+            {
+              "x": 585,
+              "y": 706,
+              "hex": "#947a6d"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dev-031",
+      "sha256": "6583ce4919a29f5d95303f42a07bf251d1b85aae6ecb8f1c0848c594bc42ae20",
+      "category": "character-art",
+      "width": 300,
+      "height": 416,
+      "acceptable": [
+        {
+          "samples": [
+            {
+              "x": 177,
+              "y": 303,
+              "hex": "#1e417e"
+            },
+            {
+              "x": 182,
+              "y": 279,
+              "hex": "#1e427c"
+            },
+            {
+              "x": 158,
+              "y": 301,
+              "hex": "#184080"
+            },
+            {
+              "x": 162,
+              "y": 323,
+              "hex": "#1d3f81"
+            },
+            {
+              "x": 170,
+              "y": 323,
+              "hex": "#263872"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dev-032",
+      "sha256": "462f9ca7a3788cd0fb9fdee8df35f84fb06615f9b0d5c54e5f3e1ec5ca65043f",
+      "category": "character-art",
+      "width": 300,
+      "height": 416,
+      "acceptable": [
+        {
+          "samples": [
+            {
+              "x": 184,
+              "y": 258,
+              "hex": "#a2aaa0"
+            },
+            {
+              "x": 208,
+              "y": 258,
+              "hex": "#859180"
+            },
+            {
+              "x": 198,
+              "y": 254,
+              "hex": "#899382"
+            },
+            {
+              "x": 190,
+              "y": 215,
+              "hex": "#6a745e"
+            },
+            {
+              "x": 231,
+              "y": 251,
+              "hex": "#929d90"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dev-033",
+      "sha256": "784c97fd83930d23c4bcdc53528a2a29635e537299f990ef79cdf527cf00725e",
+      "category": "dark",
+      "width": 300,
+      "height": 463,
+      "acceptable": [
+        {
+          "samples": [
+            {
+              "x": 145,
+              "y": 172,
+              "hex": "#4e8d8e"
+            },
+            {
+              "x": 164,
+              "y": 172,
+              "hex": "#56949b"
+            },
+            {
+              "x": 155,
+              "y": 200,
+              "hex": "#447685"
+            },
+            {
+              "x": 164,
+              "y": 219,
+              "hex": "#457987"
+            },
+            {
+              "x": 153,
+              "y": 304,
+              "hex": "#568e89"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dev-034",
+      "sha256": "b59ab2db73fb2bbe1e2c4aaec25f022146f8d7421893ab0bfa527fb21cd70c3a",
+      "category": "character-art",
+      "width": 1200,
+      "height": 1680,
+      "acceptable": [
+        {
+          "samples": [
+            {
+              "x": 748,
+              "y": 107,
+              "hex": "#2b3992"
+            },
+            {
+              "x": 829,
+              "y": 92,
+              "hex": "#2b295a"
+            },
+            {
+              "x": 818,
+              "y": 212,
+              "hex": "#1c3377"
+            },
+            {
+              "x": 792,
+              "y": 150,
+              "hex": "#2e3296"
+            },
+            {
+              "x": 833,
+              "y": 150,
+              "hex": "#2e3699"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dev-035",
+      "sha256": "f9d380d1c3c34362da0c10e4cdc767f6f14bbaca0ab51b2c28382b21c54d96f5",
+      "category": "character-art",
+      "width": 770,
+      "height": 1200,
+      "acceptable": [
+        {
+          "samples": [
+            {
+              "x": 691,
+              "y": 389,
+              "hex": "#ffca2c"
+            },
+            {
+              "x": 678,
+              "y": 460,
+              "hex": "#ffca2e"
+            },
+            {
+              "x": 219,
+              "y": 616,
+              "hex": "#f6af39"
+            },
+            {
+              "x": 222,
+              "y": 734,
+              "hex": "#ffd124"
+            },
+            {
+              "x": 542,
+              "y": 1069,
+              "hex": "#feb83c"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dev-036",
+      "sha256": "54ef40482549c74a856d6987f27860d6ba09a677c5c775f225898b16adb1762f",
+      "category": "character-art",
+      "width": 300,
+      "height": 467,
+      "acceptable": [
+        {
+          "samples": [
+            {
+              "x": 144,
+              "y": 126,
+              "hex": "#b73877"
+            },
+            {
+              "x": 163,
+              "y": 218,
+              "hex": "#a0286a"
+            },
+            {
+              "x": 214,
+              "y": 173,
+              "hex": "#8e2260"
+            },
+            {
+              "x": 254,
+              "y": 239,
+              "hex": "#914072"
+            },
+            {
+              "x": 55,
+              "y": 141,
+              "hex": "#e45c83"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dev-037",
+      "sha256": "de85e1eee8ae65708c48eba33a68bd1bf843d5e14f55432139d230f7d48a1f21",
+      "category": "character-art",
+      "width": 300,
+      "height": 442,
+      "acceptable": [
+        {
+          "samples": [
+            {
+              "x": 68,
+              "y": 135,
+              "hex": "#bd8c34"
+            },
+            {
+              "x": 95,
+              "y": 138,
+              "hex": "#b2882e"
+            },
+            {
+              "x": 88,
+              "y": 153,
+              "hex": "#b57b24"
+            },
+            {
+              "x": 127,
+              "y": 143,
+              "hex": "#ae8228"
+            },
+            {
+              "x": 113,
+              "y": 145,
+              "hex": "#b3872b"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dev-038",
+      "sha256": "398fc1b83eb528ce885b7bb33ae1bb32a5f7370c685fa3810a46d3a4bb032a0f",
+      "category": "character-art",
+      "width": 300,
+      "height": 464,
+      "acceptable": [
+        {
+          "samples": [
+            {
+              "x": 47,
+              "y": 315,
+              "hex": "#4c562a"
+            },
+            {
+              "x": 69,
+              "y": 302,
+              "hex": "#65675b"
+            },
+            {
+              "x": 107,
+              "y": 350,
+              "hex": "#4f6242"
+            },
+            {
+              "x": 91,
+              "y": 335,
+              "hex": "#3c5037"
+            },
+            {
+              "x": 122,
+              "y": 334,
+              "hex": "#3f4f31"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dev-039",
+      "sha256": "115e2b6131989d9c33049abc35fc33dddebea094b4488b85e68a4fff6c0c65f4",
+      "category": "white-background",
+      "width": 300,
+      "height": 225,
+      "acceptable": [
+        {
+          "samples": [
+            {
+              "x": 137,
+              "y": 56,
+              "hex": "#f6d536"
+            },
+            {
+              "x": 146,
+              "y": 54,
+              "hex": "#e0ba1c"
+            },
+            {
+              "x": 159,
+              "y": 53,
+              "hex": "#efc428"
+            },
+            {
+              "x": 168,
+              "y": 51,
+              "hex": "#f3cb2d"
+            },
+            {
+              "x": 172,
+              "y": 57,
+              "hex": "#f1cc29"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dev-040",
+      "sha256": "110ee2e07e16c6c790e287ec374ce829a3c863f45c323602f69af1283e667dee",
+      "category": "white-background",
+      "width": 300,
+      "height": 442,
+      "acceptable": [
+        {
+          "samples": [
+            {
+              "x": 175,
+              "y": 168,
+              "hex": "#e4628e"
+            },
+            {
+              "x": 184,
+              "y": 168,
+              "hex": "#d5316b"
+            },
+            {
+              "x": 202,
+              "y": 168,
+              "hex": "#f080a3"
+            },
+            {
+              "x": 120,
+              "y": 110,
+              "hex": "#e9bdc3"
+            },
+            {
+              "x": 134,
+              "y": 109,
+              "hex": "#f68fa0"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dev-041",
+      "sha256": "bc540214467ed432ea2d8f8c7529e794d02e8e25e9e92c90e898c2bb2dab4fa0",
+      "category": "character-art",
+      "width": 1200,
+      "height": 1693,
+      "acceptable": [
+        {
+          "samples": [
+            {
+              "x": 831,
+              "y": 576,
+              "hex": "#5ca8dc"
+            },
+            {
+              "x": 850,
+              "y": 597,
+              "hex": "#58a3d3"
+            },
+            {
+              "x": 883,
+              "y": 595,
+              "hex": "#529ed0"
+            },
+            {
+              "x": 883,
+              "y": 630,
+              "hex": "#3f6d8e"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dev-042",
+      "sha256": "d72d8add4370eac64f0c66d5d284164d53ffd2f084ef9fdc803530f8a2de8eb6",
+      "category": "character-art",
+      "width": 300,
+      "height": 442,
+      "acceptable": [
+        {
+          "samples": [
+            {
+              "x": 92,
+              "y": 141,
+              "hex": "#4c8144"
+            },
+            {
+              "x": 110,
+              "y": 142,
+              "hex": "#5b945a"
+            },
+            {
+              "x": 79,
+              "y": 139,
+              "hex": "#82a663"
+            },
+            {
+              "x": 82,
+              "y": 131,
+              "hex": "#718749"
+            },
+            {
+              "x": 150,
+              "y": 139,
+              "hex": "#68965b"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dev-043",
+      "sha256": "72d00d88b772ca59feb22ebabb955045b75043ebc718d8915d4d235941c821f2",
+      "category": "character-art",
+      "width": 865,
+      "height": 1200,
+      "acceptable": [
+        {
+          "samples": [
+            {
+              "x": 661,
+              "y": 517,
+              "hex": "#f03a36"
+            },
+            {
+              "x": 645,
+              "y": 649,
+              "hex": "#ee3522"
+            },
+            {
+              "x": 708,
+              "y": 514,
+              "hex": "#e42826"
+            },
+            {
+              "x": 795,
+              "y": 565,
+              "hex": "#e12227"
+            },
+            {
+              "x": 652,
+              "y": 591,
+              "hex": "#ed3126"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dev-044",
+      "sha256": "a196e6e2258feed8198b789304bbc6a6d36c957b98567ec824f79bd0ff7aa2e4",
+      "category": "white-background",
+      "width": 300,
+      "height": 467,
+      "acceptable": [
+        {
+          "samples": [
+            {
+              "x": 145,
+              "y": 296,
+              "hex": "#af82a8"
+            },
+            {
+              "x": 163,
+              "y": 303,
+              "hex": "#b182a6"
+            },
+            {
+              "x": 163,
+              "y": 283,
+              "hex": "#845d7c"
+            },
+            {
+              "x": 154,
+              "y": 306,
+              "hex": "#b283a5"
+            },
+            {
+              "x": 128,
+              "y": 428,
+              "hex": "#b87c92"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dev-045",
+      "sha256": "014b482fc090e64c783dfb17e68b0cc6b65a380e8d15ab1b9a15ace7306e80ff",
+      "category": "character-art",
+      "width": 600,
+      "height": 900,
+      "acceptable": [
+        {
+          "samples": [
+            {
+              "x": 512,
+              "y": 169,
+              "hex": "#896885"
+            },
+            {
+              "x": 509,
+              "y": 195,
+              "hex": "#91708f"
+            },
+            {
+              "x": 545,
+              "y": 176,
+              "hex": "#8c6e88"
+            },
+            {
+              "x": 553,
+              "y": 209,
+              "hex": "#906e8f"
+            },
+            {
+              "x": 553,
+              "y": 223,
+              "hex": "#7c6383"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dev-046",
+      "sha256": "bc9e089807750c24dadd02fba5a9f429702fade1e1efbe5fd314c999872354a1",
+      "category": "dark",
+      "width": 858,
+      "height": 1200,
+      "acceptable": [
+        {
+          "samples": [
+            {
+              "x": 436,
+              "y": 556,
+              "hex": "#ee4b14"
+            },
+            {
+              "x": 436,
+              "y": 504,
+              "hex": "#e8670c"
+            },
+            {
+              "x": 389,
+              "y": 554,
+              "hex": "#a24003"
+            },
+            {
+              "x": 400,
+              "y": 618,
+              "hex": "#e2320d"
+            },
+            {
+              "x": 405,
+              "y": 479,
+              "hex": "#ee7504"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dev-047",
+      "sha256": "b37d7d003c7806d393b315031cb69bed970d4ea048b8235131dcfaf3bdf424b5",
+      "category": "character-art",
+      "width": 1200,
+      "height": 1871,
+      "acceptable": [
+        {
+          "samples": [
+            {
+              "x": 731,
+              "y": 1615,
+              "hex": "#8f212a"
+            },
+            {
+              "x": 1065,
+              "y": 1543,
+              "hex": "#8f212a"
+            },
+            {
+              "x": 1042,
+              "y": 1638,
+              "hex": "#8f212a"
+            },
+            {
+              "x": 1148,
+              "y": 1576,
+              "hex": "#8f212a"
+            },
+            {
+              "x": 21,
+              "y": 1585,
+              "hex": "#8f212a"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dev-048",
+      "sha256": "3b2e4f9a9e2d43461531ddc764377f3fb8abc7097ac255da17bf2e738c810573",
+      "category": "character-art",
+      "width": 300,
+      "height": 460,
+      "acceptable": [
+        {
+          "samples": [
+            {
+              "x": 164,
+              "y": 205,
+              "hex": "#ba3a4a"
+            },
+            {
+              "x": 138,
+              "y": 204,
+              "hex": "#e24f66"
+            },
+            {
+              "x": 139,
+              "y": 220,
+              "hex": "#e95272"
+            },
+            {
+              "x": 163,
+              "y": 213,
+              "hex": "#d03a54"
+            },
+            {
+              "x": 131,
+              "y": 171,
+              "hex": "#c74459"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dev-049",
+      "sha256": "d305d6eb98f9c801b87b09c9d87dce20f037f26afecc380f5a892aa69e83e850",
+      "category": "character-art",
+      "width": 767,
+      "height": 1200,
+      "acceptable": [
+        {
+          "samples": [
+            {
+              "x": 246,
+              "y": 387,
+              "hex": "#153236"
+            },
+            {
+              "x": 274,
+              "y": 413,
+              "hex": "#173a40"
+            },
+            {
+              "x": 212,
+              "y": 452,
+              "hex": "#2c3436"
+            },
+            {
+              "x": 258,
+              "y": 484,
+              "hex": "#1f2a2c"
+            },
+            {
+              "x": 333,
+              "y": 390,
+              "hex": "#18272c"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dev-050",
+      "sha256": "7d7d775c07958e4e454b5f5048249b6b0efe8d412bf3d9766f83fb5a129d5580",
+      "category": "character-art",
+      "width": 300,
+      "height": 459,
+      "acceptable": [
+        {
+          "samples": [
+            {
+              "x": 120,
+              "y": 36,
+              "hex": "#c00011"
+            },
+            {
+              "x": 121,
+              "y": 19,
+              "hex": "#bc0412"
+            },
+            {
+              "x": 83,
+              "y": 46,
+              "hex": "#bb030f"
+            },
+            {
+              "x": 78,
+              "y": 23,
+              "hex": "#bb0510"
+            },
+            {
+              "x": 159,
+              "y": 49,
+              "hex": "#bb030d"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dev-051",
+      "sha256": "b3d048cc5c2eb162406cf714ef203171bbbb9150f3b31b6da1df3d920c0ef6b4",
+      "category": "character-art",
+      "width": 906,
+      "height": 1200,
+      "acceptable": [
+        {
+          "samples": [
+            {
+              "x": 714,
+              "y": 513,
+              "hex": "#a2212b"
+            },
+            {
+              "x": 734,
+              "y": 526,
+              "hex": "#5b1a13"
+            },
+            {
+              "x": 756,
+              "y": 603,
+              "hex": "#861b1e"
+            },
+            {
+              "x": 759,
+              "y": 663,
+              "hex": "#ec4041"
+            },
+            {
+              "x": 793,
+              "y": 598,
+              "hex": "#c72422"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dev-052",
+      "sha256": "b7f985656a3be24f4ea0f16e4173e021747c6216d10d08c9455e5101c182cb7c",
+      "category": "character-art",
+      "width": 859,
+      "height": 1200,
+      "acceptable": [
+        {
+          "samples": [
+            {
+              "x": 746,
+              "y": 306,
+              "hex": "#445f6a"
+            },
+            {
+              "x": 647,
+              "y": 418,
+              "hex": "#4d6778"
+            },
+            {
+              "x": 746,
+              "y": 351,
+              "hex": "#4b666f"
+            },
+            {
+              "x": 628,
+              "y": 268,
+              "hex": "#3a5b6e"
+            },
+            {
+              "x": 735,
+              "y": 266,
+              "hex": "#223c49"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dev-053",
+      "sha256": "ec5cc05f9a817e7dd9121b414981377b43975366ad851d01f8edd2b7aa98e4b3",
+      "category": "character-art",
+      "width": 300,
+      "height": 414,
+      "acceptable": [
+        {
+          "samples": [
+            {
+              "x": 219,
+              "y": 15,
+              "hex": "#cee1bd"
+            },
+            {
+              "x": 232,
+              "y": 22,
+              "hex": "#ccdfbb"
+            },
+            {
+              "x": 232,
+              "y": 127,
+              "hex": "#d4ece4"
+            },
+            {
+              "x": 245,
+              "y": 144,
+              "hex": "#a7d5ac"
+            },
+            {
+              "x": 265,
+              "y": 134,
+              "hex": "#b0e1b3"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "dev-054",
+      "sha256": "7150c28aff534867b95321ae58ed32a469e70afa073ac187d228d80876ee4c8f",
+      "category": "character-art",
+      "width": 300,
+      "height": 416,
+      "acceptable": [
+        {
+          "samples": [
+            {
+              "x": 179,
+              "y": 195,
+              "hex": "#ba403e"
+            },
+            {
+              "x": 174,
+              "y": 188,
+              "hex": "#c05348"
+            },
+            {
+              "x": 190,
+              "y": 191,
+              "hex": "#c03b31"
+            },
+            {
+              "x": 185,
+              "y": 203,
+              "hex": "#a84442"
+            },
+            {
+              "x": 194,
+              "y": 204,
+              "hex": "#c92d42"
+            }
+          ]
+        }
+      ]
+    }
+  ]
 }
