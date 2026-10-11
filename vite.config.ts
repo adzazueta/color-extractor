@@ -35,6 +35,8 @@ export default defineConfig({
           name: "node",
           environment: "node",
           include: ["test/node/**/*.test.ts"],
+          // Only `vp run bench` (`vp test bench`) reads this: `vp test` and CI never run benchmarks.
+          benchmark: { include: ["bench/**/*.bench.ts"] },
         },
       },
       {
@@ -73,6 +75,11 @@ export default defineConfig({
     tasks: {
       // The evaluation reads files outside the repository, so it is never cached.
       eval: { command: "node eval/run.mjs", cache: false },
+      // Local only. Times the built package, so it builds first; it reads covers outside the repository.
+      bench: {
+        command: 'vp pack && vp test bench --project "node (bench)" --reporter verbose',
+        cache: false,
+      },
     },
   },
 });
