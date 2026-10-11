@@ -1,0 +1,2464 @@
+{
+  "schemaVersion": 1,
+  "set": "dev",
+  "header": {
+    "algorithmVersion": "3",
+    "packageVersion": "0.4.0-next.0",
+    "commit": "b624586b56ec7244520d7e818d80f6b4a8759082",
+    "dirty": false,
+    "generatedAt": "2026-10-11T19:42:04Z",
+    "threshold": 0.03,
+    "count": 5,
+    "decoder": {
+      "sharp": "0.35.5",
+      "libvips": "8.18.7"
+    },
+    "annotations": {
+      "dev": "afea0fe963287160c1119dd0f170d30d15c753123c57d980ab516662139ab2dd",
+      "test": "5a32c41bed9181476db5f33a84cb9599dca589e5386c1daddce5430b14e92fb5"
+    },
+    "testAnnotationsChanged": null
+  },
+  "summary": {
+    "measured": 54,
+    "pending": 0,
+    "orphaned": 0,
+    "duplicates": 0,
+    "errors": 0,
+    "sampleDrift": 0,
+    "perceptual": {
+      "firstHits": 28,
+      "top3Hits": 39
+    },
+    "population": {
+      "firstHits": 2,
+      "top3Hits": 13
+    },
+    "perceptualMinusPopulation": 26
+  },
+  "categories": [
+    {
+      "category": "reference",
+      "measured": 4,
+      "perceptual": {
+        "firstHits": 2,
+        "top3Hits": 2
+      },
+      "population": {
+        "firstHits": 0,
+        "top3Hits": 0
+      }
+    },
+    {
+      "category": "black-and-white",
+      "measured": 1,
+      "perceptual": {
+        "firstHits": 1,
+        "top3Hits": 1
+      },
+      "population": {
+        "firstHits": 0,
+        "top3Hits": 1
+      }
+    },
+    {
+      "category": "saturated-logo",
+      "measured": 1,
+      "perceptual": {
+        "firstHits": 0,
+        "top3Hits": 1
+      },
+      "population": {
+        "firstHits": 0,
+        "top3Hits": 0
+      }
+    },
+    {
+      "category": "character-art",
+      "measured": 32,
+      "perceptual": {
+        "firstHits": 14,
+        "top3Hits": 20
+      },
+      "population": {
+        "firstHits": 1,
+        "top3Hits": 6
+      }
+    },
+    {
+      "category": "white-background",
+      "measured": 10,
+      "perceptual": {
+        "firstHits": 7,
+        "top3Hits": 9
+      },
+      "population": {
+        "firstHits": 0,
+        "top3Hits": 4
+      }
+    },
+    {
+      "category": "dark",
+      "measured": 5,
+      "perceptual": {
+        "firstHits": 3,
+        "top3Hits": 5
+      },
+      "population": {
+        "firstHits": 0,
+        "top3Hits": 1
+      }
+    },
+    {
+      "category": "general",
+      "measured": 1,
+      "perceptual": {
+        "firstHits": 1,
+        "top3Hits": 1
+      },
+      "population": {
+        "firstHits": 1,
+        "top3Hits": 1
+      }
+    }
+  ],
+  "calibration": {
+    "thresholds": [
+      {
+        "threshold": 0.02,
+        "perceptual": 25,
+        "population": 2
+      },
+      {
+        "threshold": 0.03,
+        "perceptual": 28,
+        "population": 2
+      },
+      {
+        "threshold": 0.04,
+        "perceptual": 29,
+        "population": 2
+      },
+      {
+        "threshold": 0.05,
+        "perceptual": 29,
+        "population": 2
+      },
+      {
+        "threshold": 0.06,
+        "perceptual": 30,
+        "population": 3
+      },
+      {
+        "threshold": 0.08,
+        "perceptual": 32,
+        "population": 4
+      },
+      {
+        "threshold": 0.1,
+        "perceptual": 34,
+        "population": 4
+      },
+      {
+        "threshold": 0.12,
+        "perceptual": 36,
+        "population": 7
+      },
+      {
+        "threshold": 0.15,
+        "perceptual": 37,
+        "population": 9
+      },
+      {
+        "threshold": 0.2,
+        "perceptual": 41,
+        "population": 13
+      }
+    ],
+    "distances": [
+      {
+        "from": 0,
+        "to": 0.02,
+        "perceptual": 25,
+        "population": 2
+      },
+      {
+        "from": 0.02,
+        "to": 0.04,
+        "perceptual": 4,
+        "population": 0
+      },
+      {
+        "from": 0.04,
+        "to": 0.06,
+        "perceptual": 1,
+        "population": 1
+      },
+      {
+        "from": 0.06,
+        "to": 0.08,
+        "perceptual": 2,
+        "population": 1
+      },
+      {
+        "from": 0.08,
+        "to": 0.1,
+        "perceptual": 2,
+        "population": 0
+      },
+      {
+        "from": 0.1,
+        "to": 0.15,
+        "perceptual": 3,
+        "population": 5
+      },
+      {
+        "from": 0.15,
+        "to": 0.2,
+        "perceptual": 4,
+        "population": 4
+      },
+      {
+        "from": 0.2,
+        "to": null,
+        "perceptual": 13,
+        "population": 41
+      },
+      {
+        "from": -1,
+        "to": null,
+        "perceptual": 0,
+        "population": 0
+      }
+    ]
+  },
+  "dark": [
+    {
+      "id": "dev-017",
+      "perceptual": {
+        "nearBlack": 1,
+        "coverage": 0.0726,
+        "closestPair": null
+      },
+      "population": {
+        "nearBlack": 4,
+        "coverage": 0.3745,
+        "closestPair": 0.0345
+      }
+    },
+    {
+      "id": "dev-022",
+      "perceptual": {
+        "nearBlack": 1,
+        "coverage": 0.0625,
+        "closestPair": null
+      },
+      "population": {
+        "nearBlack": 3,
+        "coverage": 0.281,
+        "closestPair": 0.0393
+      }
+    },
+    {
+      "id": "dev-030",
+      "perceptual": {
+        "nearBlack": 0,
+        "coverage": 0,
+        "closestPair": null
+      },
+      "population": {
+        "nearBlack": 2,
+        "coverage": 0.2561,
+        "closestPair": 0.0438
+      }
+    },
+    {
+      "id": "dev-033",
+      "perceptual": {
+        "nearBlack": 0,
+        "coverage": 0,
+        "closestPair": null
+      },
+      "population": {
+        "nearBlack": 1,
+        "coverage": 0.2878,
+        "closestPair": null
+      }
+    },
+    {
+      "id": "dev-046",
+      "perceptual": {
+        "nearBlack": 1,
+        "coverage": 0.1585,
+        "closestPair": null
+      },
+      "population": {
+        "nearBlack": 2,
+        "coverage": 0.2183,
+        "closestPair": 0.0279
+      }
+    }
+  ],
+  "images": [
+    {
+      "id": "dev-001",
+      "sha256": "599f6e0948f8132d40573384b17e44ebbd090dca3a9f320e51a452f58f8d882b",
+      "category": "reference",
+      "error": null,
+      "perceptual": {
+        "colors": [
+          "#7f751f",
+          "#aec7f8",
+          "#f5bc00",
+          "#288396",
+          "#f16519"
+        ],
+        "firstHit": false,
+        "top3Hit": false,
+        "nearest": {
+          "hex": "#a93200",
+          "color": 0,
+          "sample": 4,
+          "distance": 0.1636
+        }
+      },
+      "population": {
+        "colors": [
+          "#68988a",
+          "#549091",
+          "#2b2914",
+          "#161407",
+          "#343316"
+        ],
+        "firstHit": false,
+        "top3Hit": false,
+        "nearest": {
+          "hex": "#a93200",
+          "color": 0,
+          "sample": 4,
+          "distance": 0.2545
+        }
+      }
+    },
+    {
+      "id": "dev-002",
+      "sha256": "2b850cad4eb56e5f65c64b2b376346ad8d78c16e51db93ab5ed9e20abee00994",
+      "category": "reference",
+      "error": null,
+      "perceptual": {
+        "colors": [
+          "#80b0fc",
+          "#7a9522",
+          "#013b63",
+          "#29450b",
+          "#eccf93"
+        ],
+        "firstHit": false,
+        "top3Hit": false,
+        "nearest": {
+          "hex": "#ebcb92",
+          "color": 0,
+          "sample": 4,
+          "distance": 0.2278
+        }
+      },
+      "population": {
+        "colors": [
+          "#cfd5eb",
+          "#025a68",
+          "#80b0fc",
+          "#024c6f",
+          "#01464b"
+        ],
+        "firstHit": false,
+        "top3Hit": false,
+        "nearest": {
+          "hex": "#ebcb92",
+          "color": 0,
+          "sample": 4,
+          "distance": 0.1139
+        }
+      }
+    },
+    {
+      "id": "dev-003",
+      "sha256": "8bc343df38716f716569ae7c246aa270d56f62b019dbccb8fd149cd0034b7938",
+      "category": "reference",
+      "error": null,
+      "perceptual": {
+        "colors": [
+          "#8d0303",
+          "#516f87",
+          "#b78009",
+          "#343c17",
+          "#4f0600"
+        ],
+        "firstHit": true,
+        "top3Hit": true,
+        "nearest": {
+          "hex": "#8f0100",
+          "color": 0,
+          "sample": 0,
+          "distance": 0.0043
+        }
+      },
+      "population": {
+        "colors": [
+          "#141905",
+          "#1b230b",
+          "#222b10",
+          "#2d3212",
+          "#948e80"
+        ],
+        "firstHit": false,
+        "top3Hit": false,
+        "nearest": {
+          "hex": "#7e0403",
+          "color": 0,
+          "sample": 1,
+          "distance": 0.2328
+        }
+      }
+    },
+    {
+      "id": "dev-004",
+      "sha256": "47e7fa66c5d9c5af22e7bd27410fdd00affb4415d842c6386bec6850cfdba2e6",
+      "category": "reference",
+      "error": null,
+      "perceptual": {
+        "colors": [
+          "#9bf3f4",
+          "#1a243d",
+          "#40839d",
+          "#f7d2c9",
+          "#8e9cb7"
+        ],
+        "firstHit": true,
+        "top3Hit": true,
+        "nearest": {
+          "hex": "#9bf3f5",
+          "color": 0,
+          "sample": 0,
+          "distance": 0.0014
+        }
+      },
+      "population": {
+        "colors": [
+          "#ffffff",
+          "#1a243d",
+          "#ededf5",
+          "#a3aec0",
+          "#b2a8b3"
+        ],
+        "firstHit": false,
+        "top3Hit": false,
+        "nearest": {
+          "hex": "#9bf3f5",
+          "color": 0,
+          "sample": 0,
+          "distance": 0.124
+        }
+      }
+    },
+    {
+      "id": "dev-005",
+      "sha256": "352f134cb2112808275a119eff8667c5b8c3591913d7621cf86484ba9a9f3cfb",
+      "category": "character-art",
+      "error": null,
+      "perceptual": {
+        "colors": [
+          "#b4944b",
+          "#312f91",
+          "#ac81af",
+          "#f24d20",
+          "#f45a8c"
+        ],
+        "firstHit": false,
+        "top3Hit": true,
+        "nearest": {
+          "hex": "#ad7aa9",
+          "color": 0,
+          "sample": 0,
+          "distance": 0.1653
+        }
+      },
+      "population": {
+        "colors": [
+          "#ffffff",
+          "#f5f2ea",
+          "#f1e0ea",
+          "#2e3349",
+          "#c6acce"
+        ],
+        "firstHit": false,
+        "top3Hit": false,
+        "nearest": {
+          "hex": "#cc9ec8",
+          "color": 0,
+          "sample": 1,
+          "distance": 0.2572
+        }
+      }
+    },
+    {
+      "id": "dev-006",
+      "sha256": "eed00f88677bcdde215f931612f5d76cd2534b655866ca82ea74c545d83e27ed",
+      "category": "character-art",
+      "error": null,
+      "perceptual": {
+        "colors": [
+          "#a03434",
+          "#dfb5a7",
+          "#293036",
+          "#8c6e4c",
+          "#b76d62"
+        ],
+        "firstHit": true,
+        "top3Hit": true,
+        "nearest": {
+          "hex": "#9f2f2b",
+          "color": 0,
+          "sample": 1,
+          "distance": 0.0119
+        }
+      },
+      "population": {
+        "colors": [
+          "#a03434",
+          "#293036",
+          "#141414",
+          "#252525",
+          "#52595f"
+        ],
+        "firstHit": true,
+        "top3Hit": true,
+        "nearest": {
+          "hex": "#9f2f2b",
+          "color": 0,
+          "sample": 1,
+          "distance": 0.0119
+        }
+      }
+    },
+    {
+      "id": "dev-007",
+      "sha256": "7f2e5e315555a2ab9a7317604cd234d62ebb36f32c71800f8357b7da5a665c92",
+      "category": "white-background",
+      "error": null,
+      "perceptual": {
+        "colors": [
+          "#4c4883",
+          "#ae9e3c",
+          "#a3a1d0",
+          "#a72839",
+          "#e9b8a9"
+        ],
+        "firstHit": false,
+        "top3Hit": true,
+        "nearest": {
+          "hex": "#75251e",
+          "color": 1,
+          "sample": 1,
+          "distance": 0.1717
+        }
+      },
+      "population": {
+        "colors": [
+          "#fefefe",
+          "#afaed6",
+          "#fdecd8",
+          "#f6d1be",
+          "#dead9e"
+        ],
+        "firstHit": false,
+        "top3Hit": true,
+        "nearest": {
+          "hex": "#c7c9e2",
+          "color": 0,
+          "sample": 2,
+          "distance": 0.1587
+        }
+      }
+    },
+    {
+      "id": "dev-008",
+      "sha256": "5fd0c875b43eae7ab7900552a87f595cec2fe04cb2ab9f4f617302c4b575db97",
+      "category": "white-background",
+      "error": null,
+      "perceptual": {
+        "colors": [
+          "#e84c73",
+          "#efccb6",
+          "#110c0e",
+          "#e3344d",
+          "#948d9a"
+        ],
+        "firstHit": true,
+        "top3Hit": true,
+        "nearest": {
+          "hex": "#ea4972",
+          "color": 0,
+          "sample": 2,
+          "distance": 0.0051
+        }
+      },
+      "population": {
+        "colors": [
+          "#fdfbfc",
+          "#f4ebe7",
+          "#efccb6",
+          "#e3d8d7",
+          "#f7d9cd"
+        ],
+        "firstHit": false,
+        "top3Hit": false,
+        "nearest": {
+          "hex": "#eb5179",
+          "color": 0,
+          "sample": 4,
+          "distance": 0.3853
+        }
+      }
+    },
+    {
+      "id": "dev-009",
+      "sha256": "bd9f6fa77fb3427c3882a3f5da8f7ab8e35f23a2fd061bd1629f3ef552f724e4",
+      "category": "character-art",
+      "error": null,
+      "perceptual": {
+        "colors": [
+          "#9e4a64",
+          "#ddc250",
+          "#936d4c",
+          "#d0a878",
+          "#783345"
+        ],
+        "firstHit": true,
+        "top3Hit": true,
+        "nearest": {
+          "hex": "#9f4c64",
+          "color": 0,
+          "sample": 0,
+          "distance": 0.0054
+        }
+      },
+      "population": {
+        "colors": [
+          "#936d4c",
+          "#c2b9ae",
+          "#d3c9be",
+          "#fcf9f1",
+          "#a79b8f"
+        ],
+        "firstHit": false,
+        "top3Hit": false,
+        "nearest": {
+          "hex": "#a24d63",
+          "color": 0,
+          "sample": 2,
+          "distance": 0.1008
+        }
+      }
+    },
+    {
+      "id": "dev-010",
+      "sha256": "b5d73a21113e24fa97b46fec0559f2591f54fef5150d58d3fa3d8f1d91dde16d",
+      "category": "white-background",
+      "error": null,
+      "perceptual": {
+        "colors": [
+          "#7a904f",
+          "#1c4130",
+          "#f4aa7d",
+          "#6f5439",
+          "#966f44"
+        ],
+        "firstHit": true,
+        "top3Hit": true,
+        "nearest": {
+          "hex": "#788c45",
+          "color": 1,
+          "sample": 0,
+          "distance": 0.0144
+        }
+      },
+      "population": {
+        "colors": [
+          "#fdfdfd",
+          "#1c4130",
+          "#c1c1c1",
+          "#cdcdcd",
+          "#e6e6e6"
+        ],
+        "firstHit": false,
+        "top3Hit": true,
+        "nearest": {
+          "hex": "#788c45",
+          "color": 1,
+          "sample": 0,
+          "distance": 0.399
+        }
+      }
+    },
+    {
+      "id": "dev-011",
+      "sha256": "8122b7b5830bdac49184500885b9a9b9ea9b85cd4eb65a1356b556b3fb06e803",
+      "category": "black-and-white",
+      "error": null,
+      "perceptual": {
+        "colors": [
+          "#fdfdfd",
+          "#1d1d1d",
+          "#7b7b7b",
+          "#c1c1c1",
+          "#424242"
+        ],
+        "firstHit": true,
+        "top3Hit": true,
+        "nearest": {
+          "hex": "#fefefe",
+          "color": 1,
+          "sample": 0,
+          "distance": 0.003
+        }
+      },
+      "population": {
+        "colors": [
+          "#1d1d1d",
+          "#656565",
+          "#fdfdfd",
+          "#585858",
+          "#2d2d2d"
+        ],
+        "firstHit": false,
+        "top3Hit": true,
+        "nearest": {
+          "hex": "#656565",
+          "color": 0,
+          "sample": 0,
+          "distance": 0.276
+        }
+      }
+    },
+    {
+      "id": "dev-012",
+      "sha256": "554be038310f333e68638db100c6be57347951abae20845a7f4b66e7dc619233",
+      "category": "character-art",
+      "error": null,
+      "perceptual": {
+        "colors": [
+          "#567e3f",
+          "#e54c25",
+          "#f8c82d",
+          "#36277e",
+          "#af9044"
+        ],
+        "firstHit": true,
+        "top3Hit": true,
+        "nearest": {
+          "hex": "#60813f",
+          "color": 0,
+          "sample": 4,
+          "distance": 0.0162
+        }
+      },
+      "population": {
+        "colors": [
+          "#fffdfc",
+          "#af9044",
+          "#567e3f",
+          "#96be81",
+          "#618746"
+        ],
+        "firstHit": false,
+        "top3Hit": true,
+        "nearest": {
+          "hex": "#f49518",
+          "color": 1,
+          "sample": 3,
+          "distance": 0.292
+        }
+      }
+    },
+    {
+      "id": "dev-013",
+      "sha256": "a7b11f74520af3e61672405a86afb64ec44843300430c18ad66e4da62839bc0b",
+      "category": "saturated-logo",
+      "error": null,
+      "perceptual": {
+        "colors": [
+          "#fcd441",
+          "#c14c3a",
+          "#f4a1b3",
+          "#6e367d",
+          "#fee7c8"
+        ],
+        "firstHit": false,
+        "top3Hit": true,
+        "nearest": {
+          "hex": "#f9c9bd",
+          "color": 0,
+          "sample": 0,
+          "distance": 0.1403
+        }
+      },
+      "population": {
+        "colors": [
+          "#010101",
+          "#fefefe",
+          "#161510",
+          "#fef3df",
+          "#eeebf4"
+        ],
+        "firstHit": false,
+        "top3Hit": false,
+        "nearest": {
+          "hex": "#f4a1b3",
+          "color": 0,
+          "sample": 3,
+          "distance": 0.7354
+        }
+      }
+    },
+    {
+      "id": "dev-014",
+      "sha256": "e2768ccf5f7447f45ed619adf2ab6c5fa181a557d198bc959df60e1abc445c49",
+      "category": "white-background",
+      "error": null,
+      "perceptual": {
+        "colors": [
+          "#40781d",
+          "#fdf3d2",
+          "#d8080f",
+          "#030100",
+          "#b57f5f"
+        ],
+        "firstHit": true,
+        "top3Hit": true,
+        "nearest": {
+          "hex": "#417b1f",
+          "color": 0,
+          "sample": 0,
+          "distance": 0.0092
+        }
+      },
+      "population": {
+        "colors": [
+          "#fffeff",
+          "#030100",
+          "#fdf3d2",
+          "#f2efe5",
+          "#e9e3d3"
+        ],
+        "firstHit": false,
+        "top3Hit": false,
+        "nearest": {
+          "hex": "#35801e",
+          "color": 0,
+          "sample": 3,
+          "distance": 0.49
+        }
+      }
+    },
+    {
+      "id": "dev-015",
+      "sha256": "ae498c86596afedfde7e8efe86842460d43826024999c7910ce03cccd98faf77",
+      "category": "character-art",
+      "error": null,
+      "perceptual": {
+        "colors": [
+          "#3a6377",
+          "#cbd3d6",
+          "#72ab5e",
+          "#d73e36",
+          "#040507"
+        ],
+        "firstHit": true,
+        "top3Hit": true,
+        "nearest": {
+          "hex": "#366378",
+          "color": 0,
+          "sample": 1,
+          "distance": 0.0043
+        }
+      },
+      "population": {
+        "colors": [
+          "#101616",
+          "#1a1f22",
+          "#22292f",
+          "#090a0c",
+          "#2e3b44"
+        ],
+        "firstHit": false,
+        "top3Hit": false,
+        "nearest": {
+          "hex": "#366378",
+          "color": 0,
+          "sample": 1,
+          "distance": 0.2872
+        }
+      }
+    },
+    {
+      "id": "dev-016",
+      "sha256": "6c95a8fd863f0ca7bf2f42e270e8907303d9917734d99090b29f75f3fd372abd",
+      "category": "general",
+      "error": null,
+      "perceptual": {
+        "colors": [
+          "#fedb01",
+          "#584400",
+          "#978215",
+          "#fcbabc",
+          "#d15033"
+        ],
+        "firstHit": true,
+        "top3Hit": true,
+        "nearest": {
+          "hex": "#fedb01",
+          "color": 0,
+          "sample": 0,
+          "distance": 0
+        }
+      },
+      "population": {
+        "colors": [
+          "#fedb01",
+          "#e1d02f",
+          "#584400",
+          "#503a00",
+          "#625100"
+        ],
+        "firstHit": true,
+        "top3Hit": true,
+        "nearest": {
+          "hex": "#fedb01",
+          "color": 0,
+          "sample": 0,
+          "distance": 0
+        }
+      }
+    },
+    {
+      "id": "dev-017",
+      "sha256": "5d2bd945403a8be8b14d32fbdb3461a56aa887268e40cd5742631334f88c740d",
+      "category": "dark",
+      "error": null,
+      "perceptual": {
+        "colors": [
+          "#26403c",
+          "#fffdff",
+          "#838c99",
+          "#030d05",
+          "#52686a"
+        ],
+        "firstHit": true,
+        "top3Hit": true,
+        "nearest": {
+          "hex": "#30433b",
+          "color": 0,
+          "sample": 1,
+          "distance": 0.0179
+        }
+      },
+      "population": {
+        "colors": [
+          "#fffdff",
+          "#010101",
+          "#112017",
+          "#030d05",
+          "#09180f"
+        ],
+        "firstHit": false,
+        "top3Hit": true,
+        "nearest": {
+          "hex": "#30433b",
+          "color": 0,
+          "sample": 1,
+          "distance": 0.633
+        }
+      }
+    },
+    {
+      "id": "dev-018",
+      "sha256": "b59a81eb569fe9503d9cfb27e0047caa2c99465d7cd412e9ca885b2f3457d169",
+      "category": "character-art",
+      "error": null,
+      "perceptual": {
+        "colors": [
+          "#ea4296",
+          "#7e5179",
+          "#e7bcd8",
+          "#dc7fb3",
+          "#c83d65"
+        ],
+        "firstHit": true,
+        "top3Hit": true,
+        "nearest": {
+          "hex": "#df4287",
+          "color": 0,
+          "sample": 1,
+          "distance": 0.0297
+        }
+      },
+      "population": {
+        "colors": [
+          "#251e21",
+          "#ea4296",
+          "#f6d8eb",
+          "#eecae1",
+          "#df3d86"
+        ],
+        "firstHit": false,
+        "top3Hit": true,
+        "nearest": {
+          "hex": "#b23b75",
+          "color": 0,
+          "sample": 2,
+          "distance": 0.3317
+        }
+      }
+    },
+    {
+      "id": "dev-019",
+      "sha256": "566fb8453d6a906b5e2c537c0d848048ff287b912ca46d050d9dccafa939a66d",
+      "category": "character-art",
+      "error": null,
+      "perceptual": {
+        "colors": [
+          "#e77e99",
+          "#76b96e",
+          "#180207",
+          "#f8d4b1",
+          "#723b47"
+        ],
+        "firstHit": true,
+        "top3Hit": true,
+        "nearest": {
+          "hex": "#da7990",
+          "color": 0,
+          "sample": 4,
+          "distance": 0.0285
+        }
+      },
+      "population": {
+        "colors": [
+          "#020002",
+          "#fcfffe",
+          "#fee1c2",
+          "#040202",
+          "#040704"
+        ],
+        "firstHit": false,
+        "top3Hit": false,
+        "nearest": {
+          "hex": "#c1677f",
+          "color": 0,
+          "sample": 3,
+          "distance": 0.5726
+        }
+      }
+    },
+    {
+      "id": "dev-020",
+      "sha256": "1efff5f02857881768b6382b117e7b404324e15075cc844e2916013de4fba6e0",
+      "category": "character-art",
+      "error": null,
+      "perceptual": {
+        "colors": [
+          "#60618d",
+          "#f3d5b3",
+          "#d51d5b",
+          "#c09e94",
+          "#6dacb5"
+        ],
+        "firstHit": true,
+        "top3Hit": true,
+        "nearest": {
+          "hex": "#675e8d",
+          "color": 0,
+          "sample": 2,
+          "distance": 0.013
+        }
+      },
+      "population": {
+        "colors": [
+          "#fee4cb",
+          "#fefaee",
+          "#e6c4b8",
+          "#ac9796",
+          "#e5dfd3"
+        ],
+        "firstHit": false,
+        "top3Hit": false,
+        "nearest": {
+          "hex": "#888ab1",
+          "color": 0,
+          "sample": 0,
+          "distance": 0.3036
+        }
+      }
+    },
+    {
+      "id": "dev-021",
+      "sha256": "43afb06ea533b15bdf83bac99a452f6f4300955349d168d7fde23f100d77fbaa",
+      "category": "character-art",
+      "error": null,
+      "perceptual": {
+        "colors": [
+          "#00a1df",
+          "#94ce52",
+          "#f18e26",
+          "#feeaa3",
+          "#fbcc04"
+        ],
+        "firstHit": false,
+        "top3Hit": false,
+        "nearest": {
+          "hex": "#fae067",
+          "color": 0,
+          "sample": 0,
+          "distance": 0.3552
+        }
+      },
+      "population": {
+        "colors": [
+          "#fdfbf7",
+          "#94ce52",
+          "#00a1df",
+          "#fbcc04",
+          "#fef7db"
+        ],
+        "firstHit": false,
+        "top3Hit": false,
+        "nearest": {
+          "hex": "#ffe784",
+          "color": 0,
+          "sample": 2,
+          "distance": 0.1319
+        }
+      }
+    },
+    {
+      "id": "dev-022",
+      "sha256": "619eed2faa08632346c134a13a6bceddb70aed5ee1ae89d2a8059b8d1d089324",
+      "category": "dark",
+      "error": null,
+      "perceptual": {
+        "colors": [
+          "#d6667e",
+          "#00030f",
+          "#e7d4c5",
+          "#4b5064",
+          "#6d8188"
+        ],
+        "firstHit": false,
+        "top3Hit": true,
+        "nearest": {
+          "hex": "#e7d4c5",
+          "color": 0,
+          "sample": 0,
+          "distance": 0.2632
+        }
+      },
+      "population": {
+        "colors": [
+          "#202632",
+          "#0d131f",
+          "#161c28",
+          "#292f3b",
+          "#00030f"
+        ],
+        "firstHit": false,
+        "top3Hit": false,
+        "nearest": {
+          "hex": "#e7d4c5",
+          "color": 0,
+          "sample": 0,
+          "distance": 0.6155
+        }
+      }
+    },
+    {
+      "id": "dev-023",
+      "sha256": "8ae0cda5bb95948c2d2fe0ef7be893d60f87c1d903277be4490f275e51ffe580",
+      "category": "character-art",
+      "error": null,
+      "perceptual": {
+        "colors": [
+          "#95cb6d",
+          "#e93229",
+          "#fbb19a",
+          "#ab7740",
+          "#a23326"
+        ],
+        "firstHit": true,
+        "top3Hit": true,
+        "nearest": {
+          "hex": "#95cb6b",
+          "color": 0,
+          "sample": 1,
+          "distance": 0.0022
+        }
+      },
+      "population": {
+        "colors": [
+          "#e93229",
+          "#fcbebc",
+          "#ab7740",
+          "#fa989b",
+          "#fdfdfb"
+        ],
+        "firstHit": false,
+        "top3Hit": false,
+        "nearest": {
+          "hex": "#95cb6b",
+          "color": 0,
+          "sample": 1,
+          "distance": 0.3355
+        }
+      }
+    },
+    {
+      "id": "dev-024",
+      "sha256": "dc823d97b6f1f554cca5be96c9971886fe58c9701f7a991b22de897ceb8c0049",
+      "category": "character-art",
+      "error": null,
+      "perceptual": {
+        "colors": [
+          "#4e418f",
+          "#712c2f",
+          "#c09a7c",
+          "#20797b",
+          "#2f0d0d"
+        ],
+        "firstHit": true,
+        "top3Hit": true,
+        "nearest": {
+          "hex": "#4f3c92",
+          "color": 0,
+          "sample": 0,
+          "distance": 0.0138
+        }
+      },
+      "population": {
+        "colors": [
+          "#712c2f",
+          "#dccac0",
+          "#ccb9b0",
+          "#612325",
+          "#bca9a1"
+        ],
+        "firstHit": false,
+        "top3Hit": false,
+        "nearest": {
+          "hex": "#4b3c8c",
+          "color": 0,
+          "sample": 2,
+          "distance": 0.1651
+        }
+      }
+    },
+    {
+      "id": "dev-025",
+      "sha256": "5a85e5c6c2c2ca99cbb91991116ea05aac7a9104f109c84ff9d7ac39a1a2de06",
+      "category": "character-art",
+      "error": null,
+      "perceptual": {
+        "colors": [
+          "#fae008",
+          "#ea72a8",
+          "#f7d082",
+          "#f3accd",
+          "#2b080b"
+        ],
+        "firstHit": false,
+        "top3Hit": true,
+        "nearest": {
+          "hex": "#f8e386",
+          "color": 0,
+          "sample": 0,
+          "distance": 0.0727
+        }
+      },
+      "population": {
+        "colors": [
+          "#564d49",
+          "#fbebdf",
+          "#ea72a8",
+          "#675f5b",
+          "#48423f"
+        ],
+        "firstHit": false,
+        "top3Hit": false,
+        "nearest": {
+          "hex": "#fac265",
+          "color": 0,
+          "sample": 1,
+          "distance": 0.4345
+        }
+      }
+    },
+    {
+      "id": "dev-026",
+      "sha256": "fe5e33ee4abbcd1171cbbfa5292be25cb92e0ee6b33cb781cf877aeb11ec5a8c",
+      "category": "character-art",
+      "error": null,
+      "perceptual": {
+        "colors": [
+          "#df8e0c",
+          "#332948",
+          "#744a00",
+          "#9a6603",
+          "#d1a230"
+        ],
+        "firstHit": false,
+        "top3Hit": true,
+        "nearest": {
+          "hex": "#49385b",
+          "color": 0,
+          "sample": 4,
+          "distance": 0.3906
+        }
+      },
+      "population": {
+        "colors": [
+          "#9a6603",
+          "#865700",
+          "#282536",
+          "#1e1c2c",
+          "#303243"
+        ],
+        "firstHit": false,
+        "top3Hit": false,
+        "nearest": {
+          "hex": "#49385b",
+          "color": 0,
+          "sample": 4,
+          "distance": 0.2404
+        }
+      }
+    },
+    {
+      "id": "dev-027",
+      "sha256": "bc2acbd1b98810e931019788b61597c1081887f0118b496a7712f70bd87c1d90",
+      "category": "white-background",
+      "error": null,
+      "perceptual": {
+        "colors": [
+          "#db1f2a",
+          "#0d509d",
+          "#feedd8",
+          "#38302a",
+          "#837064"
+        ],
+        "firstHit": true,
+        "top3Hit": true,
+        "nearest": {
+          "hex": "#da2028",
+          "color": 0,
+          "sample": 1,
+          "distance": 0.0027
+        }
+      },
+      "population": {
+        "colors": [
+          "#f6f6f2",
+          "#eceae8",
+          "#0d509d",
+          "#38302a",
+          "#423832"
+        ],
+        "firstHit": false,
+        "top3Hit": false,
+        "nearest": {
+          "hex": "#e71d2a",
+          "color": 0,
+          "sample": 4,
+          "distance": 0.4424
+        }
+      }
+    },
+    {
+      "id": "dev-028",
+      "sha256": "a052108ab2af7aa73c996d5d693b6493ece8415d54d2090685f23671927ca069",
+      "category": "white-background",
+      "error": null,
+      "perceptual": {
+        "colors": [
+          "#dd0311",
+          "#fce89b",
+          "#238baa",
+          "#821012",
+          "#073155"
+        ],
+        "firstHit": false,
+        "top3Hit": false,
+        "nearest": {
+          "hex": "#b74f3c",
+          "color": 0,
+          "sample": 2,
+          "distance": 0.0918
+        }
+      },
+      "population": {
+        "colors": [
+          "#fffeff",
+          "#f1efee",
+          "#dd0311",
+          "#fefbd6",
+          "#fcf5bf"
+        ],
+        "firstHit": false,
+        "top3Hit": false,
+        "nearest": {
+          "hex": "#b74f3c",
+          "color": 0,
+          "sample": 2,
+          "distance": 0.4611
+        }
+      }
+    },
+    {
+      "id": "dev-029",
+      "sha256": "e4a5002bb3a32b7712d24639ca5207a5460fc857540e8eaab45a631e319d7cef",
+      "category": "white-background",
+      "error": null,
+      "perceptual": {
+        "colors": [
+          "#bc2a2e",
+          "#f3cfbb",
+          "#30291e",
+          "#c57f6d",
+          "#965035"
+        ],
+        "firstHit": true,
+        "top3Hit": true,
+        "nearest": {
+          "hex": "#be242a",
+          "color": 0,
+          "sample": 0,
+          "distance": 0.0068
+        }
+      },
+      "population": {
+        "colors": [
+          "#fffeff",
+          "#666364",
+          "#f1dbc9",
+          "#f3ebe0",
+          "#f3cfbb"
+        ],
+        "firstHit": false,
+        "top3Hit": false,
+        "nearest": {
+          "hex": "#dd471a",
+          "color": 0,
+          "sample": 4,
+          "distance": 0.4372
+        }
+      }
+    },
+    {
+      "id": "dev-030",
+      "sha256": "de8359697ac91c4d655b26b7e2cc23b01c4bbaef4b1ebe2667f374f2249fae88",
+      "category": "dark",
+      "error": null,
+      "perceptual": {
+        "colors": [
+          "#9b8174",
+          "#2e3748",
+          "#ffffff",
+          "#61534a",
+          "#7c6962"
+        ],
+        "firstHit": true,
+        "top3Hit": true,
+        "nearest": {
+          "hex": "#9b8173",
+          "color": 0,
+          "sample": 1,
+          "distance": 0.0014
+        }
+      },
+      "population": {
+        "colors": [
+          "#1e1e1e",
+          "#504541",
+          "#282a29",
+          "#141414",
+          "#9b8174"
+        ],
+        "firstHit": false,
+        "top3Hit": false,
+        "nearest": {
+          "hex": "#6b5e58",
+          "color": 0,
+          "sample": 3,
+          "distance": 0.2583
+        }
+      }
+    },
+    {
+      "id": "dev-031",
+      "sha256": "6583ce4919a29f5d95303f42a07bf251d1b85aae6ecb8f1c0848c594bc42ae20",
+      "category": "character-art",
+      "error": null,
+      "perceptual": {
+        "colors": [
+          "#1d407f",
+          "#f29b9d",
+          "#a13f5b",
+          "#c56796",
+          "#ffe5c1"
+        ],
+        "firstHit": true,
+        "top3Hit": true,
+        "nearest": {
+          "hex": "#1e417e",
+          "color": 0,
+          "sample": 0,
+          "distance": 0.0038
+        }
+      },
+      "population": {
+        "colors": [
+          "#f29b9d",
+          "#f5aba4",
+          "#1d407f",
+          "#010101",
+          "#ef8c85"
+        ],
+        "firstHit": false,
+        "top3Hit": true,
+        "nearest": {
+          "hex": "#1e427c",
+          "color": 0,
+          "sample": 1,
+          "distance": 0.4317
+        }
+      }
+    },
+    {
+      "id": "dev-032",
+      "sha256": "462f9ca7a3788cd0fb9fdee8df35f84fb06615f9b0d5c54e5f3e1ec5ca65043f",
+      "category": "character-art",
+      "error": null,
+      "perceptual": {
+        "colors": [
+          "#73574c",
+          "#ebdfe1",
+          "#060307",
+          "#9c1f20",
+          "#541c16"
+        ],
+        "firstHit": false,
+        "top3Hit": false,
+        "nearest": {
+          "hex": "#6a745e",
+          "color": 0,
+          "sample": 3,
+          "distance": 0.0804
+        }
+      },
+      "population": {
+        "colors": [
+          "#070709",
+          "#ccd0d5",
+          "#fefdff",
+          "#f0eaf0",
+          "#bfc0c4"
+        ],
+        "firstHit": false,
+        "top3Hit": false,
+        "nearest": {
+          "hex": "#6a745e",
+          "color": 0,
+          "sample": 3,
+          "distance": 0.4163
+        }
+      }
+    },
+    {
+      "id": "dev-033",
+      "sha256": "784c97fd83930d23c4bcdc53528a2a29635e537299f990ef79cdf527cf00725e",
+      "category": "dark",
+      "error": null,
+      "perceptual": {
+        "colors": [
+          "#e95e30",
+          "#442970",
+          "#519295",
+          "#e8ccc1",
+          "#eb5d84"
+        ],
+        "firstHit": false,
+        "top3Hit": true,
+        "nearest": {
+          "hex": "#568e89",
+          "color": 0,
+          "sample": 4,
+          "distance": 0.241
+        }
+      },
+      "population": {
+        "colors": [
+          "#261c1f",
+          "#e8ccc1",
+          "#c8504d",
+          "#443946",
+          "#e86f54"
+        ],
+        "firstHit": false,
+        "top3Hit": false,
+        "nearest": {
+          "hex": "#447685",
+          "color": 0,
+          "sample": 2,
+          "distance": 0.3055
+        }
+      }
+    },
+    {
+      "id": "dev-034",
+      "sha256": "b59ab2db73fb2bbe1e2c4aaec25f022146f8d7421893ab0bfa527fb21cd70c3a",
+      "category": "character-art",
+      "error": null,
+      "perceptual": {
+        "colors": [
+          "#f06e9a",
+          "#673691",
+          "#63162a",
+          "#f8bac9",
+          "#7d2e4e"
+        ],
+        "firstHit": false,
+        "top3Hit": false,
+        "nearest": {
+          "hex": "#2b3992",
+          "color": 0,
+          "sample": 0,
+          "distance": 0.3846
+        }
+      },
+      "population": {
+        "colors": [
+          "#1f1f1f",
+          "#ffffff",
+          "#fcefe6",
+          "#f06e9a",
+          "#fdcccf"
+        ],
+        "firstHit": false,
+        "top3Hit": false,
+        "nearest": {
+          "hex": "#2b295a",
+          "color": 0,
+          "sample": 1,
+          "distance": 0.1117
+        }
+      }
+    },
+    {
+      "id": "dev-035",
+      "sha256": "f9d380d1c3c34362da0c10e4cdc767f6f14bbaca0ab51b2c28382b21c54d96f5",
+      "category": "character-art",
+      "error": null,
+      "perceptual": {
+        "colors": [
+          "#bf2b39",
+          "#56b5e3",
+          "#feca28",
+          "#4f5c91",
+          "#330000"
+        ],
+        "firstHit": false,
+        "top3Hit": true,
+        "nearest": {
+          "hex": "#f6af39",
+          "color": 0,
+          "sample": 2,
+          "distance": 0.3126
+        }
+      },
+      "population": {
+        "colors": [
+          "#000000",
+          "#ffffff",
+          "#030305",
+          "#0d0d0d",
+          "#1e1e1e"
+        ],
+        "firstHit": false,
+        "top3Hit": false,
+        "nearest": {
+          "hex": "#f6af39",
+          "color": 0,
+          "sample": 2,
+          "distance": 0.8165
+        }
+      }
+    },
+    {
+      "id": "dev-036",
+      "sha256": "54ef40482549c74a856d6987f27860d6ba09a677c5c775f225898b16adb1762f",
+      "category": "character-art",
+      "error": null,
+      "perceptual": {
+        "colors": [
+          "#9d1b47",
+          "#6cafd4",
+          "#f48d20",
+          "#020002",
+          "#835899"
+        ],
+        "firstHit": false,
+        "top3Hit": false,
+        "nearest": {
+          "hex": "#8e2260",
+          "color": 0,
+          "sample": 2,
+          "distance": 0.051
+        }
+      },
+      "population": {
+        "colors": [
+          "#dee6ea",
+          "#39393b",
+          "#1c1c1e",
+          "#302f32",
+          "#131313"
+        ],
+        "firstHit": false,
+        "top3Hit": false,
+        "nearest": {
+          "hex": "#e45c83",
+          "color": 0,
+          "sample": 4,
+          "distance": 0.317
+        }
+      }
+    },
+    {
+      "id": "dev-037",
+      "sha256": "de85e1eee8ae65708c48eba33a68bd1bf843d5e14f55432139d230f7d48a1f21",
+      "category": "character-art",
+      "error": null,
+      "perceptual": {
+        "colors": [
+          "#c76363",
+          "#f5f0bb",
+          "#352e13",
+          "#b3862d",
+          "#6f282c"
+        ],
+        "firstHit": false,
+        "top3Hit": false,
+        "nearest": {
+          "hex": "#b57b24",
+          "color": 0,
+          "sample": 2,
+          "distance": 0.1072
+        }
+      },
+      "population": {
+        "colors": [
+          "#ffffff",
+          "#f8f1d6",
+          "#edd5dd",
+          "#100e08",
+          "#f5f0bb"
+        ],
+        "firstHit": false,
+        "top3Hit": false,
+        "nearest": {
+          "hex": "#bd8c34",
+          "color": 0,
+          "sample": 0,
+          "distance": 0.3489
+        }
+      }
+    },
+    {
+      "id": "dev-038",
+      "sha256": "398fc1b83eb528ce885b7bb33ae1bb32a5f7370c685fa3810a46d3a4bb032a0f",
+      "category": "character-art",
+      "error": null,
+      "perceptual": {
+        "colors": [
+          "#f9f098",
+          "#3e4d2c",
+          "#f4aa9f",
+          "#9c684c",
+          "#fabf1a"
+        ],
+        "firstHit": false,
+        "top3Hit": true,
+        "nearest": {
+          "hex": "#65675b",
+          "color": 0,
+          "sample": 1,
+          "distance": 0.4442
+        }
+      },
+      "population": {
+        "colors": [
+          "#fffffd",
+          "#e2c5bd",
+          "#dacad6",
+          "#ebb8a0",
+          "#343422"
+        ],
+        "firstHit": false,
+        "top3Hit": false,
+        "nearest": {
+          "hex": "#65675b",
+          "color": 0,
+          "sample": 1,
+          "distance": 0.4914
+        }
+      }
+    },
+    {
+      "id": "dev-039",
+      "sha256": "115e2b6131989d9c33049abc35fc33dddebea094b4488b85e68a4fff6c0c65f4",
+      "category": "white-background",
+      "error": null,
+      "perceptual": {
+        "colors": [
+          "#f1cb2d",
+          "#9a3f32",
+          "#e993b0",
+          "#ecdfcb",
+          "#060000"
+        ],
+        "firstHit": true,
+        "top3Hit": true,
+        "nearest": {
+          "hex": "#f3cb2d",
+          "color": 0,
+          "sample": 3,
+          "distance": 0.003
+        }
+      },
+      "population": {
+        "colors": [
+          "#ffffff",
+          "#f1cb2d",
+          "#d1d8da",
+          "#e1e7e7",
+          "#6c6e6f"
+        ],
+        "firstHit": false,
+        "top3Hit": true,
+        "nearest": {
+          "hex": "#f6d536",
+          "color": 0,
+          "sample": 0,
+          "distance": 0.208
+        }
+      }
+    },
+    {
+      "id": "dev-040",
+      "sha256": "110ee2e07e16c6c790e287ec374ce829a3c863f45c323602f69af1283e667dee",
+      "category": "white-background",
+      "error": null,
+      "perceptual": {
+        "colors": [
+          "#faf26c",
+          "#ef94a5",
+          "#fbf6b3",
+          "#baa640",
+          "#ae2f56"
+        ],
+        "firstHit": false,
+        "top3Hit": true,
+        "nearest": {
+          "hex": "#e9bdc3",
+          "color": 0,
+          "sample": 3,
+          "distance": 0.1975
+        }
+      },
+      "population": {
+        "colors": [
+          "#fffdff",
+          "#edeaed",
+          "#dbd8de",
+          "#cdcad0",
+          "#c6c0c6"
+        ],
+        "firstHit": false,
+        "top3Hit": false,
+        "nearest": {
+          "hex": "#e9bdc3",
+          "color": 0,
+          "sample": 3,
+          "distance": 0.1648
+        }
+      }
+    },
+    {
+      "id": "dev-041",
+      "sha256": "bc540214467ed432ea2d8f8c7529e794d02e8e25e9e92c90e898c2bb2dab4fa0",
+      "category": "character-art",
+      "error": null,
+      "perceptual": {
+        "colors": [
+          "#1b77ba",
+          "#d66c5a",
+          "#fdf8c1",
+          "#51bde7",
+          "#255d3d"
+        ],
+        "firstHit": false,
+        "top3Hit": false,
+        "nearest": {
+          "hex": "#3f6d8e",
+          "color": 0,
+          "sample": 3,
+          "distance": 0.0697
+        }
+      },
+      "population": {
+        "colors": [
+          "#fcfcfa",
+          "#fdf8c1",
+          "#fbede4",
+          "#8b9395",
+          "#1b77ba"
+        ],
+        "firstHit": false,
+        "top3Hit": false,
+        "nearest": {
+          "hex": "#5ca8dc",
+          "color": 0,
+          "sample": 0,
+          "distance": 0.3069
+        }
+      }
+    },
+    {
+      "id": "dev-042",
+      "sha256": "d72d8add4370eac64f0c66d5d284164d53ffd2f084ef9fdc803530f8a2de8eb6",
+      "category": "character-art",
+      "error": null,
+      "perceptual": {
+        "colors": [
+          "#1b346e",
+          "#b8c090",
+          "#698bb6",
+          "#6e2172",
+          "#678d57"
+        ],
+        "firstHit": false,
+        "top3Hit": false,
+        "nearest": {
+          "hex": "#4c8144",
+          "color": 0,
+          "sample": 0,
+          "distance": 0.2807
+        }
+      },
+      "population": {
+        "colors": [
+          "#0e1511",
+          "#fcfffe",
+          "#050b0d",
+          "#1f2b35",
+          "#e8f2fa"
+        ],
+        "firstHit": false,
+        "top3Hit": false,
+        "nearest": {
+          "hex": "#4c8144",
+          "color": 0,
+          "sample": 0,
+          "distance": 0.3757
+        }
+      }
+    },
+    {
+      "id": "dev-043",
+      "sha256": "72d00d88b772ca59feb22ebabb955045b75043ebc718d8915d4d235941c821f2",
+      "category": "character-art",
+      "error": null,
+      "perceptual": {
+        "colors": [
+          "#e92926",
+          "#f4cd88",
+          "#0f1330",
+          "#b97745",
+          "#037440"
+        ],
+        "firstHit": true,
+        "top3Hit": true,
+        "nearest": {
+          "hex": "#e42826",
+          "color": 0,
+          "sample": 2,
+          "distance": 0.0104
+        }
+      },
+      "population": {
+        "colors": [
+          "#010101",
+          "#0d0c12",
+          "#ffffff",
+          "#ee4524",
+          "#f9d9b0"
+        ],
+        "firstHit": false,
+        "top3Hit": false,
+        "nearest": {
+          "hex": "#e12227",
+          "color": 0,
+          "sample": 3,
+          "distance": 0.5623
+        }
+      }
+    },
+    {
+      "id": "dev-044",
+      "sha256": "a196e6e2258feed8198b789304bbc6a6d36c957b98567ec824f79bd0ff7aa2e4",
+      "category": "white-background",
+      "error": null,
+      "perceptual": {
+        "colors": [
+          "#b3769d",
+          "#050206",
+          "#fffeff",
+          "#b17587",
+          "#9d758c"
+        ],
+        "firstHit": true,
+        "top3Hit": true,
+        "nearest": {
+          "hex": "#b87c92",
+          "color": 0,
+          "sample": 4,
+          "distance": 0.028
+        }
+      },
+      "population": {
+        "colors": [
+          "#fffeff",
+          "#090609",
+          "#b3769d",
+          "#050206",
+          "#b17587"
+        ],
+        "firstHit": false,
+        "top3Hit": true,
+        "nearest": {
+          "hex": "#b283a5",
+          "color": 0,
+          "sample": 3,
+          "distance": 0.3392
+        }
+      }
+    },
+    {
+      "id": "dev-045",
+      "sha256": "014b482fc090e64c783dfb17e68b0cc6b65a380e8d15ab1b9a15ace7306e80ff",
+      "category": "character-art",
+      "error": null,
+      "perceptual": {
+        "colors": [
+          "#8a6e87",
+          "#ebe2b9",
+          "#454b49",
+          "#a4aba3",
+          "#c02b25"
+        ],
+        "firstHit": true,
+        "top3Hit": true,
+        "nearest": {
+          "hex": "#8c6e88",
+          "color": 0,
+          "sample": 2,
+          "distance": 0.0037
+        }
+      },
+      "population": {
+        "colors": [
+          "#dcddd7",
+          "#ebece6",
+          "#bcc3bb",
+          "#cad1ca",
+          "#aeb5ad"
+        ],
+        "firstHit": false,
+        "top3Hit": false,
+        "nearest": {
+          "hex": "#91708f",
+          "color": 0,
+          "sample": 1,
+          "distance": 0.3144
+        }
+      }
+    },
+    {
+      "id": "dev-046",
+      "sha256": "bc9e089807750c24dadd02fba5a9f429702fade1e1efbe5fd314c999872354a1",
+      "category": "dark",
+      "error": null,
+      "perceptual": {
+        "colors": [
+          "#e63d14",
+          "#ffffff",
+          "#0c0c0c",
+          "#ee780a",
+          "#7b7b7b"
+        ],
+        "firstHit": true,
+        "top3Hit": true,
+        "nearest": {
+          "hex": "#e2320d",
+          "color": 0,
+          "sample": 3,
+          "distance": 0.0175
+        }
+      },
+      "population": {
+        "colors": [
+          "#7b7b7b",
+          "#ffffff",
+          "#0c0c0c",
+          "#121212",
+          "#6d6d6d"
+        ],
+        "firstHit": false,
+        "top3Hit": false,
+        "nearest": {
+          "hex": "#a24003",
+          "color": 0,
+          "sample": 2,
+          "distance": 0.1662
+        }
+      }
+    },
+    {
+      "id": "dev-047",
+      "sha256": "b37d7d003c7806d393b315031cb69bed970d4ea048b8235131dcfaf3bdf424b5",
+      "category": "character-art",
+      "error": null,
+      "perceptual": {
+        "colors": [
+          "#8f212a",
+          "#e0d1aa",
+          "#e9718c",
+          "#f05920",
+          "#837598"
+        ],
+        "firstHit": true,
+        "top3Hit": true,
+        "nearest": {
+          "hex": "#8f212a",
+          "color": 0,
+          "sample": 0,
+          "distance": 0
+        }
+      },
+      "population": {
+        "colors": [
+          "#e0d1aa",
+          "#fdfdfd",
+          "#e5dbc2",
+          "#fbe8d9",
+          "#8f212a"
+        ],
+        "firstHit": false,
+        "top3Hit": false,
+        "nearest": {
+          "hex": "#8f212a",
+          "color": 0,
+          "sample": 0,
+          "distance": 0.4517
+        }
+      }
+    },
+    {
+      "id": "dev-048",
+      "sha256": "3b2e4f9a9e2d43461531ddc764377f3fb8abc7097ac255da17bf2e738c810573",
+      "category": "character-art",
+      "error": null,
+      "perceptual": {
+        "colors": [
+          "#245da2",
+          "#f4cd86",
+          "#030001",
+          "#6099cd",
+          "#e65a89"
+        ],
+        "firstHit": false,
+        "top3Hit": false,
+        "nearest": {
+          "hex": "#ba3a4a",
+          "color": 0,
+          "sample": 0,
+          "distance": 0.2614
+        }
+      },
+      "population": {
+        "colors": [
+          "#fffeff",
+          "#030001",
+          "#9fa1a5",
+          "#c5beb1",
+          "#b0afa7"
+        ],
+        "firstHit": false,
+        "top3Hit": false,
+        "nearest": {
+          "hex": "#e95272",
+          "color": 0,
+          "sample": 2,
+          "distance": 0.3943
+        }
+      }
+    },
+    {
+      "id": "dev-049",
+      "sha256": "d305d6eb98f9c801b87b09c9d87dce20f037f26afecc380f5a892aa69e83e850",
+      "category": "character-art",
+      "error": null,
+      "perceptual": {
+        "colors": [
+          "#fcf103",
+          "#ee1b24",
+          "#5b542a",
+          "#a2352e",
+          "#b94a75"
+        ],
+        "firstHit": false,
+        "top3Hit": false,
+        "nearest": {
+          "hex": "#173a40",
+          "color": 0,
+          "sample": 1,
+          "distance": 0.6474
+        }
+      },
+      "population": {
+        "colors": [
+          "#181818",
+          "#2a2f33",
+          "#20282b",
+          "#ee1b24",
+          "#1c2125"
+        ],
+        "firstHit": false,
+        "top3Hit": true,
+        "nearest": {
+          "hex": "#18272c",
+          "color": 0,
+          "sample": 4,
+          "distance": 0.057
+        }
+      }
+    },
+    {
+      "id": "dev-050",
+      "sha256": "7d7d775c07958e4e454b5f5048249b6b0efe8d412bf3d9766f83fb5a129d5580",
+      "category": "character-art",
+      "error": null,
+      "perceptual": {
+        "colors": [
+          "#be0310",
+          "#dfb197",
+          "#170804",
+          "#81654f",
+          "#92161b"
+        ],
+        "firstHit": true,
+        "top3Hit": true,
+        "nearest": {
+          "hex": "#c00011",
+          "color": 0,
+          "sample": 0,
+          "distance": 0.0041
+        }
+      },
+      "population": {
+        "colors": [
+          "#010101",
+          "#f1e7df",
+          "#ffffff",
+          "#be0310",
+          "#dfb197"
+        ],
+        "firstHit": false,
+        "top3Hit": false,
+        "nearest": {
+          "hex": "#bb030d",
+          "color": 0,
+          "sample": 4,
+          "distance": 0.4767
+        }
+      }
+    },
+    {
+      "id": "dev-051",
+      "sha256": "b3d048cc5c2eb162406cf714ef203171bbbb9150f3b31b6da1df3d920c0ef6b4",
+      "category": "character-art",
+      "error": null,
+      "perceptual": {
+        "colors": [
+          "#ed1b24",
+          "#a58944",
+          "#f9f4b8",
+          "#121b16",
+          "#5f4e2a"
+        ],
+        "firstHit": false,
+        "top3Hit": false,
+        "nearest": {
+          "hex": "#ec4041",
+          "color": 0,
+          "sample": 3,
+          "distance": 0.037
+        }
+      },
+      "population": {
+        "colors": [
+          "#ffffff",
+          "#ed1b24",
+          "#ebecf1",
+          "#0a100c",
+          "#030708"
+        ],
+        "firstHit": false,
+        "top3Hit": false,
+        "nearest": {
+          "hex": "#ec4041",
+          "color": 0,
+          "sample": 3,
+          "distance": 0.4267
+        }
+      }
+    },
+    {
+      "id": "dev-052",
+      "sha256": "b7f985656a3be24f4ea0f16e4173e021747c6216d10d08c9455e5101c182cb7c",
+      "category": "character-art",
+      "error": null,
+      "perceptual": {
+        "colors": [
+          "#847852",
+          "#000100",
+          "#253f4e",
+          "#9ebcb2",
+          "#47626d"
+        ],
+        "firstHit": false,
+        "top3Hit": true,
+        "nearest": {
+          "hex": "#4b666f",
+          "color": 0,
+          "sample": 2,
+          "distance": 0.1158
+        }
+      },
+      "population": {
+        "colors": [
+          "#ffffff",
+          "#f3f3f3",
+          "#3e5865",
+          "#e0e1d9",
+          "#586d6e"
+        ],
+        "firstHit": false,
+        "top3Hit": true,
+        "nearest": {
+          "hex": "#4d6778",
+          "color": 0,
+          "sample": 1,
+          "distance": 0.502
+        }
+      }
+    },
+    {
+      "id": "dev-053",
+      "sha256": "ec5cc05f9a817e7dd9121b414981377b43975366ad851d01f8edd2b7aa98e4b3",
+      "category": "character-art",
+      "error": null,
+      "perceptual": {
+        "colors": [
+          "#4185bd",
+          "#dfedcf",
+          "#233d74",
+          "#8fd3d5",
+          "#6cadd0"
+        ],
+        "firstHit": false,
+        "top3Hit": false,
+        "nearest": {
+          "hex": "#a7d5ac",
+          "color": 0,
+          "sample": 3,
+          "distance": 0.2716
+        }
+      },
+      "population": {
+        "colors": [
+          "#fcfcf9",
+          "#4e94c5",
+          "#6cadd0",
+          "#8fd3d5",
+          "#5ea0cc"
+        ],
+        "firstHit": false,
+        "top3Hit": false,
+        "nearest": {
+          "hex": "#d4ece4",
+          "color": 0,
+          "sample": 2,
+          "distance": 0.072
+        }
+      }
+    },
+    {
+      "id": "dev-054",
+      "sha256": "7150c28aff534867b95321ae58ed32a469e70afa073ac187d228d80876ee4c8f",
+      "category": "character-art",
+      "error": null,
+      "perceptual": {
+        "colors": [
+          "#f5e59f",
+          "#5a4722",
+          "#aa9167",
+          "#d5ba81",
+          "#7b6e31"
+        ],
+        "firstHit": false,
+        "top3Hit": false,
+        "nearest": {
+          "hex": "#c05348",
+          "color": 0,
+          "sample": 1,
+          "distance": 0.3663
+        }
+      },
+      "population": {
+        "colors": [
+          "#fffffd",
+          "#fbf3b8",
+          "#f8efe0",
+          "#aa9167",
+          "#fcf9d3"
+        ],
+        "firstHit": false,
+        "top3Hit": false,
+        "nearest": {
+          "hex": "#c05348",
+          "color": 0,
+          "sample": 1,
+          "distance": 0.4432
+        }
+      }
+    }
+  ]
+}
