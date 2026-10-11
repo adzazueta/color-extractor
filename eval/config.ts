@@ -1,8 +1,9 @@
 /**
- * Oklab distance at or under which a returned color matches an acceptable sample. `null` until
- * Alexis fixes it after calibrating on the development set (specification 7.2).
+ * Oklab distance at or under which a returned color matches an acceptable sample. Fixed by the
+ * maintainer at 0.03 after calibrating on the development set (specification 7.2): of the
+ * candidates, it disagrees least with 83 judged color pairs.
  */
-export const MATCH_THRESHOLD: number | null = null;
+export const MATCH_THRESHOLD: number | null = 0.03;
 
 /** Candidate thresholds of the dev-only calibration table, ascending. */
 export const CALIBRATION_THRESHOLDS: readonly number[] = [
