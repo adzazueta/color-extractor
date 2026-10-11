@@ -106,6 +106,14 @@ jobs:
           node-version: 24
           cache: true
       - run: vp pack
+      # Specification 9.1: the version pull request of a stable version needs the evaluation report
+      # for the current algorithmVersion. The script exempts prereleases.
+      - name: Require the evaluation report (stable version pull requests)
+        if: >-
+          github.event_name == 'pull_request'
+          && github.event.pull_request.head.repo.full_name == github.repository
+          && startsWith(github.head_ref, 'changeset-release/')
+        run: node scripts/check-report.mjs
       - name: Create the tarball
         run: |
           mkdir -p "$RUNNER_TEMP/tarball"
