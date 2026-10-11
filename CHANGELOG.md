@@ -1,5 +1,12 @@
 # @adzazueta/color-extractor
 
+## 0.4.0-next.1
+
+### Minor Changes
+
+- cbc6a45: Add perceptual mode, the default: it orders colors by how much they stand out (their colorfulness and their contrast with the rest of the image, reduced for colors under 2% coverage), and its `score` is relative to the first color. Both modes find the same colors, with the same coverage and positions. Population mode is unchanged.
+- b624586: Perceptual mode: after the first color, a color close to one already placed moves down, so the first colors are different. The first color never changes, and `score` is the color's score when it was placed, relative to the first, so it never increases. Population mode is unchanged, and `algorithmVersion` is "3".
+
 ## 0.4.0-next.0
 
 ### Minor Changes
