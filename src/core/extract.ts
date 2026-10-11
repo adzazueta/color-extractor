@@ -11,6 +11,7 @@ import {
   PERCEPTUAL_CONTRAST_WEIGHT,
   PERCEPTUAL_LIGHTNESS_WEIGHT,
   PERCEPTUAL_PRESENCE_DIVISOR,
+  PERCEPTUAL_VARIETY_DISTANCE,
   POSITION_WINDOW_RADIUS,
   RANKING_MIN_PRESENCE_DIVISOR,
   REPRESENTATIVE_PRESENCE_DIVISOR,
@@ -23,6 +24,7 @@ import {
   selectRepresentativeColors,
   selectRepresentativePositions,
 } from "@/core/pipeline/representative.js";
+import { rankWithVariety, type VarietyParameters } from "@/core/pipeline/variety.js";
 import { proposeWuClusters } from "@/core/pipeline/wu.js";
 import { ColorExtractorError } from "./errors.js";
 import type { ExtractedColor, ExtractionOptions, ExtractionResult, PixelInput } from "./types.js";
@@ -36,6 +38,11 @@ const PERCEPTUAL_PARAMETERS: PerceptualParameters = {
   colorfulnessWeight: PERCEPTUAL_COLORFULNESS_WEIGHT,
 };
 
+const VARIETY_PARAMETERS: VarietyParameters = {
+  lightnessWeight: PERCEPTUAL_LIGHTNESS_WEIGHT,
+  distance: PERCEPTUAL_VARIETY_DISTANCE,
+};
+
 /**
  * Extracts the main colors of raw RGBA pixels, synchronously. Every returned color is a real pixel
  * of the image, with the position of one such pixel and its alpha.
@@ -47,8 +54,10 @@ const PERCEPTUAL_PARAMETERS: PerceptualParameters = {
  *
  * - `"perceptual"` (the default) orders colors by how much they stand out: their colorfulness and
  *   their contrast with the rest of the image, reduced for colors that cover less than 2 % of it.
- *   `score` is relative to the first color. When no color stands out at all (an image of a single
- *   neutral color), the order and `score` are those of `"population"`.
+ *   After the first color, a color that is a shade of one already placed moves down, so the first
+ *   places show different colors. `score` is relative to the first color and never increases. When
+ *   no color stands out at all (an image of a single neutral color), the order and `score` are
+ *   those of `"population"`.
  * - `"population"` orders colors by the area they cover (`coverage`, descending), and `score` is
  *   the area relative to the largest returned color.
  *
@@ -128,14 +137,28 @@ function extract(pixels: PixelInput, options: ResolvedOptions): ExtractionResult
           PERCEPTUAL_PARAMETERS,
         )
       : null;
-  const ranked = rankGroups(
-    assigned.weights,
-    representatives.colors,
-    histogram.totalWeight,
-    RANKING_MIN_PRESENCE_DIVISOR,
-    options.count,
-    scores,
-  );
+  // Perceptual: the order with variety, and each slot's score when it was placed.
+  const ranked =
+    scores === null
+      ? {
+          ...rankGroups(
+            assigned.weights,
+            representatives.colors,
+            histogram.totalWeight,
+            RANKING_MIN_PRESENCE_DIVISOR,
+            options.count,
+          ),
+          scores: null,
+        }
+      : rankWithVariety(
+          assigned.weights,
+          representatives.colors,
+          histogram.totalWeight,
+          RANKING_MIN_PRESENCE_DIVISOR,
+          options.count,
+          scores,
+          VARIETY_PARAMETERS,
+        );
   const located = selectRepresentativePositions(
     pixels,
     histogram.pixelColorIndices,
@@ -151,7 +174,8 @@ function extract(pixels: PixelInput, options: ResolvedOptions): ExtractionResult
   const largestWeight = assigned.weights[groups[0]!]!;
   // Perceptual: the score relative to the first color's. When that is 0, every returned score is
   // 0, so the order is the population order (groups[0] is the heaviest) and so is the score.
-  const firstScore = scores === null ? 0 : scores[groups[0]!]!;
+  const slotScores = ranked.scores;
+  const firstScore = slotScores === null ? 0 : slotScores[0]!;
   const colors: ExtractedColor[] = [];
   for (let slot = 0; slot < groups.length; slot++) {
     const group = groups[slot]!;
@@ -172,7 +196,9 @@ function extract(pixels: PixelInput, options: ResolvedOptions): ExtractionResult
       rgba: [red, green, blue, alpha],
       coverage: roundRatio(weight / histogram.totalWeight),
       score: roundRatio(
-        scores !== null && firstScore > 0 ? scores[group]! / firstScore : weight / largestWeight,
+        slotScores !== null && firstScore > 0
+          ? slotScores[slot]! / firstScore
+          : weight / largestWeight,
       ),
       position: { x, y },
     });

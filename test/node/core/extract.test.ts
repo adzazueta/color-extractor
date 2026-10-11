@@ -44,7 +44,7 @@ describe("extractColorsFromPixels", () => {
       height: 10,
       mode: "population",
       count: 5,
-      algorithmVersion: "2",
+      algorithmVersion: "3",
     });
     expect(result.colors).toHaveLength(3);
     result.colors.forEach((color, index) => {
@@ -87,7 +87,7 @@ describe("extractColorsFromPixels", () => {
         height: 2,
         mode: "perceptual",
         count: 3,
-        algorithmVersion: "2",
+        algorithmVersion: "3",
       },
     });
   });
