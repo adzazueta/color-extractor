@@ -35,7 +35,7 @@
     "publint": "0.3.25",
     "sharp": "0.35.5",
     "typescript": "7.0.2",
-    "vite-plus": "1.0.0"
+    "vite-plus": "1.1.0"
   },
   "peerDependencies": {
     "sharp": "^0.35.0"
